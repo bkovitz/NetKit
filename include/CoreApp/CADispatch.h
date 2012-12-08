@@ -1,5 +1,5 @@
-#ifndef _CoreApp_dispatch_h
-#define _CoreApp_dispatch_h
+#ifndef _coreapp_dispatch_h
+#define _coreapp_dispatch_h
 
 #if defined( __APPLE__ )
 

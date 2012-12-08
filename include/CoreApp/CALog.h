@@ -1,5 +1,5 @@
-#ifndef _CoreApp_log_h
-#define _CoreApp_log_h
+#ifndef _coreapp_log_h
+#define _coreapp_log_h
 
 
 #if defined( WIN32 )
@@ -8,16 +8,16 @@
 #	include <windows.h>
 #	include <stdarg.h>
 #	include <stdio.h>
-#	define calog( LEVEL, MESSAGE, ... ) CoreApp::log::put( LEVEL, __FILE__, __FUNCTION__, __LINE__, MESSAGE, __VA_ARGS__ );
+#	define calog( LEVEL, MESSAGE, ... ) coreapp::log::put( LEVEL, __FILE__, __FUNCTION__, __LINE__, MESSAGE, __VA_ARGS__ );
 
 #else
 
-#	define calog( LEVEL, MESSAGE, ... ) CoreApp::log::put( LEVEL, __FILE__, __FUNCTION__, __LINE__, MESSAGE, ##__VA_ARGS__ );
+#	define calog( LEVEL, MESSAGE, ... ) coreapp::log::put( LEVEL, __FILE__, __FUNCTION__, __LINE__, MESSAGE, ##__VA_ARGS__ );
 
 #endif
 
 
-namespace CoreApp {
+namespace coreapp {
 
 class log
 {

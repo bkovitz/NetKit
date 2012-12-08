@@ -1,10 +1,10 @@
-#ifndef _CoreApp_object_h
-#define _CoreApp_object_h
+#ifndef _coreapp_object_h
+#define _coreapp_object_h
 
-#include <CoreApp/smart_ptr.h>
-#include <CoreApp/mutex.h>
+#include <CoreApp/CASmartPtr.h>
+#include <atomic>
 
-namespace CoreApp {
+namespace coreapp {
 
 class object
 {
@@ -15,22 +15,15 @@ public:
 	inline void
 	retain()
 	{
-		synchronized( m_mutex );
 		m_refs++;
 	}
 	
 	inline int
 	release()
 	{
-		int refs;
-		
-		m_mutex.lock();
-		
-		refs = --m_refs;
-
-		m_mutex.unlock();
-		
-		if ( m_refs == 0 )
+		int refs = --m_refs;
+	
+		if ( refs == 0 )
 		{
 			delete this;
 		}
@@ -55,8 +48,8 @@ protected:
 	virtual
 	~object() = 0;
 
-	mutex	m_mutex;
-	int		m_refs;
+	typedef std::atomic< int > atomic_int_t;
+	atomic_int_t m_refs;
 };
 
 }

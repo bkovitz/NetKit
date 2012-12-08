@@ -1,19 +1,19 @@
-#ifndef _CoreApp_http_h
-#define _CoreApp_http_h
+#ifndef _coreapp_http_h
+#define _coreapp_http_h
 
-#include <CoreApp/connection.h>
-#include <CoreApp/tcp_socket.h>
-#include <CoreApp/server.h>
-#include <CoreApp/tstring.h>
-#include <CoreApp/uri.h>
+#include <CoreApp/CAConnection.h>
+#include <CoreApp/CATCPSocket.h>
+#include <CoreApp/CAServer.h>
+#include <CoreApp/CAURI.h>
 #include <CoreApp/cstring.h>
+#include <string>
 #include <vector>
 #include <list>
 
 struct http_parser_settings;
 struct http_parser;
 
-namespace CoreApp {
+namespace coreapp {
 namespace http {
 
 class message;
@@ -25,11 +25,11 @@ typedef smart_ptr< request > request_ptr;
 class response;
 typedef smart_ptr< response > response_ptr;
 
-class connection : public CoreApp::connection< tcp::client >
+class connection : public coreapp::connection< tcp::client >
 {
 public:
 
-	typedef std::function< request_ptr ( const CoreApp::uri::ptr& ) >	request_will_begin_handler;
+	typedef std::function< request_ptr ( const coreapp::uri::ptr& ) >	request_will_begin_handler;
 	typedef std::function< response_ptr ( int ) >						response_will_begin_handler;
 	typedef std::function< int ( message_ptr& )	>						headers_were_received_handler;
 	typedef std::function< int ( message_ptr&, const blob& ) >			body_was_received_handler;
@@ -71,7 +71,7 @@ public:
 	
 protected:
 
-	typedef CoreApp::connection< tcp::client >	super;
+	typedef coreapp::connection< tcp::client >	super;
 	
 	typedef std::vector< std::string >			strings;
 	
@@ -87,9 +87,9 @@ protected:
 	body_was_received_handler			m_body_was_received_handler;
 	message_was_received_handler		m_message_was_received_handler;
 	
-	std::tstring						m_uri_value;
-	std::tstring						m_header_field;
-	std::tstring						m_header_value;
+	std::string						m_uri_value;
+	std::string						m_header_field;
+	std::string						m_header_value;
 	int									m_operation;
 	time_t								m_start;
 	bool								m_okay;
@@ -167,7 +167,7 @@ protected:
 };
 
 
-class server : public CoreApp::server
+class server : public coreapp::server
 {
 public:
 
@@ -194,11 +194,11 @@ public:
 	virtual ~server();
 	
 	void
-	set_handler( const std::tstring &path, handler *handler );
+	set_handler( const std::string &path, handler *handler );
 
 protected:
 
-	typedef std::deque< std::pair< std::tstring, handler* > > handlers;
+	typedef std::deque< std::pair< std::string, handler* > > handlers;
 
 	typedef std::list< connection::ptr > connections;
 	
@@ -214,7 +214,7 @@ class message : public object
 {
 public:
 
-	typedef std::list< std::pair< std::tstring, std::tstring > > header;
+	typedef std::list< std::pair< std::string, std::string > > header;
 	
 public:
 
@@ -236,12 +236,12 @@ public:
 	add_to_header( const header& header );
 
 	virtual void
-	add_to_header( const std::tstring &key, int val );
+	add_to_header( const std::string &key, int val );
 
 	virtual void
-	add_to_header( const std::tstring &key, const std::tstring &val );
+	add_to_header( const std::string &key, const std::string &val );
 	
-	inline const std::tstring&
+	inline const std::string&
 	content_type() const
 	{
 		return m_content_type;
@@ -285,7 +285,7 @@ public:
 protected:
 
 	header				m_header;
-	std::tstring		m_content_type;
+	std::string		m_content_type;
 	size_t				m_content_length;
 	std::ostringstream	m_ostream;
 };
@@ -299,7 +299,7 @@ public:
 
 	inline request( const std::string &uri )
 	:
-		m_uri( new CoreApp::uri( uri ) ),
+		m_uri( new coreapp::uri( uri ) ),
 		m_context( NULL )
 	{
 		init();
@@ -363,7 +363,7 @@ private:
 	init();
 
 	std::string			m_method;
-	CoreApp::uri::ptr	m_uri;
+	coreapp::uri::ptr	m_uri;
 	void				*m_context;
 };
 
@@ -405,7 +405,7 @@ private:
 
 namespace status {
 
-const std::tstring&
+const std::string&
 string( int code );
 
 enum
@@ -463,8 +463,8 @@ enum
 
 }
 
-inline CoreApp::connection< tcp::client >&
-endl( CoreApp::connection< tcp::client > &conn )
+inline coreapp::connection< tcp::client >&
+endl( coreapp::connection< tcp::client > &conn )
 {
 	conn << "\r\n";
 	return conn;

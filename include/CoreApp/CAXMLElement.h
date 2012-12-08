@@ -1,12 +1,12 @@
-#ifndef _CoreApp_xml_element_h
-#define _CoreApp_xml_element_h
+#ifndef _coreapp_xml_element_h
+#define _coreapp_xml_element_h
 
-#include <CoreApp/xml/node.h>
-#include <CoreApp/tstring.h>
+#include <CoreApp/CAXMLNode.h>
+#include <string>
 
 struct _xmlElement;
 
-namespace CoreApp {
+namespace coreapp {
 namespace xml {
 
 
@@ -14,7 +14,7 @@ class element : public node
 {
 public:
 
-	std::tstring
+	std::string
 	version() const;
 	
 protected:

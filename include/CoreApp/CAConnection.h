@@ -1,13 +1,13 @@
-#ifndef _CoreApp_connection_h
-#define _CoreApp_connection_h
+#ifndef _coreapp_connection_h
+#define _coreapp_connection_h
 
-#include <CoreApp/tcp_socket.h>
-#include <CoreApp/dispatch.h>
-#include <CoreApp/log.h>
+#include <CoreApp/CATCPSocket.h>
+#include <CoreApp/CADispatch.h>
+#include <CoreApp/CALog.h>
 #include <functional>
 #include <sstream>
 
-namespace CoreApp {
+namespace coreapp {
 
 template < class T >
 class connection : public object
@@ -76,7 +76,7 @@ public:
 		
 		if ( msg.size() > 0 )
 		{
-			netlog( log::verbose, "sending msg: %s", msg.c_str() );
+			calog( log::verbose, "sending msg: %s", msg.c_str() );
 			num = m_socket->send( reinterpret_cast< const uint8_t* >( msg.c_str() ), msg.size() );
 			m_ostream.str( "" );
 			m_ostream.clear();

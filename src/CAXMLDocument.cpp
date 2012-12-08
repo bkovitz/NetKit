@@ -1,13 +1,13 @@
-#include <CoreApp/xml/document.h>
+#include <CoreApp/CAXMLDocument.h>
 #include <libxml/tree.h>
 
 
-using namespace CoreApp;
-using namespace CoreApp::xml;
+using namespace coreapp;
+using namespace coreapp::xml;
 
 
 document::ptr
-document::create( const std::tstring &str )
+document::create( const std::string &str )
 {
 	document::ptr	self;
 	xmlDocPtr		doc		= xmlReadMemory( str.c_str(), ( int ) str.size(), "noname.xml", NULL, 0 );

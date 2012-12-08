@@ -80,6 +80,12 @@ public:
 
 	manager_impl( sqlite3 *db );
 	
+	inline static manager_impl*
+	instance()
+	{
+		return m_instance;
+	}
+	
 	virtual
 	~manager_impl();
 	

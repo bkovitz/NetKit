@@ -1,11 +1,11 @@
-#ifndef _CoreApp_uri_h
-#define _CoreApp_uri_h
+#ifndef _coreapp_uri_h
+#define _coreapp_uri_h
 
-#include <CoreApp/object.h>
-#include <CoreApp/smart_ptr.h>
-#include <CoreApp/tstring.h>
+#include <CoreApp/CAObject.h>
+#include <CoreApp/CASmartPtr.h>
+#include <string>
 
-namespace CoreApp {
+namespace coreapp {
 
 class uri : public object
 {
@@ -15,30 +15,30 @@ public:
 	
 	uri();
 	
-	uri( const std::tstring& s );
+	uri( const std::string& s );
 
 	~uri();
 
-	inline const std::tstring&
+	inline const std::string&
 	scheme() const
 	{
 		return m_scheme;
 	}
 	
 	inline void
-	set_scheme( const std::tstring &val )
+	set_scheme( const std::string &val )
 	{
 		m_scheme = val;
 	}
 
-	inline const std::tstring&
+	inline const std::string&
 	host() const
 	{
 		return m_host;
 	}
 	
 	inline void
-	set_host( const std::tstring &val )
+	set_host( const std::string &val )
 	{
 		m_host = val;
 	}
@@ -55,52 +55,52 @@ public:
 		m_port = val;
 	}
 
-	inline const std::tstring&
+	inline const std::string&
 	path() const
 	{
 		return m_path;
 	}
 
 	inline void
-	set_path( const std::tstring &val )
+	set_path( const std::string &val )
 	{
 		m_path = val;
 	}
 
-	inline const std::tstring&
+	inline const std::string&
 	query() const
 	{
 		return m_query;
 	}
 	
 	inline void
-	set_query( const std::tstring &val )
+	set_query( const std::string &val )
 	{
 		m_query = val;
 	}
 	
-	std::tstring
-	recompose();
+	std::string
+	recompose() const;
 
 	void
-	assign( const std::tstring &s );
+	assign( const std::string &s );
 	
 	void
 	clear();
 	
-	static std::tstring
-	encode( const std::tstring &str );
+	static std::string
+	encode( const std::string &str );
 	
-	static std::tstring
-	decode( const std::tstring& str );
+	static std::string
+	decode( const std::string& str );
 
 private:
 
-	std::tstring	m_scheme;
-	std::tstring	m_host;
+	std::string	m_scheme;
+	std::string	m_host;
 	int				m_port;
-	std::tstring	m_path;
-	std::tstring	m_query;
+	std::string	m_path;
+	std::string	m_query;
 };
 
 }

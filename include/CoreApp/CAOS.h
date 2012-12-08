@@ -1,8 +1,8 @@
-#ifndef _CoreApp_os_h
-#define _CoreApp_os_h
+#ifndef _coreapp_os_h
+#define _coreapp_os_h
 
-#include <CoreApp/types.h>
-#include <CoreApp/tstring.h>
+#include <CoreApp/CATypes.h>
+#include <string>
 
 #if defined( WIN32 )
 
@@ -20,23 +20,23 @@
 #endif
 
 
-namespace CoreApp {
+namespace coreapp {
 namespace os {
 
-std::tstring
+std::string
 computer_name();
 
-std::tstring
+std::string
 machine_id();
 
-std::tstring
+std::string
 machine_description();
 
-std::tstring
+std::string
 uuid();
 
 bool
-create_folder( const std::tstring& folder );
+create_folder( const std::string& folder );
 
 inline int
 catnap( int msec )

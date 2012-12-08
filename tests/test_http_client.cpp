@@ -5,14 +5,14 @@
 #endif
 #include <functional>
 
-using namespace CoreApp;
+using namespace coreapp;
 
 TEST_CASE( "CoreApp/http/client", "http client tests" )
 {
 	http::client::ptr	client	= new http::client;
 	http::request::ptr	request = new http::request( "http://www.porchdogsoft.com/test.html" );
 	
-	request->set_method( TEXT( "GET" ) );
+	request->set_method( "GET" );
 	
 	client->send( request, [&]( const http::response::ptr &response )
 	{

@@ -1,6 +1,6 @@
-#include "uri.h"
+#include "CAURI.h"
 #include "cstring.h"
-#include "types.h"
+#include "CATypes.h"
 #include <uriparser/Uri.h>
 #include <string>
 #include <algorithm>
@@ -49,7 +49,7 @@ split( const std::string &str, const char &delim )
 }
 
 
-using namespace CoreApp;
+using namespace coreapp;
 
 
 uri::uri()
@@ -57,7 +57,7 @@ uri::uri()
 }
 
 
-uri::uri( const std::tstring& s )
+uri::uri( const std::string& s )
 :
 	m_port( 0 )
 {
@@ -70,10 +70,10 @@ uri::~uri()
 }
 
 
-std::tstring
-uri::recompose()
+std::string
+uri::recompose() const
 {
-	std::tstring	ret;
+	std::string	ret;
 	UriUriStructA	uri;
 	strings			components;
 	strings			encodedComponents;
@@ -153,7 +153,7 @@ exit:
 
 
 void
-uri::assign( const std::tstring& s )
+uri::assign( const std::string& s )
 {
 	UriParserStateA state;
 	UriUriA			uri;
@@ -173,10 +173,10 @@ uri::assign( const std::tstring& s )
 
 	if ( uri.portText.first )
 	{
-		std::tstring text;
+		std::string text;
 		
 		text.assign( uri.portText.first, uri.portText.afterLast - uri.portText.first );
-		m_port = atoi( text.utf8().c_str() );
+		m_port = atoi( text.c_str() );
 	}
 	else if ( m_scheme == "http" )
 	{
@@ -189,7 +189,7 @@ uri::assign( const std::tstring& s )
 	
 	for ( UriPathSegmentA* path = uri.pathHead; path != NULL; path = path->next )
 	{
-		std::tstring temp;
+		std::string temp;
 		
 		temp.assign( path->text.first, path->text.afterLast - path->text.first );
 		temp = decode( temp );
@@ -215,25 +215,25 @@ uri::clear()
 }
 
 
-std::tstring
-uri::encode( const std::tstring & str )
+std::string
+uri::encode( const std::string & str )
 {
-	std::tstring	ret;
+	std::string	ret;
 	const char		*last;
 	char			*buf = new char[ str.size() * 3 ];
 	
 	last = uriEscapeA( str.c_str(), buf, false, false );
-	ret.assign( buf, last );
+	ret.assign( buf, last - buf );
 	
 	return ret;
 }
 
 
-std::tstring
-uri::decode( const std::tstring & str )
+std::string
+uri::decode( const std::string & str )
 {
-	std::tstring	dummy( str );
-	std::tstring	ret;
+	std::string	dummy( str );
+	std::string	ret;
 	const char		*last;
 	
 	last = uriUnescapeInPlaceA( ( char* ) dummy.c_str() );

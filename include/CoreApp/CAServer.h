@@ -1,10 +1,10 @@
-#ifndef _CoreApp_server_h
-#define _CoreApp_server_h
+#ifndef _coreapp_server_h
+#define _coreapp_server_h
 
-#include "socket.h"
+#include <CoreApp/CASocket.h>
 #include <deque>
 
-namespace CoreApp {
+namespace coreapp {
 
 class server : public object
 {

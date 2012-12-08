@@ -1,8 +1,8 @@
-#include "tcp_socket.h"
-#include "server.h"
-#include "log.h"
-#include "os.h"
-#include "error.h"
+#include <CoreApp/CATCPSocket.h>
+#include <CoreApp/CAServer.h>
+#include <CoreApp/CALog.h>
+#include <CoreApp/CAOS.h>
+#include <CoreApp/CAError.h>
 #include <sys/socket.h>
 #include <openssl/pem.h>
 #include <openssl/conf.h>
@@ -11,7 +11,7 @@
 #	include <openssl/engine.h>
 #endif
 
-using namespace CoreApp::tcp;
+using namespace coreapp::tcp;
 
 X509		*client::m_cert			= NULL;
 EVP_PKEY	*client::m_pkey			= NULL;
@@ -89,7 +89,7 @@ client::connect( ip::address::ptr address, connect_reply reply )
 		
 		if ( ret == -1 )
 		{
-			netlog( log::error, "connect errno = %d", errno );
+			calog( log::error, "connect errno = %d", errno );
 		}
 		
 		dispatch_async( dispatch_get_main_queue(), ^()
@@ -628,7 +628,7 @@ server::open()
 
 
 void
-server::add_listener( CoreApp::server::ptr listener )
+server::add_listener( coreapp::server::ptr listener )
 {
 	m_listeners.push_back( listener );
 }
@@ -646,7 +646,7 @@ server::listen()
 	
 	if ( ret != 0 )
 	{
-		netlog( log::error, "bind() failed: %d", os::error() );
+		calog( log::error, "bind() failed: %d", os::error() );
 		goto exit;
 	}
 	
@@ -655,7 +655,7 @@ server::listen()
 	
 	if ( ret != 0 )
 	{
-		netlog( log::error, "getsockname() failed: %d", os::error() );
+		calog( log::error, "getsockname() failed: %d", os::error() );
 		goto exit;
 	}
 	
@@ -672,7 +672,7 @@ server::listen()
 	
 	if ( ret != 0 )
 	{
-		netlog( log::error, "listen() failed: %d", os::error() );
+		calog( log::error, "listen() failed: %d", os::error() );
 		goto exit;
 	}
 	

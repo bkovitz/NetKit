@@ -12,7 +12,7 @@
 
 
 #define DECLARE_PERSISTENT_OBJECT( NAME )			\
-typedef database::iterator< NAME, ptr > iterator;	\
+typedef coreapp::database::iterator< NAME, ptr > iterator;	\
 static const std::string&							\
 table_name()										\
 {													\
@@ -27,28 +27,28 @@ table_name_v() const								\
 static size_t										\
 count()												\
 {													\
-	return database::object::count<NAME>();			\
+	return coreapp::database::object::count<NAME>();			\
 }													\
 static iterator										\
 find()												\
 {													\
-	return database::object::find<NAME, ptr>();		\
+	return coreapp::database::object::find<NAME, ptr>();		\
 }													\
 static ptr											\
 find( int64_t oid )									\
 {													\
-	return database::object::find<NAME, ptr>( oid );	\
+	return coreapp::database::object::find<NAME, ptr>( oid );	\
 }													\
 static ptr											\
 find( const std::string &uuid )						\
 {													\
-	return database::object::find<NAME, ptr>( uuid );	\
+	return coreapp::database::object::find<NAME, ptr>( uuid );	\
 }													\
 template <class T>									\
 static iterator										\
 find( const std::string &key, T val )				\
 {													\
-	return database::object::find<NAME, ptr>( key, val );	\
+	return coreapp::database::object::find<NAME, ptr>( key, val );	\
 }													\
 NAME( const coreapp::database::statement::ptr &stmt );\
 static bool initialize();							\
@@ -169,14 +169,16 @@ private:
 };
 
 
-class manager
+class manager : public coreapp::object
 {
 public:
+
+	typedef smart_ptr< manager > ptr;
 
 	static bool
 	initialize( const uri::ptr &uri );
 
-	static manager*
+	static manager::ptr
 	instance();
 
 	virtual void
@@ -202,6 +204,9 @@ public:
 class object : public coreapp::object
 {
 public:
+
+	typedef smart_ptr< object > ptr;
+	typedef int64_t oid_t;
 
 	object()
 	:
@@ -391,7 +396,7 @@ public:
 		m_uuid = uuid;
 	}
 	
-	inline int64_t
+	inline oid_t
 	oid() const
 	{
 		return m_oid;
@@ -405,7 +410,7 @@ public:
 
 protected:
 
-	mutable int64_t		m_oid;
+	mutable oid_t		m_oid;
 	mutable std::string	m_uuid;
 	mutable bool		m_dirty;
 };

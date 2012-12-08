@@ -43,7 +43,6 @@
 		D23DF59015F6AC530027A8F1 /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D23DF58F15F6AC530027A8F1 /* SystemConfiguration.framework */; };
 		D23DF59215F6AC920027A8F1 /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D23DF59115F6AC920027A8F1 /* IOKit.framework */; };
 		D23DF59C15F6AFCD0027A8F1 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D23DF59B15F6AFCD0027A8F1 /* main.cpp */; };
-		D23DF5B015F6B0F50027A8F1 /* test_tstring.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D23DF5AF15F6B0F50027A8F1 /* test_tstring.cpp */; };
 		D23DF5B315F6B1190027A8F1 /* CoreApp.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D23DF52615F698390027A8F1 /* CoreApp.framework */; };
 		D23DF5BC15F6B9310027A8F1 /* test_tcp_socket.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D23DF5BA15F6B6F90027A8F1 /* test_tcp_socket.cpp */; };
 		D23DF5C015F6D5490027A8F1 /* CATCPSocket.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D23DF5BD15F6D5490027A8F1 /* CATCPSocket.cpp */; };
@@ -84,20 +83,20 @@
 		D2740F3915FBA87700589649 /* libhttp-parser.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D2740F3015FBA83E00589649 /* libhttp-parser.a */; };
 		D2740F3B15FBA97C00589649 /* test_uri.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D2740F3A15FBA97C00589649 /* test_uri.cpp */; };
 		D2740F3D15FBAA8600589649 /* CoreApp.h in Headers */ = {isa = PBXBuildFile; fileRef = D2740F3C15FBAA8600589649 /* CoreApp.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		D2A8BA39162BAC5400D0C09A /* node.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D2A8BA38162BAC5300D0C09A /* node.cpp */; };
-		D2A8BA3D162BACCE00D0C09A /* attribute.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D2A8BA3A162BACCD00D0C09A /* attribute.cpp */; };
-		D2A8BA3E162BACCE00D0C09A /* document.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D2A8BA3B162BACCE00D0C09A /* document.cpp */; };
-		D2A8BA3F162BACCE00D0C09A /* element.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D2A8BA3C162BACCE00D0C09A /* element.cpp */; };
 		D2A8BA41162BC0B900D0C09A /* libxml2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D2A8BA40162BC0B900D0C09A /* libxml2.dylib */; };
 		D2A8BA43162BC15000D0C09A /* test_xml.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D2A8BA42162BC15000D0C09A /* test_xml.cpp */; };
-		D2A8BA44162BC2C300D0C09A /* attribute.h in Headers */ = {isa = PBXBuildFile; fileRef = D2A8BA2F162B91FA00D0C09A /* attribute.h */; };
-		D2A8BA45162BC2C800D0C09A /* document.h in Headers */ = {isa = PBXBuildFile; fileRef = D2A8BA30162B91FA00D0C09A /* document.h */; };
-		D2A8BA46162BC2CA00D0C09A /* element.h in Headers */ = {isa = PBXBuildFile; fileRef = D2A8BA31162B91FA00D0C09A /* element.h */; };
-		D2A8BA47162BC2CE00D0C09A /* node.h in Headers */ = {isa = PBXBuildFile; fileRef = D2A8BA32162B91FA00D0C09A /* node.h */; };
-		D2A8BA49162BC2FD00D0C09A /* attribute.h in Copy Sub Headers */ = {isa = PBXBuildFile; fileRef = D2A8BA2F162B91FA00D0C09A /* attribute.h */; };
-		D2A8BA4A162BC2FF00D0C09A /* document.h in Copy Sub Headers */ = {isa = PBXBuildFile; fileRef = D2A8BA30162B91FA00D0C09A /* document.h */; };
-		D2A8BA4B162BC30200D0C09A /* element.h in Copy Sub Headers */ = {isa = PBXBuildFile; fileRef = D2A8BA31162B91FA00D0C09A /* element.h */; };
-		D2A8BA4C162BC30500D0C09A /* node.h in Copy Sub Headers */ = {isa = PBXBuildFile; fileRef = D2A8BA32162B91FA00D0C09A /* node.h */; };
+		D2E25B9A16701A45009C6073 /* CADatabase.h in Headers */ = {isa = PBXBuildFile; fileRef = D2E25B9516701A45009C6073 /* CADatabase.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D2E25B9B16701A45009C6073 /* CAXMLAttribute.h in Headers */ = {isa = PBXBuildFile; fileRef = D2E25B9616701A45009C6073 /* CAXMLAttribute.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D2E25B9C16701A45009C6073 /* CAXMLDocument.h in Headers */ = {isa = PBXBuildFile; fileRef = D2E25B9716701A45009C6073 /* CAXMLDocument.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D2E25B9D16701A45009C6073 /* CAXMLElement.h in Headers */ = {isa = PBXBuildFile; fileRef = D2E25B9816701A45009C6073 /* CAXMLElement.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D2E25B9E16701A45009C6073 /* CAXMLNode.h in Headers */ = {isa = PBXBuildFile; fileRef = D2E25B9916701A45009C6073 /* CAXMLNode.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D2E25BA516701A55009C6073 /* CADatabase_SQLite.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D2E25B9F16701A55009C6073 /* CADatabase_SQLite.cpp */; };
+		D2E25BA616701A55009C6073 /* CADatabase_SQLite.h in Headers */ = {isa = PBXBuildFile; fileRef = D2E25BA016701A55009C6073 /* CADatabase_SQLite.h */; };
+		D2E25BA716701A55009C6073 /* CAXMLAttribute.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D2E25BA116701A55009C6073 /* CAXMLAttribute.cpp */; };
+		D2E25BA816701A55009C6073 /* CAXMLDocument.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D2E25BA216701A55009C6073 /* CAXMLDocument.cpp */; };
+		D2E25BA916701A55009C6073 /* CAXMLElement.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D2E25BA316701A55009C6073 /* CAXMLElement.cpp */; };
+		D2E25BAA16701A55009C6073 /* CAXMLNode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D2E25BA416701A55009C6073 /* CAXMLNode.cpp */; };
+		D2E25BAE16701C56009C6073 /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D2E25BAD16701C56009C6073 /* libsqlite3.dylib */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -133,20 +132,6 @@
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 1;
-		};
-		D2A8BA48162BC2D900D0C09A /* Copy Sub Headers */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = Headers/xml;
-			dstSubfolderSpec = 1;
-			files = (
-				D2A8BA49162BC2FD00D0C09A /* attribute.h in Copy Sub Headers */,
-				D2A8BA4A162BC2FF00D0C09A /* document.h in Copy Sub Headers */,
-				D2A8BA4C162BC30500D0C09A /* node.h in Copy Sub Headers */,
-				D2A8BA4B162BC30200D0C09A /* element.h in Copy Sub Headers */,
-			);
-			name = "Copy Sub Headers";
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
 
@@ -191,7 +176,6 @@
 		D23DF59815F6AFCD0027A8F1 /* UnitTests */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = UnitTests; sourceTree = BUILT_PRODUCTS_DIR; };
 		D23DF59B15F6AFCD0027A8F1 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = main.cpp; path = tests/main.cpp; sourceTree = SOURCE_ROOT; };
 		D23DF5A215F6B03B0027A8F1 /* catch.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = catch.hpp; path = tests/catch.hpp; sourceTree = SOURCE_ROOT; };
-		D23DF5AF15F6B0F50027A8F1 /* test_tstring.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = test_tstring.cpp; path = tests/test_tstring.cpp; sourceTree = SOURCE_ROOT; };
 		D23DF5BA15F6B6F90027A8F1 /* test_tcp_socket.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = test_tcp_socket.cpp; path = tests/test_tcp_socket.cpp; sourceTree = SOURCE_ROOT; };
 		D23DF5BD15F6D5490027A8F1 /* CATCPSocket.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = CATCPSocket.cpp; path = src/CATCPSocket.cpp; sourceTree = "<group>"; };
 		D23DF5BF15F6D5490027A8F1 /* CASocket.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = CASocket.cpp; path = src/CASocket.cpp; sourceTree = "<group>"; };
@@ -230,16 +214,20 @@
 		D2740F3615FBA85A00589649 /* http_parser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = http_parser.h; path = "ThirdParty/http-parser/http_parser.h"; sourceTree = "<group>"; };
 		D2740F3A15FBA97C00589649 /* test_uri.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = test_uri.cpp; path = tests/test_uri.cpp; sourceTree = SOURCE_ROOT; };
 		D2740F3C15FBAA8600589649 /* CoreApp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CoreApp.h; path = include/CoreApp/CoreApp.h; sourceTree = "<group>"; };
-		D2A8BA2F162B91FA00D0C09A /* attribute.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = attribute.h; path = include/CoreApp/xml/attribute.h; sourceTree = "<group>"; };
-		D2A8BA30162B91FA00D0C09A /* document.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = document.h; path = include/CoreApp/xml/document.h; sourceTree = "<group>"; };
-		D2A8BA31162B91FA00D0C09A /* element.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = element.h; path = include/CoreApp/xml/element.h; sourceTree = "<group>"; };
-		D2A8BA32162B91FA00D0C09A /* node.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = node.h; path = include/CoreApp/xml/node.h; sourceTree = "<group>"; };
-		D2A8BA38162BAC5300D0C09A /* node.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = node.cpp; path = src/xml/node.cpp; sourceTree = "<group>"; };
-		D2A8BA3A162BACCD00D0C09A /* attribute.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = attribute.cpp; path = src/xml/attribute.cpp; sourceTree = "<group>"; };
-		D2A8BA3B162BACCE00D0C09A /* document.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = document.cpp; path = src/xml/document.cpp; sourceTree = "<group>"; };
-		D2A8BA3C162BACCE00D0C09A /* element.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = element.cpp; path = src/xml/element.cpp; sourceTree = "<group>"; };
 		D2A8BA40162BC0B900D0C09A /* libxml2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libxml2.dylib; path = usr/lib/libxml2.dylib; sourceTree = SDKROOT; };
 		D2A8BA42162BC15000D0C09A /* test_xml.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = test_xml.cpp; path = tests/test_xml.cpp; sourceTree = SOURCE_ROOT; };
+		D2E25B9516701A45009C6073 /* CADatabase.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CADatabase.h; path = include/CoreApp/CADatabase.h; sourceTree = "<group>"; };
+		D2E25B9616701A45009C6073 /* CAXMLAttribute.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CAXMLAttribute.h; path = include/CoreApp/CAXMLAttribute.h; sourceTree = "<group>"; };
+		D2E25B9716701A45009C6073 /* CAXMLDocument.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CAXMLDocument.h; path = include/CoreApp/CAXMLDocument.h; sourceTree = "<group>"; };
+		D2E25B9816701A45009C6073 /* CAXMLElement.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CAXMLElement.h; path = include/CoreApp/CAXMLElement.h; sourceTree = "<group>"; };
+		D2E25B9916701A45009C6073 /* CAXMLNode.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CAXMLNode.h; path = include/CoreApp/CAXMLNode.h; sourceTree = "<group>"; };
+		D2E25B9F16701A55009C6073 /* CADatabase_SQLite.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = CADatabase_SQLite.cpp; path = src/CADatabase_SQLite.cpp; sourceTree = "<group>"; };
+		D2E25BA016701A55009C6073 /* CADatabase_SQLite.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CADatabase_SQLite.h; path = src/CADatabase_SQLite.h; sourceTree = "<group>"; };
+		D2E25BA116701A55009C6073 /* CAXMLAttribute.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = CAXMLAttribute.cpp; path = src/CAXMLAttribute.cpp; sourceTree = "<group>"; };
+		D2E25BA216701A55009C6073 /* CAXMLDocument.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = CAXMLDocument.cpp; path = src/CAXMLDocument.cpp; sourceTree = "<group>"; };
+		D2E25BA316701A55009C6073 /* CAXMLElement.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = CAXMLElement.cpp; path = src/CAXMLElement.cpp; sourceTree = "<group>"; };
+		D2E25BA416701A55009C6073 /* CAXMLNode.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = CAXMLNode.cpp; path = src/CAXMLNode.cpp; sourceTree = "<group>"; };
+		D2E25BAD16701C56009C6073 /* libsqlite3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libsqlite3.dylib; path = usr/lib/libsqlite3.dylib; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -247,6 +235,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D2E25BAE16701C56009C6073 /* libsqlite3.dylib in Frameworks */,
 				D23DF59215F6AC920027A8F1 /* IOKit.framework in Frameworks */,
 				D23DF59015F6AC530027A8F1 /* SystemConfiguration.framework in Frameworks */,
 				D23DF57E15F69D1E0027A8F1 /* CoreFoundation.framework in Frameworks */,
@@ -316,6 +305,7 @@
 				D23DF52E15F698390027A8F1 /* Foundation.framework */,
 				D23DF59115F6AC920027A8F1 /* IOKit.framework */,
 				D23DF5CD15F7C8DF0027A8F1 /* libcrypto.dylib */,
+				D2E25BAD16701C56009C6073 /* libsqlite3.dylib */,
 				D2A8BA40162BC0B900D0C09A /* libxml2.dylib */,
 				D23DF5CB15F7C8D70027A8F1 /* libssl.dylib */,
 			);
@@ -358,7 +348,8 @@
 				D23DF5D715F964C10027A8F1 /* CAURI.cpp */,
 				D23DF55B15F698F90027A8F1 /* CAXMPP.h */,
 				D20D20FE1608FF2B0037A994 /* CAXMPP.cpp */,
-				D2A8BA37162B91FF00D0C09A /* xml */,
+				D2E25BAC16701A88009C6073 /* Database */,
+				D2E25BAB16701A74009C6073 /* XML */,
 				D23DF53015F698390027A8F1 /* Supporting Files */,
 			);
 			name = CoreApp;
@@ -378,7 +369,6 @@
 			children = (
 				D23DF5A215F6B03B0027A8F1 /* catch.hpp */,
 				D23DF59B15F6AFCD0027A8F1 /* main.cpp */,
-				D23DF5AF15F6B0F50027A8F1 /* test_tstring.cpp */,
 				D2740F3A15FBA97C00589649 /* test_uri.cpp */,
 				D23DF5CF15F7EEEC0027A8F1 /* test_ip_address.cpp */,
 				D23DF5BA15F6B6F90027A8F1 /* test_tcp_socket.cpp */,
@@ -430,19 +420,29 @@
 			name = "http-parser";
 			sourceTree = "<group>";
 		};
-		D2A8BA37162B91FF00D0C09A /* xml */ = {
+		D2E25BAB16701A74009C6073 /* XML */ = {
 			isa = PBXGroup;
 			children = (
-				D2A8BA2F162B91FA00D0C09A /* attribute.h */,
-				D2A8BA3A162BACCD00D0C09A /* attribute.cpp */,
-				D2A8BA30162B91FA00D0C09A /* document.h */,
-				D2A8BA3B162BACCE00D0C09A /* document.cpp */,
-				D2A8BA31162B91FA00D0C09A /* element.h */,
-				D2A8BA3C162BACCE00D0C09A /* element.cpp */,
-				D2A8BA32162B91FA00D0C09A /* node.h */,
-				D2A8BA38162BAC5300D0C09A /* node.cpp */,
+				D2E25B9916701A45009C6073 /* CAXMLNode.h */,
+				D2E25BA416701A55009C6073 /* CAXMLNode.cpp */,
+				D2E25B9616701A45009C6073 /* CAXMLAttribute.h */,
+				D2E25BA116701A55009C6073 /* CAXMLAttribute.cpp */,
+				D2E25B9716701A45009C6073 /* CAXMLDocument.h */,
+				D2E25BA216701A55009C6073 /* CAXMLDocument.cpp */,
+				D2E25B9816701A45009C6073 /* CAXMLElement.h */,
+				D2E25BA316701A55009C6073 /* CAXMLElement.cpp */,
 			);
-			name = xml;
+			name = XML;
+			sourceTree = "<group>";
+		};
+		D2E25BAC16701A88009C6073 /* Database */ = {
+			isa = PBXGroup;
+			children = (
+				D2E25B9516701A45009C6073 /* CADatabase.h */,
+				D2E25BA016701A55009C6073 /* CADatabase_SQLite.h */,
+				D2E25B9F16701A55009C6073 /* CADatabase_SQLite.cpp */,
+			);
+			name = Database;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -472,10 +472,12 @@
 				D2740F2B15FBA45900589649 /* CABase64.h in Headers */,
 				D2740F3D15FBAA8600589649 /* CoreApp.h in Headers */,
 				D20D21051608FF4F0037A994 /* CAOAuth.h in Headers */,
-				D2A8BA44162BC2C300D0C09A /* attribute.h in Headers */,
-				D2A8BA45162BC2C800D0C09A /* document.h in Headers */,
-				D2A8BA46162BC2CA00D0C09A /* element.h in Headers */,
-				D2A8BA47162BC2CE00D0C09A /* node.h in Headers */,
+				D2E25B9A16701A45009C6073 /* CADatabase.h in Headers */,
+				D2E25B9B16701A45009C6073 /* CAXMLAttribute.h in Headers */,
+				D2E25B9C16701A45009C6073 /* CAXMLDocument.h in Headers */,
+				D2E25B9D16701A45009C6073 /* CAXMLElement.h in Headers */,
+				D2E25B9E16701A45009C6073 /* CAXMLNode.h in Headers */,
+				D2E25BA616701A55009C6073 /* CADatabase_SQLite.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -515,8 +517,8 @@
 				D23DF52115F698390027A8F1 /* Sources */,
 				D23DF52215F698390027A8F1 /* Frameworks */,
 				D23DF52315F698390027A8F1 /* Headers */,
-				D2A8BA48162BC2D900D0C09A /* Copy Sub Headers */,
 				D23DF52415F698390027A8F1 /* Resources */,
+				D2E25BE116712977009C6073 /* Update Installed Framework */,
 			);
 			buildRules = (
 			);
@@ -663,6 +665,20 @@
 			shellPath = /bin/sh;
 			shellScript = "if [ ! -d ThirdParty/uriparser ]\nthen\n    git clone git://uriparser.git.sourceforge.net/gitroot/uriparser/uriparser ThirdParty/uriparser\nfi";
 		};
+		D2E25BE116712977009C6073 /* Update Installed Framework */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Update Installed Framework";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "SUDO_ASKPASS=~/.password.sh\nexport SUDO_ASKPASS\nsudo -A /usr/bin/rsync -av \"$BUILT_PRODUCTS_DIR/CoreApp.framework\" /Library/Frameworks/\n";
+		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -683,10 +699,11 @@
 				D219FD3216000EBF00877C70 /* CAServer.cpp in Sources */,
 				D20D20FF1608FF2B0037A994 /* CAOAuth.cpp in Sources */,
 				D20D21011608FF2B0037A994 /* CAXMPP.cpp in Sources */,
-				D2A8BA39162BAC5400D0C09A /* node.cpp in Sources */,
-				D2A8BA3D162BACCE00D0C09A /* attribute.cpp in Sources */,
-				D2A8BA3E162BACCE00D0C09A /* document.cpp in Sources */,
-				D2A8BA3F162BACCE00D0C09A /* element.cpp in Sources */,
+				D2E25BA516701A55009C6073 /* CADatabase_SQLite.cpp in Sources */,
+				D2E25BA716701A55009C6073 /* CAXMLAttribute.cpp in Sources */,
+				D2E25BA816701A55009C6073 /* CAXMLDocument.cpp in Sources */,
+				D2E25BA916701A55009C6073 /* CAXMLElement.cpp in Sources */,
+				D2E25BAA16701A55009C6073 /* CAXMLNode.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -695,7 +712,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				D23DF59C15F6AFCD0027A8F1 /* main.cpp in Sources */,
-				D23DF5B015F6B0F50027A8F1 /* test_tstring.cpp in Sources */,
 				D23DF5BC15F6B9310027A8F1 /* test_tcp_socket.cpp in Sources */,
 				D23DF5D015F7EEEC0027A8F1 /* test_ip_address.cpp in Sources */,
 				D2740F3B15FBA97C00589649 /* test_uri.cpp in Sources */,
@@ -816,9 +832,11 @@
 		D23DF53C15F698390027A8F1 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CLANG_CXX_LIBRARY = "libc++";
 				COMBINE_HIDPI_IMAGES = YES;
+				DEPLOYMENT_LOCATION = NO;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				FRAMEWORK_VERSION = A;
@@ -832,6 +850,7 @@
 					./ThirdParty/uriparser/include,
 				);
 				INFOPLIST_FILE = Info.plist;
+				INSTALL_PATH = /Library/Frameworks;
 				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				PRODUCT_NAME = CoreApp;
 				SDKROOT = macosx10.7;
@@ -842,9 +861,11 @@
 		D23DF53D15F698390027A8F1 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CLANG_CXX_LIBRARY = "libc++";
 				COMBINE_HIDPI_IMAGES = YES;
+				DEPLOYMENT_LOCATION = NO;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				FRAMEWORK_VERSION = A;
@@ -858,6 +879,7 @@
 					./ThirdParty/uriparser/include,
 				);
 				INFOPLIST_FILE = Info.plist;
+				INSTALL_PATH = /Library/Frameworks;
 				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				PRODUCT_NAME = CoreApp;
 				SDKROOT = macosx10.7;

@@ -1,8 +1,7 @@
-#ifndef _CoreApp_ip_address_h
-#define _CoreApp_ip_address_h
+#ifndef _coreapp_ip_address_h
+#define _coreapp_ip_address_h
 
-#include <CoreApp/object.h>
-#include <CoreApp/tstring.h>
+#include <CoreApp/CAObject.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <net/if.h>
@@ -11,7 +10,7 @@
 #include <deque>
 
 
-namespace CoreApp {
+namespace coreapp {
 namespace ip {
 
 class address : public object
@@ -36,7 +35,7 @@ public:
 	virtual ~address();
 	
 	static void
-	resolve( std::tstring host, uint16_t port, resolve_reply reply );
+	resolve( std::string host, uint16_t port, resolve_reply reply );
 	
 	inline sockaddr_storage
 	sockaddr() const
@@ -44,7 +43,7 @@ public:
 		return m_native;
 	}
 	
-	std::tstring
+	std::string
 	host() const;
 	
 	uint16_t

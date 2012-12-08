@@ -1,9 +1,9 @@
-#include "http.h"
-#include "socket.h"
-#include "base64.h"
+#include "CAHTTP.h"
+#include "CASocket.h"
+#include "CABase64.h"
 #include "cstring.h"
-#include "os.h"
-#include "log.h"
+#include "CAOS.h"
+#include "CALog.h"
 #include <http_parser.h>
 #include <fstream>
 #include <assert.h>
@@ -23,7 +23,7 @@
 #	define TEXT( X ) X
 #endif
 
-using namespace CoreApp::http;
+using namespace coreapp::http;
 
 
 #if defined(WIN32)
@@ -211,7 +211,7 @@ connection::send( const message::ptr &message )
 	/*
 	msg = m_ostream.str();
 			
-	netlog( log::verbose, "%s", msg.c_str() );
+	calog( log::verbose, "%s", msg.c_str() );
 			
 	ret = ( int ) m_socket->send( ( buf_t ) msg.c_str(), msg.size() );
 	
@@ -220,7 +220,7 @@ connection::send( const message::ptr &message )
 	{
 		response::ptr response = new http::response( -1 );
 		
-		netlog( log::error, "send failed: %d(%d)", os::error() );
+		calog( log::error, "send failed: %d(%d)", os::error() );
 		m_reply( response );
 		m_reply = NULL;
 	}
@@ -253,7 +253,7 @@ connection::can_recv_data()
 
 			if ( processed != num )
 			{
-				netlog( log::error, "http_parser_execute() failed: bytes read = %ld, processed = %ld",
+				calog( log::error, "http_parser_execute() failed: bytes read = %ld, processed = %ld",
 									num, processed );
 				close();
 				break;
@@ -309,7 +309,7 @@ connection::message_will_begin( http_parser *parser )
 {
 	connection *self = reinterpret_cast< connection* >( parser->data );
 	
-	netlog( log::verbose, "reading new message" );
+	calog( log::verbose, "reading new message" );
 
 	self->m_parser->upgrade = 0;
 	self->m_parse_state	= NONE;
@@ -328,9 +328,9 @@ int
 connection::uri_was_received( http_parser *parser, const char *buf, size_t len )
 {
 	connection		*self = reinterpret_cast< connection* >( parser->data );
-	std::tstring	str( buf, len );
+	std::string	str( buf, len );
 	
-	netlog( log::verbose, "uri was received: %s", str.utf8().c_str() );
+	calog( log::verbose, "uri was received: %s", str.c_str() );
 	
 	self->m_uri_value.append( str );
 	
@@ -343,7 +343,7 @@ connection::header_field_was_received( http_parser *parser, const char *buf, siz
 {
 	connection		*self = reinterpret_cast< connection* >( parser->data );
 	int				ret = 0;
-	std::tstring	str( buf, len );
+	std::string	str( buf, len );
 	
 	if ( !self->m_message && !self->build_message() )
 	{
@@ -376,7 +376,7 @@ int
 connection::header_value_was_received( http_parser *parser, const char *buf, size_t len )
 {
 	connection		*self = reinterpret_cast< connection* >( parser->data );
-	std::tstring	str( buf, len );
+	std::string	str( buf, len );
 	
 	if ( self->m_parse_state != VALUE )
 	{
@@ -419,7 +419,7 @@ connection::headers_were_received( http_parser *parser )
 		/*
 	for ( header::const_iterator it = self->m_message->header().begin(); it != self->m_message->header().end(); it++ )
 	{
-		netlog( log::verbose, "%s %s\n", it->first.c_str(), it->second.c_str() );
+		calog( log::verbose, "%s %s\n", it->first.c_str(), it->second.c_str() );
 	
 		if ( it->first == TEXT( "Content-Length" ) )
 		{
@@ -439,8 +439,8 @@ connection::headers_were_received( http_parser *parser )
 		}
 		else if ( *it1 == "Authorization" )
 		{
-			std::tstring base64_encoded;
-			std::tstring decoded;
+			std::string base64_encoded;
+			std::string decoded;
 			size_t		pos;
 			
 			m_authorization	= *it2;
@@ -590,7 +590,7 @@ client::send( const request::ptr &request, reply reply )
 						else
 						{
 							response::ptr response = new http::response( -1 );
-							netlog( log::error, "unable to setup tls" );
+							calog( log::error, "unable to setup tls" );
 							m_reply( response );
 						}
 					}
@@ -624,7 +624,7 @@ server::~server()
 
 
 bool
-server::adopt( const CoreApp::socket::ptr &sock, uint8_t *buf, size_t len )
+server::adopt( const coreapp::socket::ptr &sock, uint8_t *buf, size_t len )
 {
 	tcp::client::ptr		tcp_sock = dynamic_pointer_cast< tcp::client >( sock );
 	http::connection::ptr	conn;
@@ -641,7 +641,7 @@ server::adopt( const CoreApp::socket::ptr &sock, uint8_t *buf, size_t len )
 	
 			if ( conn )
 			{
-				conn->set_request_will_begin_handler( [ this, conn ]( const CoreApp::uri::ptr &uri ) -> request::ptr
+				conn->set_request_will_begin_handler( [ this, conn ]( const coreapp::uri::ptr &uri ) -> request::ptr
 				{
 					connection::ptr temp( conn );
 					
@@ -725,7 +725,7 @@ server::adopt( const CoreApp::socket::ptr &sock, uint8_t *buf, size_t len )
 
 
 void
-server::set_handler( const std::tstring &path, handler *handler )
+server::set_handler( const std::string &path, handler *handler )
 {
 	m_handlers.push_back( std::make_pair( path, handler ) );
 }
@@ -755,7 +755,7 @@ message::add_to_header( const header &heder )
 
 	
 void
-message::add_to_header( const std::tstring &key, int val )
+message::add_to_header( const std::string &key, int val )
 {
 	char buf[ 1024 ];
 		
@@ -765,7 +765,7 @@ message::add_to_header( const std::tstring &key, int val )
 
 
 void
-message::add_to_header( const std::tstring &key, const std::tstring &val )
+message::add_to_header( const std::string &key, const std::string &val )
 {
 	m_header.push_back( make_pair( key, val ) );
 	
@@ -865,77 +865,77 @@ response::send_prologue( connection::ptr conn ) const
 }
 
 
-const std::tstring&
+const std::string&
 status::string( int code )
 {
 	switch ( code )
 	{
 		case http::status::error:
 		{
-			static std::tstring s( "Error" );
+			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
 		case http::status::cont:
 		{
-			static std::tstring s( "Error" );
+			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
 		case http::status::switchingProtocols:
 		{
-			static std::tstring s( "Error" );
+			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
 		case http::status::ok:
 		{
-			static std::tstring s( "" );
+			static std::string s( "" );
 			return s;
 		}
 		break;
 
 		case http::status::created:
 		{
-			static std::tstring s( "Error" );
+			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
 		case http::status::accepted:
 		{
-			static std::tstring s( "Error" );
+			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
 		case http::status::notAuthoritative:
 		{
-			static std::tstring s( "Error" );
+			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
 		case http::status::noContent:
 		{
-			static std::tstring s( "Error" );
+			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
 		case http::status::resetContent:
 		{
-			static std::tstring s( "Error" );
+			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
 		case http::status::partialContent:
 		{
-			static std::tstring s( "Error" );
+			static std::string s( "Error" );
 			return s;
 		}
 		break;
@@ -943,42 +943,42 @@ status::string( int code )
 
 		case http::status::multipleChoices:
 		{
-			static std::tstring s( "Error" );
+			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
 		case http::status::movedPermanently:
 		{
-			static std::tstring s( "Error" );
+			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
 		case http::status::movedTemporarily:
 		{
-			static std::tstring s( "Error" );
+			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
 		case http::status::seeOther:
 		{
-			static std::tstring s( "Error" );
+			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
 		case http::status::notModified:
 		{
-			static std::tstring s( "Error" );
+			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
 		case http::status::useProxy:
 		{
-			static std::tstring s( "Error" );
+			static std::string s( "Error" );
 			return s;
 		}
 		break;
@@ -986,133 +986,133 @@ status::string( int code )
 
 		case http::status::badRequest:
 		{
-			static std::tstring s( "Error" );
+			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
 		case http::status::unauthorized:
 		{
-			static std::tstring s( "Error" );
+			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
 		case http::status::paymentRequired:
 		{
-			static std::tstring s( "Error" );
+			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
 		case http::status::forbidden:
 		{
-			static std::tstring s( "Error" );
+			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
 		case http::status::notFound:
 		{
-			static std::tstring s( "Error" );
+			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
 		case http::status::methodNotAllowed:
 		{
-			static std::tstring s( "Error" );
+			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
 		case http::status::notAcceptable:
 		{
-			static std::tstring s( "Error" );
+			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
 		case http::status::proxyAuthentication:
 		{
-			static std::tstring s( "Error" );
+			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
 		case http::status::requestTimeout:
 		{
-			static std::tstring s( "Error" );
+			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
 		case http::status::conflict:
 		{
-			static std::tstring s( "Error" );
+			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
 		case http::status::gone:
 		{
-			static std::tstring s( "Error" );
+			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
 		case http::status::lengthRequired:
 		{
-			static std::tstring s( "Error" );
+			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
 		case http::status::precondition:
 		{
-			static std::tstring s( "Error" );
+			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
 		case http::status::requestTooLarge:
 		{
-			static std::tstring s( "Error" );
+			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
 		case http::status::uriTooLong:
 		{
-			static std::tstring s( "Error" );
+			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
 		case http::status::unsupportedMediaType:
 		{
-			static std::tstring s( "Error" );
+			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
 		case http::status::requestedRange:
 		{
-			static std::tstring s( "Error" );
+			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
 		case http::status::expectationFailed:
 		{
-			static std::tstring s( "Error" );
+			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
 		case http::status::upgradeRequired:
 		{
-			static std::tstring s( "Error" );
+			static std::string s( "Error" );
 			return s;
 		}
 		break;
@@ -1120,42 +1120,42 @@ status::string( int code )
 
 		case http::status::serverError:
 		{
-			static std::tstring s( "Error" );
+			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
 		case http::status::notImplemented:
 		{
-			static std::tstring s( "Error" );
+			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
 		case http::status::badGateway:
 		{
-			static std::tstring s( "Error" );
+			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
 		case http::status::serviceUnavailable:
 		{
-			static std::tstring s( "Error" );
+			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
 		case http::status::gatewayTimeout:
 		{
-			static std::tstring s( "Error" );
+			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
 		case http::status::notSupported:
 		{
-			static std::tstring s( "Error" );
+			static std::string s( "Error" );
 			return s;
 		}
 		break;
@@ -1163,21 +1163,21 @@ status::string( int code )
 
 		case http::status::authorizedCancelled:
 		{
-			static std::tstring s( "Error" );
+			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
 		case http::status::pkiError:
 		{
-			static std::tstring s( "Error" );
+			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
 		case http::status::webifDisabled:
 		{
-			static std::tstring s( "Error" );
+			static std::string s( "Error" );
 			return s;
 		}
 		break;
@@ -1185,7 +1185,7 @@ status::string( int code )
 
 		default:
 		{
-			static std::tstring s( "Error" );
+			static std::string s( "Error" );
 			return s;
 		}
 		break;

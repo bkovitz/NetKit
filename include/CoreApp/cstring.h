@@ -1,5 +1,7 @@
-#ifndef _CoreApp_cstring_h
-#define _CoreApp_cstring_h
+#ifndef _coreapp_cstring_h
+#define _coreapp_cstring_h
+
+#include <stdarg.h>
 
 namespace std {
 

@@ -1,11 +1,12 @@
 #include "catch.hpp"
-#include <CoreApp/ip_address.h>
-#include <CoreApp/dispatch.h>
+#include <CoreApp/CAIPAddress.h>
+#include <CoreApp/CADispatch.h>
+
 #if defined( __APPLE__ )
 #	include <CoreFoundation/CoreFoundation.h>
 #endif
 
-using namespace CoreApp;
+using namespace coreapp;
 
 TEST_CASE( "CoreApp/ip/address/1", "ip::address tests" )
 {
@@ -27,7 +28,7 @@ TEST_CASE( "CoreApp/ip/address/2", "ip::address tests" )
 
 TEST_CASE( "CoreApp/ip/address/3", "ip::address tests" )
 {
-	CoreApp::ip::address::resolve( "www.google.com", 443, []( int status, CoreApp::ip::address::list addrs )
+	coreapp::ip::address::resolve( "www.google.com", 443, []( int status, coreapp::ip::address::list addrs )
 	{
 		REQUIRE( status == 0 );
 		REQUIRE( addrs.size() > 0 );

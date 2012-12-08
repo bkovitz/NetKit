@@ -1,8 +1,8 @@
 #ifndef _coreapp_base64_h
 #define _coreapp_base64_h
 
-#include <coreapp/types.h>
-#include <coreapp/tstring.h>
+#include <CoreApp/CATypes.h>
+#include <string>
 
 namespace coreapp {
 namespace codec {
@@ -11,11 +11,11 @@ class base64
 {
 public:
 
-	static std::tstring
-	encode( const std::tstring &s );
+	static std::string
+	encode( const std::string &s );
 
-	static std::tstring
-	decode( const std::tstring &s );
+	static std::string
+	decode( const std::string &s );
 };
 
 }

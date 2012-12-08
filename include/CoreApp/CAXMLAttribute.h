@@ -1,12 +1,11 @@
-#ifndef _CoreApp_xml_attribute_h
-#define _CoreApp_xml_attribute_h
+#ifndef _coreapp_xml_attribute_h
+#define _coreapp_xml_attribute_h
 
-#include <CoreApp/xml/node.h>
-#include <CoreApp/tstring.h>
+#include <CoreApp/CAXMLNode.h>
 
 struct _xmlAttr;
 
-namespace CoreApp {
+namespace coreapp {
 namespace xml {
 
 class attribute : public node

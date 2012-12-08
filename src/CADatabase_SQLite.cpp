@@ -47,6 +47,13 @@ exit:
 }
 
 
+manager::ptr
+manager::instance()
+{
+	return manager_impl::instance();
+}
+
+
 manager_impl::manager_impl( sqlite3 *db )
 :
 	m_db( db )

@@ -1,13 +1,13 @@
-#include "log.h"
+#include <CoreApp/CALog.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <time.h>
 #include <string.h>
-#include <CoreApp/mutex.h>
+#include <mutex>
 
-using namespace CoreApp;
+using namespace coreapp;
 
-static mutex		g_mutex;
+static std::mutex	g_mutex;
 static log::level	g_log_level = log::info;
 
 void
@@ -19,7 +19,7 @@ log::init( const char *name )
 log::level
 log::get_level()
 {
-	synchronized( g_mutex );
+	std::lock_guard<std::mutex> lk( g_mutex );
 
 	return g_log_level;
 }
@@ -28,7 +28,7 @@ log::get_level()
 void
 log::set_level( log::level l )
 {
-	synchronized( g_mutex );
+	std::lock_guard<std::mutex> lk( g_mutex );
 
 	g_log_level = l;
 }
@@ -37,7 +37,7 @@ log::set_level( log::level l )
 void
 log::put( log::level l, const char * filename, const char * function, int line, const char * format, ... )
 {
-	synchronized( g_mutex );
+	std::lock_guard<std::mutex> lk( g_mutex );
 
 	if ( l <= g_log_level )
 	{

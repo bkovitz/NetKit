@@ -1,6 +1,6 @@
-#include <CoreApp/connection.h>
+#include <CoreApp/CAConnection.h>
 
-using namespace CoreApp;
+using namespace coreapp;
 
 
 

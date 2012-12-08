@@ -1,5 +1,5 @@
-#include "os.h"
-#include "log.h"
+#include "CAOS.h"
+#include "CALog.h"
 #include <Foundation/Foundation.h>
 #include <CoreFoundation/CoreFoundation.h>
 #include <SystemConfiguration/SystemConfiguration.h>
@@ -33,13 +33,13 @@
 #include <stdio.h>
 
 
-using namespace CoreApp;
+using namespace coreapp;
 
 
-std::tstring
+std::string
 os::computer_name()
 {
-	static std::tstring name;
+	static std::string name;
 	
 	if ( name.size() == 0 )
 	{
@@ -65,14 +65,14 @@ os::computer_name()
 
 
 bool
-os::create_folder( const std::tstring &folder )
+os::create_folder( const std::string &folder )
 {
 	//return SHCreateDirectoryEx( NULL, folder, NULL ) == ERROR_SUCCESS ? true : false;
 	return false;
 }
 
 
-std::tstring
+std::string
 os::uuid()
 {
 	CFUUIDRef       uuidRef     =   CFUUIDCreate( NULL );
@@ -232,10 +232,10 @@ GetMACAddress(io_iterator_t intfIterator, UInt8 *MACAddress, UInt8 bufferSize)
 }
  
 
-static std::tstring
+static std::string
 serialNumber()
 {
-	std::tstring serialNumber;
+	std::string serialNumber;
 
 	io_service_t platformExpert = IOServiceGetMatchingService(kIOMasterPortDefault, IOServiceMatching("IOPlatformExpertDevice" ) );
 
@@ -256,13 +256,13 @@ serialNumber()
 }
 
 
-std::tstring
+std::string
 os::machine_id()
 {
 	kern_return_t	kernResult = KERN_SUCCESS;
 	io_iterator_t	intfIterator;
 	UInt8			MACAddress[kIOEthernetAddressSize];
-	std::tstring	machineID;
+	std::string	machineID;
  
 	kernResult = FindEthernetInterfaces(&intfIterator);
     
@@ -291,13 +291,13 @@ os::machine_id()
 }
 
 
-std::tstring
+std::string
 os::machine_description()
 {
 	NSString * systemVersionFile = @"/System/Library/CoreServices/SystemVersion.plist";
 	NSData * data = [NSData dataWithContentsOfFile:systemVersionFile];
 	NSString *temp;
-	std::tstring machineDescription;
+	std::string machineDescription;
   
 	NSDictionary * dict = [NSPropertyListSerialization propertyListFromData:data mutabilityOption:NSPropertyListImmutable format:NULL errorDescription:nil ];
 

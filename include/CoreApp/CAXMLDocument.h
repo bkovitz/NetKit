@@ -1,12 +1,11 @@
-#ifndef _CoreApp_xml_document_h
-#define _CoreApp_xml_document_h
+#ifndef _coreapp_xml_document_h
+#define _coreapp_xml_document_h
 
-#include <CoreApp/xml/node.h>
-#include <CoreApp/tstring.h>
+#include <CoreApp/CAXMLNode.h>
 
 struct _xmlDoc;
 
-namespace CoreApp {
+namespace coreapp {
 namespace xml {
 
 
@@ -17,7 +16,7 @@ public:
 	typedef smart_ptr< document > ptr;
 
 	static document::ptr
-	create( const std::tstring &str );
+	create( const std::string &str );
 	
 	document();
 	
@@ -28,10 +27,10 @@ public:
 	node::ptr
 	root() const;
 	
-	std::tstring
+	std::string
 	name() const;
 
-	std::tstring
+	std::string
 	version() const;
 	
 protected:

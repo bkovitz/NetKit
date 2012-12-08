@@ -1,7 +1,7 @@
-#ifndef _CoreApp_xmpp_client_h
-#define _CoreApp_xmpp_client_h
+#ifndef _coreapp_xmpp_client_h
+#define _coreapp_xmpp_client_h
 
-namespace CoreApp {
+namespace coreapp {
 
 class xmpp_client : public client 
 {

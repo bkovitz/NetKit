@@ -1,8 +1,8 @@
-#ifndef _CoreApp_error_h
-#define _CoreApp_error_h
+#ifndef _coreapp_error_h
+#define _coreapp_error_h
 
 
-namespace CoreApp {
+namespace coreapp {
 
 typedef enum
 {

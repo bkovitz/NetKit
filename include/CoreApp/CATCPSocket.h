@@ -1,15 +1,15 @@
-#ifndef _CoreApp_tcp_socket_h
-#define _CoreApp_tcp_socket_h
+#ifndef _coreapp_tcp_socket_h
+#define _coreapp_tcp_socket_h
 
-#include "socket.h"
-#include <CoreApp/ip_address.h>
-#include <CoreApp/server.h>
-#include <CoreApp/tstring.h>
-#include <CoreApp/types.h>
+#include <CoreApp/CATCPSocket.h>
+#include <CoreApp/CAIPAddress.h>
+#include <CoreApp/CAServer.h>
+#include <CoreApp/CATypes.h>
 #include <openssl/ssl.h>
+#include <string>
 #include <deque>
 
-namespace CoreApp {
+namespace coreapp {
 namespace tcp {
 
 class client : public socket
@@ -103,7 +103,7 @@ public:
 	open();
 	
 	void
-	add_listener( CoreApp::server::ptr s );
+	add_listener( coreapp::server::ptr s );
 	
 	client::ptr
 	accept( ip::address::ptr &addr );
@@ -116,7 +116,7 @@ public:
 	
 protected:
 
-	typedef std::deque< CoreApp::server::ptr > listeners;
+	typedef std::deque< coreapp::server::ptr > listeners;
 	
 	int
 	listen();

@@ -1,12 +1,12 @@
-#ifndef _CoreApp_socket_h
-#define _CoreApp_socket_h
+#ifndef _coreapp_socket_h
+#define _coreapp_socket_h
 
-#include <CoreApp/object.h>
-#include <CoreApp/dispatch.h>
+#include <CoreApp/CAObject.h>
+#include <CoreApp/CADispatch.h>
 #include <functional>
 #include <errno.h>
 
-namespace CoreApp {
+namespace coreapp {
 
 class socket : public object
 {

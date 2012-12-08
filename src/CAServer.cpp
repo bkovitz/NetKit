@@ -1,6 +1,6 @@
-#include "server.h"
+#include <CoreApp/CAServer.h>
 
-using namespace CoreApp;
+using namespace coreapp;
 
 
 server::server()

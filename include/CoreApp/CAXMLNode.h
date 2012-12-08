@@ -1,12 +1,12 @@
-#ifndef _CoreApp_xml_node_h
-#define _CoreApp_xml_node_h
+#ifndef _coreapp_xml_node_h
+#define _coreapp_xml_node_h
 
-#include <CoreApp/object.h>
-#include <CoreApp/tstring.h>
+#include <CoreApp/CAObject.h>
+#include <string>
 
 struct _xmlNode;
 
-namespace CoreApp {
+namespace coreapp {
 namespace xml {
 
 class document;
@@ -27,7 +27,7 @@ public:
 
 	virtual ~node();
 
-	std::tstring
+	std::string
 	name() const;
 	
 	node::ptr
@@ -48,7 +48,7 @@ public:
 	document_ptr
 	document() const;
 
-	std::tstring
+	std::string
 	content() const;
 
 	attribute_ptr

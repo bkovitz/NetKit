@@ -1,21 +1,21 @@
-#ifndef _CoreApp_CoreApp_h
-#define _CoreApp_CoreApp_h
+#ifndef _coreapp_coreapp_h
+#define _coreapp_coreapp_h
 
-#include <CoreApp/types.h>
-#include <CoreApp/object.h>
-#include <CoreApp/uri.h>
-#include <CoreApp/ip_address.h>
-#include <CoreApp/socket.h>
-#include <CoreApp/tcp_socket.h>
-#include <CoreApp/connection.h>
-#include <CoreApp/http.h>
-#include <CoreApp/tstring.h>
-#include <CoreApp/base64.h>
+#include <CoreApp/CATypes.h>
+#include <CoreApp/CAObject.h>
+#include <CoreApp/CAURI.h>
+#include <CoreApp/CAIPAddress.h>
+#include <CoreApp/CASocket.h>
+#include <CoreApp/CATCPSocket.h>
+#include <CoreApp/CAConnection.h>
+#include <CoreApp/CAHTTP.h>
+#include <CoreApp/CABase64.h>
 #include <CoreApp/cstring.h>
-#include <CoreApp/os.h>
-#include <CoreApp/xml/node.h>
-#include <CoreApp/xml/document.h>
-#include <CoreApp/xml/attribute.h>
-#include <CoreApp/xml/element.h>
+#include <CoreApp/CAOS.h>
+#include <CoreApp/CAXMLNode.h>
+#include <CoreApp/CAXMLDocument.h>
+#include <CoreApp/CAXMLAttribute.h>
+#include <CoreApp/CAXMLElement.h>
+#include <CoreApp/CADatabase.h>
 
 #endif

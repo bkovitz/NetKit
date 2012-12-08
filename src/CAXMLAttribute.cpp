@@ -1,8 +1,8 @@
-#include <CoreApp/xml/attribute.h>
+#include <CoreApp/CAXMLAttribute.h>
 #include <libxml/tree.h>
 
-using namespace CoreApp;
-using namespace CoreApp::xml;
+using namespace coreapp;
+using namespace coreapp::xml;
 
 
 attribute::attribute()

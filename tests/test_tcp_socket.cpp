@@ -1,12 +1,12 @@
 #include "catch.hpp"
-#include <CoreApp/tcp_socket.h>
-#include <CoreApp/ip_address.h>
+#include <CoreApp/CATCPSocket.h>
+#include <CoreApp/CAIPAddress.h>
 
 TEST_CASE( "CoreApp/socket", "socket tests" )
 {
 	SECTION( "constructors", "socket constructors" )
 	{
-		CoreApp::tcp::client::ptr sock = new CoreApp::tcp::client;
+		coreapp::tcp::client::ptr sock = new coreapp::tcp::client;
 
 		REQUIRE( sock );
 	}

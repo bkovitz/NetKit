@@ -1,5 +1,5 @@
-#ifndef _CoreApp_types_h
-#define _CoreApp_types_h
+#ifndef _coreapp_types_h
+#define _coreapp_types_h
 
 #include <cstdint>
 #include <vector>
@@ -16,7 +16,7 @@
 
 #endif
 
-namespace CoreApp {
+namespace coreapp {
 
 using std::int8_t;
 using std::uint8_t;

@@ -4,6 +4,6 @@
 
 int main (int argc, char * const argv[])
 {
-	CoreApp::log::set_level( CoreApp::log::verbose );
+	coreapp::log::set_level( coreapp::log::verbose );
     return Catch::Main( argc, argv );
 }

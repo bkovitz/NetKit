@@ -4,7 +4,7 @@
 #	include <CoreFoundation/CoreFoundation.h>
 #endif
 
-using namespace CoreApp;
+using namespace coreapp;
 
 class handler : public http::server::handler
 {
@@ -25,7 +25,7 @@ class handler : public http::server::handler
 	virtual int
 	message_was_received( http::connection::ptr conn, http::request::ptr &request )
 	{
-		if ( request->uri()->path() == TEXT( "/found.html" ) )
+		if ( request->uri()->path() == "/found.html" )
 		{
 			http::response::ptr response = new http::response( 200 );
 			
@@ -52,7 +52,7 @@ TEST_CASE( "CoreApp/http/server/1", "http server tests" )
 	
 	request	= new http::request( buf );
 	
-	request->set_method( TEXT( "GET" ) );
+	request->set_method( "GET" );
 	
 	client->send( request, [&]( const http::response::ptr &response )
 	{
@@ -89,7 +89,7 @@ TEST_CASE( "CoreApp/http/server/2", "http server tests" )
 	
 	request	= new http::request( buf );
 	
-	request->set_method( TEXT( "GET" ) );
+	request->set_method( "GET" );
 	
 	client->send( request, [&]( const http::response::ptr &response )
 	{

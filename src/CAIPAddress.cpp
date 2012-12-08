@@ -1,12 +1,13 @@
-#include "ip_address.h"
-#include <CoreApp/dispatch.h>
-#include <CoreApp/os.h>
-#include <CoreApp/log.h>
+#include <CoreApp/CAIPAddress.h>
+#include <CoreApp/CADispatch.h>
+#include <CoreApp/CAOS.h>
+#include <CoreApp/CALog.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <sstream>
 
-using namespace CoreApp::ip;
+using namespace coreapp::ip;
 
 
 inline bool
@@ -68,7 +69,7 @@ address::~address()
 
 
 void
-address::resolve( std::tstring host, uint16_t port, resolve_reply reply )
+address::resolve( std::string host, uint16_t port, resolve_reply reply )
 {
 	dispatch_async( dispatch_get_global_queue( DISPATCH_QUEUE_PRIORITY_DEFAULT, 0 ), ^()
 	{
@@ -76,7 +77,7 @@ address::resolve( std::tstring host, uint16_t port, resolve_reply reply )
 		struct addrinfo	*result;
 		struct addrinfo *res;
 		struct addrinfo hints;
-		char			buf[ 64 ];
+		std::ostringstream os;
 		int				err;
 		
 		memset( &hints, 0, sizeof( hints ) );
@@ -84,8 +85,9 @@ address::resolve( std::tstring host, uint16_t port, resolve_reply reply )
 		hints.ai_socktype	= SOCK_STREAM;
 		hints.ai_family		= AF_INET;
  
-		sprintf( buf, "%d", port );
-		err = getaddrinfo( host.utf8().c_str(), buf, NULL, &result );
+		os << port;
+		
+		err = getaddrinfo( host.c_str(), os.str().c_str(), NULL, &result );
     
 		if ( err == 0 )
 		{
@@ -112,7 +114,7 @@ address::resolve( std::tstring host, uint16_t port, resolve_reply reply )
 		}
 		else
 		{
-			netlog( log::error, "error in getaddrinfo: %s", gai_strerror( err ) );
+			calog( log::error, "error in getaddrinfo: %s", gai_strerror( err ) );
 		}
 		
 		dispatch_async( dispatch_get_main_queue(), ^()
@@ -124,7 +126,7 @@ address::resolve( std::tstring host, uint16_t port, resolve_reply reply )
 }
 
 
-std::tstring
+std::string
 address::host() const
 {
 	char buf[ 1024 ];
@@ -141,7 +143,7 @@ address::host() const
 
 #endif
 		{
-			netlog( log::error, "error converting addr to string: %d", os::error() );
+			calog( log::error, "error converting addr to string: %d", os::error() );
 		}
 	}
 	else if ( m_native.ss_family == AF_INET6 )

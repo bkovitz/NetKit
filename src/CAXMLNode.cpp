@@ -1,11 +1,11 @@
-#include <CoreApp/xml/node.h>
-#include <CoreApp/xml/document.h>
-#include <CoreApp/xml/attribute.h>
+#include <CoreApp/CAXMLNode.h>
+#include <CoreApp/CAXMLDocument.h>
+#include <CoreApp/CAXMLAttribute.h>
 #include <libxml/tree.h>
 
 
-using namespace CoreApp;
-using namespace CoreApp::xml;
+using namespace coreapp;
+using namespace coreapp::xml;
 
 
 node::node()
@@ -25,10 +25,10 @@ node::~node()
 }
 
 
-std::tstring
+std::string
 node::name() const
 {
-	std::tstring s;
+	std::string s;
 	
 	if ( m_node && m_node->name )
 	{
@@ -81,7 +81,7 @@ node::document() const
 }
 
 
-std::tstring
+std::string
 node::content() const
 {
 	std::string s;

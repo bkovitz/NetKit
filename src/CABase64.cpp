@@ -1,4 +1,4 @@
-#include "base64.h"
+#include <CoreApp/CABase64.h>
 
 //
 //  Created by Matt Gallagher on 2009/06/03.
@@ -65,11 +65,11 @@ static unsigned char base64_decode_lookup[256] =
 #define MIN(a,b) (((a) < (b)) ? (a) : (b))
 #endif
 
-using namespace CoreApp::codec;
+using namespace coreapp::codec;
 
 
-std::tstring
-base64::encode( const std::tstring &s )
+std::string
+base64::encode( const std::string &s )
 {
 	#define MAX_NUM_PADDING_CHARS 2
 	#define OUTPUT_LINE_LENGTH 64
@@ -183,8 +183,8 @@ exit:
 }
 
 
-std::tstring
-base64::decode( const std::tstring &s )
+std::string
+base64::decode( const std::string &s )
 {
 	size_t			length = s.size();
 	const char		*inputBuffer		= s.c_str();

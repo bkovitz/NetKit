@@ -1,7 +1,7 @@
-#include <CoreApp/object.h>
+#include <CoreApp/CAObject.h>
 #include <assert.h>
 
-using namespace CoreApp;
+using namespace coreapp;
 
 object::~object()
 {

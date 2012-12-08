@@ -1,10 +1,10 @@
-#include "socket.h"
+#include <CoreApp/CASocket.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <fcntl.h>
 
-using namespace CoreApp;
+using namespace coreapp;
 
 socket::socket( int domain, int type )
 :
