@@ -1,7 +1,7 @@
-CoreApp
+CoreNetwork
 =======
 
-CoreApp is a cross platform framework that uses some modern C++ features to make it easier to write modern apps. Primary consideration is code readability and ease of use, not performance or size.
+CoreNetwork is a cross platform framework that uses some modern C++ features to make it easier to write modern network aware apps. Primary consideration is code readability and ease of use, not performance or size.
 
 I'm making liberal use of closures (lambdas on Windows and blocks on OS X) in an effort to make asynchronous networking elegant, simple to use, and baked in from the beginning.
 
