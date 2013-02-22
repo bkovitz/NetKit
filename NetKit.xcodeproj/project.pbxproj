@@ -20,7 +20,6 @@
 		D2365E4215FD9515000B6EE3 /* UriDefsConfig.h in Headers */ = {isa = PBXBuildFile; fileRef = D2365E3C15FD9515000B6EE3 /* UriDefsConfig.h */; };
 		D2365E4315FD9515000B6EE3 /* UriDefsUnicode.h in Headers */ = {isa = PBXBuildFile; fileRef = D2365E3D15FD9515000B6EE3 /* UriDefsUnicode.h */; };
 		D2365E4415FD9515000B6EE3 /* UriIp4.h in Headers */ = {isa = PBXBuildFile; fileRef = D2365E3E15FD9515000B6EE3 /* UriIp4.h */; };
-		D239D36616D59560007FB101 /* NKParser.h in Headers */ = {isa = PBXBuildFile; fileRef = D239D36516D59560007FB101 /* NKParser.h */; };
 		D239D36816D5956B007FB101 /* NKParser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D239D36716D5956B007FB101 /* NKParser.cpp */; };
 		D239D38016D69451007FB101 /* NKSink.h in Headers */ = {isa = PBXBuildFile; fileRef = D239D37E16D69451007FB101 /* NKSink.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D239D38116D69451007FB101 /* NKSource.h in Headers */ = {isa = PBXBuildFile; fileRef = D239D37F16D69451007FB101 /* NKSource.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -182,7 +181,6 @@
 		D2365E3C15FD9515000B6EE3 /* UriDefsConfig.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = UriDefsConfig.h; path = ThirdParty/uriparser/include/uriparser/UriDefsConfig.h; sourceTree = "<group>"; };
 		D2365E3D15FD9515000B6EE3 /* UriDefsUnicode.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = UriDefsUnicode.h; path = ThirdParty/uriparser/include/uriparser/UriDefsUnicode.h; sourceTree = "<group>"; };
 		D2365E3E15FD9515000B6EE3 /* UriIp4.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = UriIp4.h; path = ThirdParty/uriparser/include/uriparser/UriIp4.h; sourceTree = "<group>"; };
-		D239D36516D59560007FB101 /* NKParser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NKParser.h; path = include/NetKit/NKParser.h; sourceTree = "<group>"; };
 		D239D36716D5956B007FB101 /* NKParser.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = NKParser.cpp; path = src/NKParser.cpp; sourceTree = "<group>"; };
 		D239D37E16D69451007FB101 /* NKSink.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NKSink.h; path = include/NetKit/NKSink.h; sourceTree = "<group>"; };
 		D239D37F16D69451007FB101 /* NKSource.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NKSource.h; path = include/NetKit/NKSource.h; sourceTree = "<group>"; };
@@ -401,7 +399,6 @@
 				D23DF55015F698F90027A8F1 /* NKObject.cpp */,
 				D23DF55115F698F90027A8F1 /* NKObject.h */,
 				D239D36716D5956B007FB101 /* NKParser.cpp */,
-				D239D36516D59560007FB101 /* NKParser.h */,
 				D254EFBB16C43DA500851E44 /* NKPlatform.h */,
 				D254EFBC16C43DA500851E44 /* NKRunLoop.h */,
 				D20ED12F16D8379900177887 /* NKRunLoop_Mac.h */,
@@ -599,7 +596,6 @@
 				D254EFC016C43DA500851E44 /* NKPlatform.h in Headers */,
 				D254EFC116C43DA500851E44 /* NKRunLoop.h in Headers */,
 				D254EFC216C43DA500851E44 /* NKService.h in Headers */,
-				D239D36616D59560007FB101 /* NKParser.h in Headers */,
 				D239D38016D69451007FB101 /* NKSink.h in Headers */,
 				D239D38116D69451007FB101 /* NKSource.h in Headers */,
 				D20ED13116D8379900177887 /* NKRunLoop_Mac.h in Headers */,
