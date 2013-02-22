@@ -1,5 +1,5 @@
-#include "CADatabase_SQLite.h"
-#include <CoreApp/CALog.h>
+#include "NKDatabase_SQLite.h"
+#include <NetKit/NKLog.h>
 #include <sstream>
 
 #if defined( __APPLE__ )
@@ -7,8 +7,8 @@
 #	include <sys/stat.h>
 #endif
 
-using namespace coreapp;
-using namespace coreapp::database;
+using namespace netkit;
+using namespace netkit::database;
 
 #if defined( __APPLE__ )
 #	pragma mark database::manager_impl implementation
@@ -91,18 +91,18 @@ manager_impl::applicationDidInitialize()
 #endif
 
 
-status
+error
 manager_impl::exec( const std::string &str )
 {
 	char *error = NULL;
 	
-	calog( log::verbose, "exec: %s", str.c_str() );
+	nklog( log::verbose, "exec: %s", str.c_str() );
 
 	int ret = sqlite3_exec( m_db, str.c_str(), 0, 0, &error );
 	
 	if ( ret )
 	{
-		calog( log::error, "sqlite3_exec() failed: %d, %s", ret, error );
+		nklog( log::error, "sqlite3_exec() failed: %d, %s", ret, error );
 	}
 	
 	if ( error )
@@ -110,7 +110,7 @@ manager_impl::exec( const std::string &str )
 		sqlite3_free( error );
 	}
 
-	return ( status ) ret;
+	return error::none;
 }
 
 
@@ -119,7 +119,7 @@ database::manager_impl::select( const std::string &str )
 {
 	sqlite3_stmt *stmt;
 
-	calog( log::verbose, "select: %s\n", str.c_str() );
+	nklog( log::verbose, "select: %s\n", str.c_str() );
 
 	return ( sqlite3_prepare_v2( m_db, str.c_str(), -1, &stmt, NULL ) == SQLITE_OK ) ? new statement_impl( stmt ) : new statement_impl( NULL );
 }

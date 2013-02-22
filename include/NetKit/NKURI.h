@@ -1,11 +1,11 @@
-#ifndef _coreapp_uri_h
-#define _coreapp_uri_h
+#ifndef _netkit_uri_h
+#define _netkit_uri_h
 
-#include <CoreApp/CAObject.h>
-#include <CoreApp/CASmartPtr.h>
+#include <NetKit/NKObject.h>
+#include <NetKit/NKSmartPtr.h>
 #include <string>
 
-namespace coreapp {
+namespace netkit {
 
 class uri : public object
 {

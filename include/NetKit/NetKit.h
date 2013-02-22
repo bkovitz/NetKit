@@ -1,21 +1,23 @@
-#ifndef _coreapp_coreapp_h
-#define _coreapp_coreapp_h
+#ifndef _netkit_netkit_h
+#define _netkit_netkit_h
 
-#include <CoreApp/CATypes.h>
-#include <CoreApp/CAObject.h>
-#include <CoreApp/CAURI.h>
-#include <CoreApp/CAIPAddress.h>
-#include <CoreApp/CASocket.h>
-#include <CoreApp/CATCPSocket.h>
-#include <CoreApp/CAConnection.h>
-#include <CoreApp/CAHTTP.h>
-#include <CoreApp/CABase64.h>
-#include <CoreApp/cstring.h>
-#include <CoreApp/CAOS.h>
-#include <CoreApp/CAXMLNode.h>
-#include <CoreApp/CAXMLDocument.h>
-#include <CoreApp/CAXMLAttribute.h>
-#include <CoreApp/CAXMLElement.h>
-#include <CoreApp/CADatabase.h>
+#include <NetKit/NKTypes.h>
+#include <NetKit/NKObject.h>
+#include <NetKit/NKURI.h>
+#include <NetKit/NKIPAddress.h>
+#include <NetKit/NKSocket.h>
+#include <NetKit/NKTCPSocket.h>
+#include <NetKit/NKConnection.h>
+#include <NetKit/NKHTTP.h>
+#include <NetKit/NKBase64.h>
+#include <NetKit/cstring.h>
+#include <NetKit/NKPlatform.h>
+#include <NetKit/NKJSON.h>
+#include <NetKit/NKJSONRPC.h>
+#include <NetKit/NKXMLNode.h>
+#include <NetKit/NKXMLDocument.h>
+#include <NetKit/NKXMLAttribute.h>
+#include <NetKit/NKXMLElement.h>
+#include <NetKit/NKDatabase.h>
 
 #endif

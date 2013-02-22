@@ -1,6 +1,6 @@
-#include "CAURI.h"
+#include "NKURI.h"
 #include "cstring.h"
-#include "CATypes.h"
+#include "NKTypes.h"
 #include <uriparser/Uri.h>
 #include <string>
 #include <algorithm>
@@ -49,7 +49,7 @@ split( const std::string &str, const char &delim )
 }
 
 
-using namespace coreapp;
+using namespace netkit;
 
 
 uri::uri()

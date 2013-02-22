@@ -1,57 +1,82 @@
-#ifndef _coreapp_socket_h
-#define _coreapp_socket_h
+#ifndef _netkit_socket_h
+#define _netkit_socket_h
 
-#include <CoreApp/CAObject.h>
-#include <CoreApp/CADispatch.h>
+#include <NetKit/NKSource.h>
+#include <NetKit/NKSink.h>
+#include <NetKit/NKRunLoop.h>
+#include <initializer_list>
 #include <functional>
 #include <errno.h>
+#if defined( WIN32 )
 
-namespace coreapp {
+#else
+#	include <sys/socket.h>
+#	include <unistd.h>
+#	include <fcntl.h>
+#endif
 
-class socket : public object
-{
-public:
+namespace netkit {
 
-	typedef std::function< void () > handler;
-
-	typedef smart_ptr< socket > ptr;
+namespace socket {
 
 #if defined( WIN32 )
 
-	typedef SOCKET native;
-
-	enum
-	{
-		null = INVALID_SOCKET
-	};
+typedef SOCKET native;
+static const native null = INVALID_SOCKET;
 
 #else
 
-	typedef int native;
-
-	enum
-	{
-		null = -1
-	};
+typedef int native;
+static const native null = -1;
 
 #endif
 
-	struct error
-	{
-		enum
-		{
-	#if defined( WIN32 )
-			inprogress	=	WSAEINPROGRESS,
-			wouldblock	=	WSAEWOULDBLOCK
-	#else
-			inprogress	=	EINPROGRESS,
-			wouldblock	=	EAGAIN
-	#endif
-		};
-	};
+enum class error
+{
+#if defined( WIN32 )
+	in_progress	=	WSAEINPROGRESS,
+	would_block	=	WSAEWOULDBLOCK
+#else
+	in_progress	=	EINPROGRESS,
+	would_block	=	EAGAIN
+#endif
+};
+
+
+class server : public object
+{
+public:
+
+	typedef std::function< sink::ptr ( const std::uint8_t *buf, size_t len ) >	adopt_f;
+	typedef std::list< adopt_f >												adopters;
+
+	void
+	bind( std::initializer_list< adopt_f > l );
 	
-	virtual int
-	open() = 0;
+protected:
+
+	server( int domain, int type );
+
+	server( native fd );
+	
+	server( const server &that );	// Not implemented
+	
+	adopters	m_adopters;
+	native		m_fd;
+};
+
+	
+class client : public source
+{
+public:
+
+	typedef smart_ptr< client > ptr;
+
+	int
+	set_blocking( bool block );
+	
+	virtual void
+	close();
 	
 	inline bool
 	is_open() const
@@ -59,39 +84,26 @@ public:
 		return ( m_fd != null ) ? true : false;
 	}
 	
-	void
-	set_send_handler( handler h );
-	
-	void
-	set_recv_handler( handler h );
-	
-	int
-	set_blocking( bool block );
-	
-	virtual void
-	close();
-	
 	inline native
 	fd() const
 	{
 		return m_fd;
 	}
-
+	
 protected:
 
-	socket( int domain, int type );
-	
-	socket( native fd );
-	
-	socket( const socket &that );	// Not implemented
-	
-	virtual ~socket() = 0;
+	client( int domain, int type );
 
-	handler				m_send_handler;
-	handler				m_recv_handler;
-	dispatch_source_t	m_recv_source;
-	native				m_fd;
+	client( native fd );
+	
+	client( const client &that );	// Not implemented
+	
+	virtual ~client();
+
+	native		m_fd;
 };
+
+}
 
 }
 

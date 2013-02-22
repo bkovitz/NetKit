@@ -6,15 +6,15 @@
 //  Copyright (c) 2012 __MyCompanyName__. All rights reserved.
 //
 
-#ifndef _coreapp_database_impl_h
-#define _coreapp_database_impl_h
+#ifndef _netkit_database_impl_h
+#define _netkit_database_impl_h
 
-#include <CoreApp/CADatabase.h>
+#include <NetKit/NKDatabase.h>
 #include <sqlite3.h>
 #include <list>
 #include <map>
 
-namespace coreapp {
+namespace netkit {
 
 namespace database {
 
@@ -95,7 +95,7 @@ public:
 	virtual void
 	remove_observer( const std::string &tableName, observer *o );
 
-	virtual status
+	virtual error
 	exec( const std::string &str );
 
 	virtual statement::ptr

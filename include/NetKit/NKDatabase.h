@@ -1,18 +1,18 @@
-#ifndef _coreapp_database_h
-#define _coreapp_database_h
+#ifndef _netkit_database_h
+#define _netkit_database_h
 
-#include <CoreApp/CASmartPtr.h>
-#include <CoreApp/CAObject.h>
-#include <CoreApp/CAURI.h>
-#include <CoreApp/CATypes.h>
-#include <CoreApp/CAError.h>
+#include <NetKit/NKSmartPtr.h>
+#include <NetKit/NKObject.h>
+#include <NetKit/NKURI.h>
+#include <NetKit/NKTypes.h>
+#include <NetKit/NKError.h>
 #include <memory>
 #include <string>
 #include <sstream>
 
 
 #define DECLARE_PERSISTENT_OBJECT( NAME )			\
-typedef coreapp::database::iterator< NAME, ptr > iterator;	\
+typedef netkit::database::iterator< NAME, ptr > iterator;	\
 static const std::string&							\
 table_name()										\
 {													\
@@ -27,35 +27,35 @@ table_name_v() const								\
 static size_t										\
 count()												\
 {													\
-	return coreapp::database::object::count<NAME>();			\
+	return netkit::database::object::count<NAME>();			\
 }													\
 static iterator										\
 find()												\
 {													\
-	return coreapp::database::object::find<NAME, ptr>();		\
+	return netkit::database::object::find<NAME, ptr>();		\
 }													\
 static ptr											\
 find( int64_t oid )									\
 {													\
-	return coreapp::database::object::find<NAME, ptr>( oid );	\
+	return netkit::database::object::find<NAME, ptr>( oid );	\
 }													\
 static ptr											\
 find( const std::string &uuid )						\
 {													\
-	return coreapp::database::object::find<NAME, ptr>( uuid );	\
+	return netkit::database::object::find<NAME, ptr>( uuid );	\
 }													\
 template <class T>									\
 static iterator										\
 find( const std::string &key, T val )				\
 {													\
-	return coreapp::database::object::find<NAME, ptr>( key, val );	\
+	return netkit::database::object::find<NAME, ptr>( key, val );	\
 }													\
-NAME( const coreapp::database::statement::ptr &stmt );\
+NAME( const netkit::database::statement::ptr &stmt );\
 static bool initialize();							\
 virtual bool save() const;
 
 
-namespace coreapp {
+namespace netkit {
 namespace database {
 
 
@@ -75,7 +75,7 @@ public:
 };
 
 
-class statement : public coreapp::object
+class statement : public netkit::object
 {
 public:
 
@@ -169,7 +169,7 @@ private:
 };
 
 
-class manager : public coreapp::object
+class manager : public netkit::object
 {
 public:
 
@@ -187,7 +187,7 @@ public:
 	virtual void
 	remove_observer( const std::string &table_name, observer *o ) = 0;
 
-	virtual status
+	virtual error
 	exec( const std::string &str ) = 0;
 
 	virtual statement::ptr
@@ -201,7 +201,7 @@ public:
 };
 
 
-class object : public coreapp::object
+class object : public netkit::object
 {
 public:
 

@@ -1,69 +1,31 @@
-#include <CoreNetwork/CNJSONRPC.h>
-#include <CoreNetwork/CNRunLoop.h>
-#include <CoreNetwork/CNTypes.h>
-#include <CoreNetwork/CNPlatform.h>
-#if 0
+#include <NetKit/NKJSONRPC.h>
+#include <NetKit/NKRunLoop.h>
+#include <NetKit/NKTypes.h>
+#include <NetKit/NKPlatform.h>
 
-using namespace fingerprint;
-using namespace fingerprint::jsonrpc;
-
-
-connection::list connection::m_connections;
+using namespace netkit::jsonrpc;
 
 connection::connection()
 :
-	m_observing( false ),
-	m_printMode( kPrintMode_OwnerOnly ),
 	m_base( NULL ),
 	m_eptr( NULL ),
 	m_end( NULL ),
-#if defined( FINGERPRINT_HAS_BLOCKS )
-	m_closure( NULL ),
-#endif
 	m_id( 1 )
 {
 	add( 4192 );
 }
 
 
-connection::connection( native sock )
+connection::connection( const tcp::client::ptr &sock )
 :
-	socket( sock ),
-	m_observing( false ),
-	m_printMode( kPrintMode_OwnerOnly ),
+	super( sock ),
 	m_base( NULL ),
 	m_eptr( NULL ),
 	m_end( NULL ),
-#if defined( FINGERPRINT_HAS_BLOCKS )
-	m_closure( NULL ),
-#endif
 	m_id( 1 )
 {
-	runloop::instance()->registerSocket( this, runloop::event::read, dataNotification, this );
-	m_connections.push_back( this );
-	add( 4192 );
-}
-
-
-connection::connection( const socket &sock, ipc::socketDidClose closure )
-:
-	socket( sock ),
-	m_observing( false ),
-	m_printMode( kPrintMode_OwnerOnly ),
-	m_base( NULL ),
-	m_eptr( NULL ),
-	m_end( NULL ),
-#if defined( FINGERPRINT_HAS_LAMBDAS )
-	m_closure( closure ),
-#elif defined( FINGERPRINT_HAS_BLOCKS )
-	m_closure( Block_copy( closure ) ),
-#endif
-	m_id( 1 )
-{
-	runloop::instance()->registerSocket( this, runloop::event::read, dataNotification, this );
-
-	m_connections.push_back( this );
-	
+//	runloop::instance()->registerSocket( this, runloop::event::read, dataNotification, this );
+//	m_connections.push_back( this );
 	add( 4192 );
 }
 
@@ -71,23 +33,11 @@ connection::connection( const socket &sock, ipc::socketDidClose closure )
 connection::~connection()
 {
 	free( m_base );
-	
-	if ( m_closure )
-	{
-		FINGERPRINT_RELEASE_CLOSURE( m_closure )
-	}
-}
-
-
-connection::list&
-connection::allConnections()
-{
-	return m_connections;
 }
 
 
 void
-connection::dataNotification( socket::ptr sock, int event, void *context )
+connection::data_notification( socket::ptr sock, int event, void *context )
 {
 	connection	*self = ( connection* ) context;
 	ssize_t		num;
@@ -130,28 +80,26 @@ connection::dataNotification( socket::ptr sock, int event, void *context )
 
 
 bool
-connection::sendNotification( Json::Value &notification )
+connection::send_notification( json::value &notification )
 {
 	return send( notification);
 }
 
 
 bool
-connection::sendRequest( Json::Value &request, reply reply )
+connection::send_request( json::value &request, reply reply )
 {
-	int			id = m_id++;
-
-	FINGERPRINT_COPY_CLOSURE( reply );
+	std::int32_t id = m_id++;
 
 	request[ "id" ]			= id;
-	m_activeRequests[ id ]	= reply;
+	m_active_requests[ id ]	= reply;
 	
 	return send( request );
 }
 
 
 int
-connection::sendResponse( Json::Value &response )
+connection::send_response( json::value &response )
 {
 	return send( response );
 }
@@ -160,25 +108,24 @@ connection::sendResponse( Json::Value &response )
 bool
 connection::send( Json::Value &value )
 {
-	Json::FastWriter	writer;
 	std::string			msg;
-	int					bytesLeft;
-	int					bytesWritten;
+	int					bytes_left;
+	int					bytes_written;
 	
-	msg = writer.write( value );
+	msg = value.flatten( 0 );
     msg = encode( msg );
     
-    bytesLeft		= ( int ) msg.size();
-    bytesWritten	= 0;
+	bytes_left		= ( int ) msg.size();
+	bytes_written	= 0;
 
-    while ( bytesLeft )
+    while ( bytes_left )
     {
-		ssize_t num = socket::send( ( const buf_t ) msg.c_str() + bytesWritten, bytesLeft, 0 );
+		ssize_t num = socket::send( ( const buf_t ) msg.c_str() + bytes_written, bytes_left, 0 );
 
 		if ( num > 0 )
 		{
-			bytesLeft		-= num;
-			bytesWritten	+= num;
+			bytes_left		-= num;
+			bytes_written	+= num;
 		}
 		else if ( num == 0 )
 		{
@@ -194,26 +141,24 @@ connection::send( Json::Value &value )
 		}
 	}
 	
-	return ( bytesLeft == 0 ) ? true : false;
+	return ( bytes_left == 0 ) ? true : false;
 }
 
 
 bool
 connection::process()
 {
-	Json::Value root;
-	Json::Value error;
-	bool parsing = false;
+	Json::Value		root;
+	Json::Value		error;
+	bool			parsing = false;
+    unsigned long	len = 0;
+	size_t			index = 0;
+	size_t			i = 0;
+	std::uint8_t	*colon;
+	std::string		msg;
+	bool			ok = true;
 
-      /* parsing */
-    unsigned long len = 0;
-    size_t index = 0; /* position of ":" */
-    size_t i = 0;
-    unsigned char *colon;
-	std::string msg;
-	bool ok = true;
-
-    while ( numBytesUsed() )
+    while ( num_bytes_used() )
     {
 		index = -1;
 	    
@@ -230,7 +175,7 @@ connection::process()
 		{
 			// If we have more than 10 bytes and no ':', then let's assume this buffer is no good
 
-			ok = numBytesUsed() < 10;
+			ok = num_bytes_used() < 10;
 			goto exit;
 		}
 
@@ -255,7 +200,7 @@ connection::process()
 			goto exit;
 		}
 		
-		if ( numBytesUsed() < len )
+		if ( num_bytes_used() < len )
 		{
 			goto exit;
 		}
@@ -280,8 +225,20 @@ connection::process()
 
 		if ( m_delegate )
 		{
-			if ( root[ "method" ] != Json::Value::null )
+			if ( root[ "method" ] != json::value::null )
 			{
+				request_handlers::iterator it = m_request_handlers.find( root[ "method"].asString() );
+				
+				if ( it != m_request_handlers.end() )
+				{
+					it->second( root, [=]( json::value::ptr &response )
+					{
+						if ( response != Json::Value::null )
+						{
+							connection::ptr nckeep( keep );
+							nckeep->send( response );
+						}
+					} );
 				connection::delegate	*delegate = dynamic_cast< connection::delegate* >( m_delegate );
 				Json::Value				response;
 				

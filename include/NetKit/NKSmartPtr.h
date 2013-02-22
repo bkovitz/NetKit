@@ -1,12 +1,12 @@
-#ifndef _coreapp_smart_ptr_h
-#define _coreapp_smart_ptr_h
+#ifndef _netkit_smart_ptr_h
+#define _netkit_smart_ptr_h
 
 #include <functional>
 #include <assert.h>
 #include <stdio.h>
 #include <typeinfo>
 
-namespace coreapp {
+namespace netkit {
 
 template < class T >
 class smart_ptr

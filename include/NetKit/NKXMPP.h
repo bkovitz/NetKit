@@ -1,7 +1,7 @@
-#ifndef _coreapp_xmpp_client_h
-#define _coreapp_xmpp_client_h
+#ifndef _netkit_xmpp_client_h
+#define _netkit_xmpp_client_h
 
-namespace coreapp {
+namespace netkit {
 
 class xmpp_client : public client 
 {

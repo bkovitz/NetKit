@@ -1,5 +1,5 @@
-#ifndef _coreapp_log_h
-#define _coreapp_log_h
+#ifndef _netkit_log_h
+#define _netkit_log_h
 
 
 #if defined( WIN32 )
@@ -8,16 +8,16 @@
 #	include <windows.h>
 #	include <stdarg.h>
 #	include <stdio.h>
-#	define calog( LEVEL, MESSAGE, ... ) coreapp::log::put( LEVEL, __FILE__, __FUNCTION__, __LINE__, MESSAGE, __VA_ARGS__ );
+#	define nklog( LEVEL, MESSAGE, ... ) netkit::log::put( LEVEL, __FILE__, __FUNCTION__, __LINE__, MESSAGE, __VA_ARGS__ );
 
 #else
 
-#	define calog( LEVEL, MESSAGE, ... ) coreapp::log::put( LEVEL, __FILE__, __FUNCTION__, __LINE__, MESSAGE, ##__VA_ARGS__ );
+#	define nklog( LEVEL, MESSAGE, ... ) netkit::log::put( LEVEL, __FILE__, __FUNCTION__, __LINE__, MESSAGE, ##__VA_ARGS__ );
 
 #endif
 
 
-namespace coreapp {
+namespace netkit {
 
 class log
 {

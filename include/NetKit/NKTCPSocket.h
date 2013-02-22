@@ -1,18 +1,52 @@
-#ifndef _coreapp_tcp_socket_h
-#define _coreapp_tcp_socket_h
+#ifndef _netkit_tcp_socket_h
+#define _netkit_tcp_socket_h
 
-#include <CoreApp/CATCPSocket.h>
-#include <CoreApp/CAIPAddress.h>
-#include <CoreApp/CAServer.h>
-#include <CoreApp/CATypes.h>
+#include <NetKit/NKSocket.h>
+#include <NetKit/NKIPAddress.h>
+#include <NetKit/NKService.h>
+#include <NetKit/NKTypes.h>
 #include <openssl/ssl.h>
 #include <string>
 #include <deque>
 
-namespace coreapp {
+namespace netkit {
+
 namespace tcp {
 
-class client : public socket
+class server : public socket::server
+{
+public:
+
+	typedef smart_ptr< server > ptr;
+	typedef std::deque< ptr > list;
+
+	server( const ip::address::ptr &addr );
+
+	virtual ~server();
+	
+	virtual int
+	open();
+	
+	inline uint16_t
+	port() const
+	{
+		return m_addr->port();
+	}
+	
+	virtual socket::client::ptr
+	accept( ip::address::ptr &addr );
+	
+protected:
+
+	int
+	listen();
+	
+	service::list		m_services;
+	ip::address::ptr	m_addr;
+};
+
+
+class client : public socket::client
 {
 public:
 
@@ -22,7 +56,7 @@ public:
 	
 	client();
 	
-	client( native fd );
+	client( socket::native fd );
 	
 	virtual ~client();
 	
@@ -35,13 +69,13 @@ public:
 	void
 	connect( ip::address::ptr addr, connect_reply reply );
 	
-	ssize_t
+	virtual ssize_t
 	send( const uint8_t *buf, size_t len ) const;
 	
-	ssize_t
+	virtual ssize_t
 	recv( uint8_t *buf, size_t len ) const;
 	
-	ssize_t
+	virtual ssize_t
 	peek( uint8_t *buf, size_t len ) const;
 	
 	ip::address::ptr
@@ -87,45 +121,8 @@ private:
 	static void				callback(int p, int n, void *arg);
 };
 
-
-class server : public socket
-{
-public:
-
-	typedef smart_ptr< server > ptr;
-	typedef std::deque< ptr > list;
-
-	server( const ip::address::ptr &addr );
-
-	virtual ~server();
-	
-	virtual int
-	open();
-	
-	void
-	add_listener( coreapp::server::ptr s );
-	
-	client::ptr
-	accept( ip::address::ptr &addr );
-	
-	inline uint16_t
-	port() const
-	{
-		return m_addr->port();
-	}
-	
-protected:
-
-	typedef std::deque< coreapp::server::ptr > listeners;
-	
-	int
-	listen();
-	
-	listeners			m_listeners;
-	ip::address::ptr	m_addr;
-};
-
 }
+
 }
 
 #endif

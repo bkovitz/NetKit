@@ -1,7 +1,7 @@
-#ifndef _netkit_server_h
-#define _netkit_server_h
+#ifndef _netkit_service_h
+#define _netkit_service_h
 
-#include <CoreNetwork/CNSocket.h>
+#include <NetKit/NKSocket.h>
 #include <deque>
 
 namespace netkit {
@@ -15,10 +15,7 @@ public:
 	
 	service();
 	
-	virtual ~service() = 0;
-	
-	virtual bool
-	adopt( const socket::ptr &sock, uint8_t *peek, size_t len ) = 0;
+	virtual ~service();
 };
 
 }

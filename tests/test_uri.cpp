@@ -1,9 +1,9 @@
 #include "catch.hpp"
-#include <CoreApp/CoreApp.h>
+#include <NetKit/NetKit.h>
 
-TEST_CASE( "CoreApp/uri/1", "coreapp::uri tests" )
+TEST_CASE( "NetKit/uri/1", "netkit::uri tests" )
 {
-	coreapp::uri::ptr uri = new coreapp::uri( "http://www.google.com:8080" );
+	netkit::uri::ptr uri = new netkit::uri( "http://www.google.com:8080" );
 
 	REQUIRE( uri->scheme() == "http" );
 	REQUIRE( uri->host() == "www.google.com" );
@@ -12,9 +12,9 @@ TEST_CASE( "CoreApp/uri/1", "coreapp::uri tests" )
 }
 
 
-TEST_CASE( "CoreApp/uri/2", "coreapp::uri tests" )
+TEST_CASE( "NetKit/uri/2", "netkit::uri tests" )
 {
-	coreapp::uri::ptr uri = new coreapp::uri( "/path?test=1" );
+	netkit::uri::ptr uri = new netkit::uri( "/path?test=1" );
 
 	REQUIRE( uri->scheme().size() == 0 );
 	REQUIRE( uri->host().size() == 0 );
@@ -23,9 +23,9 @@ TEST_CASE( "CoreApp/uri/2", "coreapp::uri tests" )
 }
 
 
-TEST_CASE( "CoreApp/uri/3", "coreapp::uri tests" )
+TEST_CASE( "NetKit/uri/3", "netkit::uri tests" )
 {
-	coreapp::uri::ptr uri = new coreapp::uri( "http://www.google.com/a%20space" );
+	netkit::uri::ptr uri = new netkit::uri( "http://www.google.com/a%20space" );
 
 	REQUIRE( uri->scheme() == "http" );
 	REQUIRE( uri->host() == "www.google.com" );
@@ -33,9 +33,9 @@ TEST_CASE( "CoreApp/uri/3", "coreapp::uri tests" )
 	REQUIRE( uri->query().size() == 0 );
 }
 
-TEST_CASE( "CoreApp/uri/4", "coreapp::uri tests" )
+TEST_CASE( "NetKit/uri/4", "netkit::uri tests" )
 {
-	coreapp::uri::ptr	uri = new coreapp::uri( "http://www.google.com/path" );
+	netkit::uri::ptr	uri = new netkit::uri( "http://www.google.com/path" );
 	std::string		str = uri->recompose();
 
 	REQUIRE( str == "http://www.google.com:80/path" );

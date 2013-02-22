@@ -1,13 +1,13 @@
 #include "catch.hpp"
-#include <CoreApp/CoreApp.h>
+#include <NetKit/NetKit.h>
 #if defined( __APPLE__ )
 #	include <CoreFoundation/CoreFoundation.h>
 #endif
 #include <functional>
 
-using namespace coreapp;
+using namespace netkit;
 
-TEST_CASE( "CoreApp/http/client", "http client tests" )
+TEST_CASE( "NetKit/http/client", "http client tests" )
 {
 	http::client::ptr	client	= new http::client;
 	http::request::ptr	request = new http::request( "http://www.porchdogsoft.com/test.html" );

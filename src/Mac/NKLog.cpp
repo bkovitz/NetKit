@@ -1,11 +1,11 @@
-#include <CoreApp/CALog.h>
+#include <NetKit/NKLog.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <time.h>
 #include <string.h>
 #include <mutex>
 
-using namespace coreapp;
+using namespace netkit;
 
 static std::mutex	g_mutex;
 static log::level	g_log_level = log::info;

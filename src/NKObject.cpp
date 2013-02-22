@@ -1,9 +1,9 @@
-#include <CoreApp/CAObject.h>
+#include <NetKit/NKObject.h>
 #include <assert.h>
 
-using namespace coreapp;
+using namespace netkit;
 
 object::~object()
 {
-	assert( m_refs == 0 );
+	//assert( m_refs == 0 );
 }

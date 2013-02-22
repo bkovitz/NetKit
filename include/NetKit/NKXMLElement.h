@@ -1,12 +1,12 @@
-#ifndef _coreapp_xml_element_h
-#define _coreapp_xml_element_h
+#ifndef _netkit_xml_element_h
+#define _netkit_xml_element_h
 
-#include <CoreApp/CAXMLNode.h>
+#include <NetKit/NKXMLNode.h>
 #include <string>
 
 struct _xmlElement;
 
-namespace coreapp {
+namespace netkit {
 namespace xml {
 
 

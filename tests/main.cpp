@@ -1,9 +1,9 @@
 #define CATCH_CONFIG_RUNNER
-#include <CoreApp/CoreApp.h>
+#include <NetKit/NetKit.h>
 #include "catch.hpp"
 
 int main (int argc, char * const argv[])
 {
-	coreapp::log::set_level( coreapp::log::verbose );
+	netkit::log::set_level( netkit::log::verbose );
     return Catch::Main( argc, argv );
 }

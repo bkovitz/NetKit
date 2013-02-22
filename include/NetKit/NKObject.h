@@ -1,10 +1,10 @@
-#ifndef _coreapp_object_h
-#define _coreapp_object_h
+#ifndef _netkit_object_h
+#define _netkit_object_h
 
-#include <CoreApp/CASmartPtr.h>
+#include <NetKit/NKSmartPtr.h>
 #include <atomic>
 
-namespace coreapp {
+namespace netkit {
 
 class object
 {
@@ -32,9 +32,9 @@ public:
 	}
 	
 	inline int
-	refs() const
-	{	
-		return m_refs;
+	refs()
+	{
+		return m_refs.fetch_add( 0 );
 	}
 	
 protected:
@@ -45,11 +45,10 @@ protected:
 	{
 	}
 
-	virtual
-	~object() = 0;
+	virtual ~object() = 0;
 
-	typedef std::atomic< int > atomic_int_t;
-	atomic_int_t m_refs;
+	typedef std::atomic< int >	atomic_int_t;
+	mutable atomic_int_t		m_refs;
 };
 
 }

@@ -1,11 +1,11 @@
-#include <CoreApp/CAXMLNode.h>
-#include <CoreApp/CAXMLDocument.h>
-#include <CoreApp/CAXMLAttribute.h>
+#include <NetKit/NKXMLNode.h>
+#include <NetKit/NKXMLDocument.h>
+#include <NetKit/NKXMLAttribute.h>
 #include <libxml/tree.h>
 
 
-using namespace coreapp;
-using namespace coreapp::xml;
+using namespace netkit;
+using namespace netkit::xml;
 
 
 node::node()

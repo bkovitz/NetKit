@@ -1,16 +1,15 @@
-#ifndef _coreapp_connection_h
-#define _coreapp_connection_h
+#ifndef _netkit_connection_h
+#define _netkit_connection_h
 
-#include <CoreApp/CATCPSocket.h>
-#include <CoreApp/CADispatch.h>
-#include <CoreApp/CALog.h>
+#include <NetKit/NKSink.h>
+#include <NetKit/NKSource.h>
+#include <NetKit/NKLog.h>
 #include <functional>
 #include <sstream>
 
-namespace coreapp {
+namespace netkit {
 
-template < class T >
-class connection : public object
+class connection : public sink
 {
 public:
 
@@ -20,27 +19,9 @@ public:
 
 	typedef smart_ptr< connection > ptr;
 	
-	typedef smart_ptr< T > T_ptr;
+	connection();
 	
-	connection()
-	:
-		m_socket( new T ),
-		m_disconnect_handler( NULL )
-	{
-		init();
-	}
-
-	connection( const T_ptr& socket )
-	:
-		m_socket( socket ),
-		m_disconnect_handler( NULL )
-	{
-		init();
-	}
-
-	virtual ~connection()
-	{
-	}
+	virtual ~connection();
 	
 	inline void
 	set_disconnect_handler( disconnect_handler handler )
@@ -68,55 +49,17 @@ public:
 		m_ostream.write( reinterpret_cast< const char* >( buf ), len );
 	}
 	
-	inline bool
-	flush()
-	{
-		std::string msg = m_ostream.str();
-		ssize_t		num = 0;
-		
-		if ( msg.size() > 0 )
-		{
-			calog( log::verbose, "sending msg: %s", msg.c_str() );
-			num = m_socket->send( reinterpret_cast< const uint8_t* >( msg.c_str() ), msg.size() );
-			m_ostream.str( "" );
-			m_ostream.clear();
-		}
-		
-		return ( msg.size() == num ) ? true : false;
-	}
+	bool
+	flush();
 	
-	inline int
-	recv( uint8_t *buf, size_t len )
-	{
-		int num = ( int ) m_socket->recv( buf, len );
-		
-		if ( num <= 0 )
-		{
-			close();
-		}
-		
-		return num;
-	}
+	ssize_t
+	recv( uint8_t *buf, size_t len );
 	
-	inline int
-	peek( uint8_t *buf, size_t len )
-	{
-		return m_socket->peek( buf, len );
-	}
+	ssize_t
+	peek( uint8_t *buf, size_t len );
 	
-	inline void
-	close()
-	{
-		if ( m_socket->fd() != socket::null )
-		{
-			m_socket->close();
-			
-			if ( m_disconnect_handler )
-			{
-				m_disconnect_handler();
-			}
-		}
-	}
+	void
+	close();
 
 protected:
 
@@ -126,18 +69,10 @@ protected:
 	virtual void
 	can_recv_data() = 0;
 
-	T_ptr m_socket;
-	
 private:
 
-	inline void
-	init()
-	{
-		m_socket->set_recv_handler( [this]()
-		{
-			can_recv_data();
-		} );
-	}
+	void
+	init();
 	
 	std::ostringstream	m_ostream;
 	disconnect_handler	m_disconnect_handler;

@@ -1,10 +1,10 @@
-#ifndef _coreapp_base64_h
-#define _coreapp_base64_h
+#ifndef _netkit_base64_h
+#define _netkit_base64_h
 
-#include <CoreApp/CATypes.h>
+#include <NetKit/NKTypes.h>
 #include <string>
 
-namespace coreapp {
+namespace netkit {
 namespace codec {
 
 class base64

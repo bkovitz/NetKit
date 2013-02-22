@@ -1,8 +1,13 @@
-#ifndef _CoreNetwork_CNJSON_h
-#define _CoreNetwork_CNJSON_h
+#ifndef _netkit_json_h
+#define _netkit_json_h
 
-#include <CoreNetwork/CNObject.h>
-#include <CoreNetwork/CNExpected.h>
+#include <NetKit/NKSink.h>
+#include <NetKit/NKSource.h>
+#include <NetKit/NKConnection.h>
+#include <NetKit/NKExpected.h>
+#include <map>
+
+struct json_t;
 
 namespace netkit {
 
@@ -12,45 +17,85 @@ class value : public object
 {
 public:
 
-	typedef smart_ptr< value > ptr;
+	static const int32_t	flatten_flag_compact;
+	static const int32_t	flatten_flag_ensure_ascii;
+	static const int32_t	flatten_flag_sort_keys;
+	static const int32_t	flatten_flag_preserve_order;
+	static const int32_t	flatten_flag_encode_any;
+	static const int32_t	flatten_flag_escape_slash;
 
-	static const uint8_t object_type;
+public:
+
+	typedef smart_ptr< value > ptr;
 	
-	static const uint8_t array_type;
+	static expected< value::ptr >
+	load( const char *input );
 	
-	static const uint8_t string_type;
+	static value::ptr
+	null();
 	
-	static const uint8_t integer_type;
+	static value::ptr
+	boolean( bool val );
 	
-	static const uint8_t real_type;
+	static value::ptr
+	integer();
 	
-	static const uint8_t bool_type;
+	static value::ptr
+	integer( int32_t value );
 	
-	static const uint8_t null_type;
+	static value::ptr
+	integer( uint32_t value );
 	
-	value( uint8_t type = null_type );
+	static value::ptr
+	integer( int64_t value );
 	
-	value( int32_t value );
+	static value::ptr
+	integer( uint64_t value );
 	
-	value( uint32_t value );
+	static value::ptr
+	real( float val );
 	
-	value( int64_t value );
+	static value::ptr
+	real( double val );
 	
-	value( uint64_t value );
+	static value::ptr
+	string();
 	
-	value( double value );
+	static value::ptr
+	string( const char *val );
 	
-    value( const char *value );
+	static value::ptr
+	string( const std::string &val );
 	
-	value( const char *beginValue, const char *endValue );
+	static value::ptr
+	array();
 	
-	value( const std::string &value );
+	static value::ptr
+	object();
 	
-	value( bool value );
+	bool
+	is_null() const;
 	
-	value( const value &other );
+	bool
+	is_bool() const;
 	
-	virtual ~value();
+	bool
+	is_integer() const;
+	
+	bool
+	is_real() const;
+	
+	bool
+	is_numeric() const;
+	
+	bool
+	is_string() const;
+	
+	bool
+	is_array() const;
+	
+	bool
+	is_object() const;
 	
 	expected< const char* >
 	as_cstring() const;
@@ -80,42 +125,6 @@ public:
 	as_bool() const;
 
 	bool
-	is_null() const;
-	
-	bool
-	is_bool() const;
-	
-	bool
-	is_int() const;
-	
-	bool
-	is_uint() const;
-	
-	bool
-	is_integral() const;
-	
-	bool
-	is_double() const;
-	
-	bool
-	is_numeric() const;
-	
-	bool
-	is_string() const;
-	
-	bool
-	is_array() const;
-	
-	bool
-	is_object() const;
-
-	bool
-	is_convertible_to( uint8_t other ) const;
-
-    size_t
-	size() const;
-
-	bool
 	empty() const;
 
 	bool
@@ -124,28 +133,31 @@ public:
 	void
 	clear();
 
+	size_t
+	size() const;
+
 	void
 	resize( size_t size );
 
-	expected< value::ptr >
+	value::ptr
 	operator[]( size_t index );
 	
-	expected< value::ptr >
+	value::ptr
 	operator[]( int index );
 
-	expected< const value::ptr >
+	const value::ptr
 	operator[]( size_t index ) const;
 
-	expected< const value::ptr >
+	const value::ptr
 	operator[]( int index ) const;
 
-	expected< value::ptr >
+	value::ptr
 	get( size_t index, const value::ptr &defaultValue ) const;
 	
 	bool
 	is_valid_index( size_t index ) const;
 	
-	value::ptr
+	bool
 	append( const value::ptr &value );
 
 	value::ptr
@@ -160,16 +172,19 @@ public:
 	const value::ptr
 	operator[]( const std::string &key ) const;
 	
+	bool
+	set( const char *key, const value::ptr &val );
+	
 	value::ptr
 	get( const char *key, const value::ptr &defaultValue ) const;
 	
 	value::ptr
 	get( const std::string &key, const value::ptr &defaultValue ) const;
 	
-	value::ptr
+	bool
 	remove_member( const char* key );
 	
-	value::ptr
+	bool
 	remove_member( const std::string &key );
 
 	bool
@@ -178,9 +193,99 @@ public:
 	bool
 	is_member( const std::string &key ) const;
 	
+	std::string
+	flatten( int32_t flags ) const;
+	
+protected:
+
+	value( json_t *impl );
+	
+	value( const value &that );
+	
+	virtual ~value();
+	
 private:
 
-	struct json_t *m_impl;
+	json_t *m_impl;
+};
+
+
+class message : public object
+{
+public:
+
+	typedef smart_ptr< message > ptr;
+
+	message();
+	
+	virtual ~message();
+
+	std::string
+	version();
+	
+	value::ptr
+	id();
+	
+protected:
+
+	value::ptr m_root;
+};
+
+
+class request : public message
+{
+public:
+
+	typedef smart_ptr< request > ptr;
+	
+	request();
+	
+	virtual ~request();
+
+	std::string
+	method();
+	
+	value::ptr
+	params();
+};
+
+
+class response : public message
+{
+public:
+
+	typedef smart_ptr< response > ptr;
+	
+	value::ptr
+	result();
+	
+	value::ptr
+	error();
+};
+
+
+typedef std::function< void ( response::ptr response ) >				response_f;
+typedef std::function< void ( request::ptr request, response_f func ) >	request_f;
+
+	
+class connection : public netkit::connection
+{
+public:
+
+	static sink::ptr
+	adopt( const std::uint8_t *buf, size_t len );
+	
+	static void
+	bind( const std::string &method, request_f func );
+	
+	virtual ssize_t
+	read( source::ptr s );
+	
+private:
+
+	typedef std::map< std::string, request_f > bindings;
+	
+	static bindings m_bindings;
 };
 
 }

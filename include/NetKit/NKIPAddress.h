@@ -1,7 +1,7 @@
-#ifndef _coreapp_ip_address_h
-#define _coreapp_ip_address_h
+#ifndef _netkit_ip_address_h
+#define _netkit_ip_address_h
 
-#include <CoreApp/CAObject.h>
+#include <NetKit/NKObject.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <net/if.h>
@@ -10,7 +10,7 @@
 #include <deque>
 
 
-namespace coreapp {
+namespace netkit {
 namespace ip {
 
 class address : public object

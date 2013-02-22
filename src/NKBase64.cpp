@@ -1,4 +1,4 @@
-#include <CoreApp/CABase64.h>
+#include <NetKit/NKBase64.h>
 
 //
 //  Created by Matt Gallagher on 2009/06/03.
@@ -65,7 +65,7 @@ static unsigned char base64_decode_lookup[256] =
 #define MIN(a,b) (((a) < (b)) ? (a) : (b))
 #endif
 
-using namespace coreapp::codec;
+using namespace netkit::codec;
 
 
 std::string

@@ -1,28 +1,40 @@
 #ifndef _netkit_source_h
 #define _netkit_source_h
 
-#include <NetKit/NKObject.h>
+#include <NetKit/NKSink.h>
 #include <initializer_list>
 #include <list>
 
 namespace netkit {
-
-class sink;
-typedef smart_ptr< sink > sink_ptr;
 
 class source : public object
 {
 public:
 
 	typedef smart_ptr< source > ptr;
-	typedef std::list< sink > sink_list;
+	
+	source();
+	
+	virtual ~source();
+
+	sink::ptr
+	sink() const;
 	
 	void
-	bind( std::initializer_list< sink_ptr > l );
+	bind( sink::ptr sink );
+	
+	virtual ssize_t
+	peek( std::uint8_t *buf, size_t len ) = 0;
+	
+	virtual ssize_t
+	read( std::uint8_t *buf, size_t len ) = 0;
+	
+	virtual ssize_t
+	send( const std::uint8_t *buf, size_t len ) = 0;
 	
 protected:
 
-	sink_list m_sinks;
+	sink::ptr m_sink;
 };
 
 }

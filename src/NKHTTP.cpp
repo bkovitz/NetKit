@@ -1,11 +1,12 @@
-#include "CAHTTP.h"
-#include "CASocket.h"
-#include "CABase64.h"
+#include "NKHTTP.h"
+#include "NKSocket.h"
+#include "NKBase64.h"
 #include "cstring.h"
-#include "CAOS.h"
-#include "CALog.h"
+#include "NKPlatform.h"
+#include "NKLog.h"
 #include <http_parser.h>
 #include <fstream>
+#include <regex>
 #include <assert.h>
 #include <stdarg.h>
 #include <openssl/ssl.h>
@@ -23,7 +24,7 @@
 #	define TEXT( X ) X
 #endif
 
-using namespace coreapp::http;
+using namespace netkit::http;
 
 
 #if defined(WIN32)
@@ -75,25 +76,12 @@ strlcat( char *dst, const char *src, size_t siz)
 #	pragma mark connection implementation
 #endif
 
-connection::connection( int type )
+connection::handlers connection::m_handlers;
+
+connection::connection( const source::ptr &source )
 :
+	sink( source ),
 	m_okay( true )
-{
-	init( type );
-}
-
-
-connection::connection( const tcp::client::ptr &sock, int type )
-:
-	super( sock ),
-	m_okay( true )
-{
-	init( type );
-}
-
-
-void
-connection::init( int type )
 {
 	m_settings = new http_parser_settings;
 	memset( m_settings, 0, sizeof( http_parser_settings ) );
@@ -109,16 +97,9 @@ connection::init( int type )
 	m_settings->on_headers_complete	= headers_were_received;
 	m_settings->on_message_complete	= message_was_received;
 	
-	http_parser_init( m_parser, ( http_parser_type ) type );
+	http_parser_init( m_parser, HTTP_REQUEST );
 	m_parser->data = this;
-	
-	m_request_will_begin_handler	= NULL;
-	m_response_will_begin_handler	= NULL;
-	m_headers_were_received_handler	= NULL;
-	m_body_was_received_handler		= NULL;
-	m_message_was_received_handler	= NULL;
 }
-
 
 
 connection::~connection()
@@ -136,37 +117,49 @@ connection::~connection()
 
 
 void
-connection::set_request_will_begin_handler( request_will_begin_handler handler )
+connection::bind( std::uint8_t m, const std::string &path, const std::string &type, request_f r )
 {
-	m_request_will_begin_handler = handler;
-}
-
-
-void
-connection::set_response_will_begin_handler( response_will_begin_handler handler )
-{
-	m_response_will_begin_handler = handler;
-}
-
-
-void
-connection::set_headers_were_received_handler( headers_were_received_handler handler )
-{
-	m_headers_were_received_handler = handler;
-}
+	handler::ptr h = new handler( path, type, r );
 	
-	
-void
-connection::set_body_was_received_handler( body_was_received_handler handler )
-{
-	m_body_was_received_handler = handler;
+	bind( m, h );
 }
 
-	
+
 void
-connection::set_message_was_received_handler( message_was_received_handler handler )
+connection::bind( std::uint8_t m, const std::string &path, const std::string &type, request_body_was_received_f rbwr, request_f r )
 {
-	m_message_was_received_handler = handler;
+	handler::ptr h = new handler( path, type, rbwr, r );
+	
+	bind( m, h );
+}
+
+
+void
+connection::bind( std::uint8_t m, const std::string &path, const std::string &type, request_will_begin_f rwb, request_body_was_received_f rbwr, request_f r )
+{
+	handler::ptr h = new handler( path, type, rwb, rbwr, r );
+	
+	bind( m, h );
+}
+
+
+void
+connection::bind( std::uint8_t m, handler::ptr h )
+{
+	handlers::iterator it = m_handlers.find( m );
+	
+	if ( it != m_handlers.end() )
+	{
+		it->second.push_back( h );
+	}
+	else
+	{
+		handler::list l;
+		
+		l.push_back( h );
+		
+		m_handlers[ m ] = l;
+	}
 }
 
 
@@ -184,464 +177,28 @@ connection::http_minor() const
 }
 
 
-bool
-connection::send( const message::ptr &message )
+netkit::sink::ptr
+connection::adopt( source::ptr source, const std::uint8_t *buf, size_t len )
 {
-	message->send_prologue( this );
-
-//	*this << request->method() << " " << request->uri()->path() << " HTTP/1.1" << http::endl;
-	// *this << "Host: " << request->uri()->host() << endl;
-
-	for ( message::header::const_iterator it = message->heder().begin(); it != message->heder().end(); it++ )
+	sink::ptr conn;
+	
+	if ( ( len >= 3 ) &&
+	     ( ( std::strncasecmp( ( const char* ) buf, "get", 3 ) == 0 ) ||
+	       ( std::strncasecmp( ( const char* ) buf, "pos", 3 ) == 0 ) ||
+	       ( std::strncasecmp( ( const char* ) buf, "opt", 3 ) == 0 ) ||
+	       ( std::strncasecmp( ( const char* ) buf, "hea", 3 ) == 0 ) ) )
 	{
-		*this << it->first << ": " << it->second << endl;
+		conn = new connection( source );
 	}
-			
-	*this << http::endl;
 	
-	message->send_body( this );
-			
-	//write( &request->body()[ 0 ], request->body().size() );
-	
-	*this << http::endl;
-	
-	return flush();
-			
-	//*this << flush;
-	/*
-	msg = m_ostream.str();
-			
-	calog( log::verbose, "%s", msg.c_str() );
-			
-	ret = ( int ) m_socket->send( ( buf_t ) msg.c_str(), msg.size() );
-	
-			
-	if ( ret != msg.size() )
-	{
-		response::ptr response = new http::response( -1 );
-		
-		calog( log::error, "send failed: %d(%d)", os::error() );
-		m_reply( response );
-		m_reply = NULL;
-	}
-	*/
+	return conn;
 }
 
-
-void
-connection::can_send_data()
-{
-}
-
-
-void
-connection::can_recv_data()
-{
-	uint8_t	buf[ 4192 ];
-	ssize_t	num;
-
-	while ( 1 )
-	{
-		memset( buf, 0, sizeof( buf ) );
-		num = recv( ( buf_t ) buf, sizeof( buf ) );
-
-		if ( num > 0 )
+#if 0
+	
+		if ( conn )
 		{
-			size_t processed;
-
-			processed = http_parser_execute( m_parser, m_settings, ( const char* ) buf, num );
-
-			if ( processed != num )
-			{
-				calog( log::error, "http_parser_execute() failed: bytes read = %ld, processed = %ld",
-									num, processed );
-				close();
-				break;
-			}
-			
-			if ( m_parser->upgrade )
-			{
-			}
-		}
-		else if ( num < 0 )
-		{
-			if ( os::error() != socket::error::wouldblock )
-			{
-				close();
-			}
-
-			break;
-		}
-		else
-		{
-			close();
-			http_parser_execute( m_parser, m_settings, NULL, 0 );
-			break;
-		}
-	}
-}
-
-
-
-
-
-/*
-void
-connection::shutdown()
-{
-	runloop::instance()->unregisterSocket( this );
-
-#undef close
-	close();
-	
-	if ( m_closure )
-	{
-		socket::ptr temp( this );
-
-		m_closure( temp );
-	}
-}
-*/
-
-
-int
-connection::message_will_begin( http_parser *parser )
-{
-	connection *self = reinterpret_cast< connection* >( parser->data );
-	
-	calog( log::verbose, "reading new message" );
-
-	self->m_parser->upgrade = 0;
-	self->m_parse_state	= NONE;
-	
-	self->m_uri_value.clear();
-	self->m_header_field.clear();
-	self->m_header_value.clear();
-	
-	self->m_message = NULL;
-	
-	return 0;
-}
-
-
-int
-connection::uri_was_received( http_parser *parser, const char *buf, size_t len )
-{
-	connection		*self = reinterpret_cast< connection* >( parser->data );
-	std::string	str( buf, len );
-	
-	calog( log::verbose, "uri was received: %s", str.c_str() );
-	
-	self->m_uri_value.append( str );
-	
-	return 0;
-}
-
-
-int
-connection::header_field_was_received( http_parser *parser, const char *buf, size_t len )
-{
-	connection		*self = reinterpret_cast< connection* >( parser->data );
-	int				ret = 0;
-	std::string	str( buf, len );
-	
-	if ( !self->m_message && !self->build_message() )
-	{
-		ret = -1;
-		goto exit;
-	}
-	
-	if ( self->m_parse_state != FIELD )
-	{
-		if ( ( self->m_header_field.size() > 0 ) && ( self->m_header_value.size() > 0 ) )
-		{
-			self->m_message->add_to_header( self->m_header_field, self->m_header_value );
-		}
-		
-		self->m_header_field.assign( str );
-		self->m_parse_state = FIELD;
-	}
-	else
-	{
-		self->m_header_field.append( str );
-	}
-
-exit:
-
-	return ret;
-}
-
-
-int
-connection::header_value_was_received( http_parser *parser, const char *buf, size_t len )
-{
-	connection		*self = reinterpret_cast< connection* >( parser->data );
-	std::string	str( buf, len );
-	
-	if ( self->m_parse_state != VALUE )
-	{
-		self->m_header_value.assign( str );
-		self->m_parse_state = VALUE;
-	}
-	else
-	{
-		self->m_header_value.append( str );
-	}
-	
-	return 0;
-}
-
-	
-int
-connection::headers_were_received( http_parser *parser )
-{
-	connection	*self	= reinterpret_cast< connection* >( parser->data );
-	int			ret		= 0;
-	
-	fprintf( stderr, "headers were received\n" );
-	
-	if ( !self->m_message && !self->build_message() )
-	{
-		ret = -1;
-		goto exit;
-	}
-	
-	if ( ( self->m_header_field.size() > 0 ) && ( self->m_header_value.size() > 0 ) )
-	{
-		self->m_message->add_to_header( self->m_header_field, self->m_header_value );
-	}
-	
-	if ( self->m_headers_were_received_handler )
-	{
-		self->m_headers_were_received_handler( self->m_message );
-	}
-		
-		/*
-	for ( header::const_iterator it = self->m_message->header().begin(); it != self->m_message->header().end(); it++ )
-	{
-		calog( log::verbose, "%s %s\n", it->first.c_str(), it->second.c_str() );
-	
-		if ( it->first == TEXT( "Content-Length" ) )
-		{
-			m_message->set_content_length( atoi( it->second.c_str() ) );
-		}
-		else if ( it->first == TEXT( "Content-Type" ) )
-		{
-			m_message->set_content_type( it->secoond );
-		}
-		else if ( it->first == "Host" )
-		{
-			m_message->set_host( it->second );
-		}
-		else if ( it->first == "Expect" )
-		{
-			m_message->set_expect( it->second );
-		}
-		else if ( *it1 == "Authorization" )
-		{
-			std::string base64_encoded;
-			std::string decoded;
-			size_t		pos;
-			
-			m_authorization	= *it2;
-			base64_encoded	= m_authorization.substr( m_authorization.find( ' ' ) + 1 );
-			decoded			= codec::base64::decode( base64_encoded );
-			pos				= decoded.find( ':' );
-			
-			if ( pos != -1 )
-			{
-				m_username	= decoded.substr( 0, pos );
-				m_password	= decoded.substr( pos + 1 );
-			}
-		}
-	}
-	*/
-
-exit:
-
-	return ret;
-}
-
-	
-int
-connection::body_was_received( http_parser *parser, const char *buf, size_t len )
-{
-	connection *self = reinterpret_cast< connection* >( parser->data );
-	
-	fprintf( stderr, "body_was_received\n" );
-	self->m_message->write( reinterpret_cast< const uint8_t* >( buf ), len );
-	
-	return 0;
-}
-
-	
-int
-connection::message_was_received( http_parser *parser )
-{
-	connection	*self = reinterpret_cast< connection* >( parser->data );
-	int			ret = 0;
-	
-	fprintf( stderr, "message was received\n" );
-	if ( self->m_message_was_received_handler )
-	{
-		ret = self->m_message_was_received_handler( self->m_message );
-	}
-	
-	return ret;
-}
-
-
-bool
-connection::build_message()
-{
-	assert( !m_message );
-	
-	switch ( m_parser->type )
-	{
-		case HTTP_REQUEST:
-		{
-			if ( m_request_will_begin_handler )
-			{
-				m_message = m_request_will_begin_handler( new uri( m_uri_value ) );
-			}
-		}
-		break;
-			
-		case HTTP_RESPONSE:
-		{
-			if ( m_response_will_begin_handler )
-			{
-				m_message = m_response_will_begin_handler( m_parser->status_code );
-			}
-		}
-		break;
-	}
-	
-	return ( m_message ) ? true : false;
-}
-
-#if defined( __APPLE__ )
-#	pragma mark client implementation
-#endif
-
-client::client()
-:
-	connection( HTTP_RESPONSE ),
-	m_reply( NULL )
-{
-	set_response_will_begin_handler( []( int code )
-	{
-		return response::ptr( new http::response( code ) );
-	} );
-	
-	set_message_was_received_handler( [this]( message::ptr message ) -> int
-	{
-		http::response::ptr response = dynamic_pointer_cast< http::response >( message );
-		
-		if ( m_reply )
-		{
-			m_reply( response );
-		}
-		
-		return 0;
-	} );
-}
-
-
-client::~client()
-{
-}
-
-
-void
-client::send( const request::ptr &request, reply reply )
-{
-	if ( m_reply )
-	{
-		response::ptr response = new http::response( -1 );
-		reply( response );
-		goto exit;
-	}
-
-	m_reply = reply;
-
-	if ( !m_socket->is_open() || !m_uri || ( request->uri()->host() != m_uri->host() ) || ( request->uri()->port() != m_uri->port() ) )
-	{
-		m_socket->close();
-		
-		if ( m_socket->open() != 0 )
-		{
-		}
-		
-		m_uri = request->uri();
-
-		ip::address::resolve( request->uri()->host(), request->uri()->port(), [&]( int status, ip::address::list addresses )
-		{
-			if ( status == 0 )
-			{
-				m_socket->connect( addresses[ 0 ], [&]( int status )
-				{
-					if ( status == 0 )
-					{
-						if ( ( request->uri()->scheme() == TEXT( "http" ) ) || ( m_socket->tls_connect() == 0 ) )
-						{
-							connection::send( request );
-						}
-						else
-						{
-							response::ptr response = new http::response( -1 );
-							calog( log::error, "unable to setup tls" );
-							m_reply( response );
-						}
-					}
-				} );
-				
-			}
-		} );
-	}
-	else
-	{
-		connection::send( request );
-	}
-	
-exit:
-
-	return;
-}
-
-#if defined( __APPLE__ )
-#	pragma mark server implementation
-#endif
-
-server::server()
-{
-}
-
-
-server::~server()
-{
-}
-
-
-bool
-server::adopt( const coreapp::socket::ptr &sock, uint8_t *buf, size_t len )
-{
-	tcp::client::ptr		tcp_sock = dynamic_pointer_cast< tcp::client >( sock );
-	http::connection::ptr	conn;
-	
-	if ( tcp_sock )
-	{
-		if ( ( len >= 3 ) &&
-			 ( ( std::strncasecmp( ( const char* ) buf, "get", 3 ) == 0 ) ||
-		       ( std::strncasecmp( ( const char* ) buf, "pos", 3 ) == 0 ) ||
-		       ( std::strncasecmp( ( const char* ) buf, "opt", 3 ) == 0 ) ||
-		       ( std::strncasecmp( ( const char* ) buf, "hea", 3 ) == 0 ) ) )
-		{
-			conn = new connection( tcp_sock, HTTP_REQUEST );
-	
-			if ( conn )
-			{
-				conn->set_request_will_begin_handler( [ this, conn ]( const coreapp::uri::ptr &uri ) -> request::ptr
+				conn->set_request_will_begin_handler( [ this, conn ]( const netkit::uri::ptr &uri ) -> request::ptr
 				{
 					connection::ptr temp( conn );
 					
@@ -723,12 +280,467 @@ server::adopt( const coreapp::socket::ptr &sock, uint8_t *buf, size_t len )
 	return ( conn ) ? true : false;
 }
 
+#endif
+
+
+bool
+connection::put( const message::ptr &message )
+{
+	//message->send_prologue( this );
+
+//	*this << request->method() << " " << request->uri()->path() << " HTTP/1.1" << http::endl;
+	// *this << "Host: " << request->uri()->host() << endl;
+
+	for ( message::header::const_iterator it = message->heade().begin(); it != message->heade().end(); it++ )
+	{
+		*this << it->first << ": " << it->second << endl;
+	}
+			
+	*this << http::endl;
+	
+//	message->send_body( this );
+			
+	//write( &request->body()[ 0 ], request->body().size() );
+	
+	*this << http::endl;
+	
+	return flush();
+			
+	//*this << flush;
+	/*
+	msg = m_ostream.str();
+			
+	nklog( log::verbose, "%s", msg.c_str() );
+			
+	ret = ( int ) m_socket->send( ( buf_t ) msg.c_str(), msg.size() );
+	
+			
+	if ( ret != msg.size() )
+	{
+		response::ptr response = new http::response( -1 );
+		
+		nklog( log::error, "send failed: %d(%d)", platform::error() );
+		m_reply( response );
+		m_reply = NULL;
+	}
+	*/
+}
+
+
+bool
+connection::flush()
+{
+	std::string msg = m_ostream.str();
+	ssize_t		num = 0;
+		
+	if ( msg.size() > 0 )
+	{
+		nklog( log::verbose, "sending msg: %s", msg.c_str() );
+		//num = m_socket->send( reinterpret_cast< const uint8_t* >( msg.c_str() ), msg.size() );
+		m_ostream.str( "" );
+		m_ostream.clear();
+	}
+		
+	return ( msg.size() == num ) ? true : false;
+}
+
 
 void
-server::set_handler( const std::string &path, handler *handler )
+connection::close()
 {
-	m_handlers.push_back( std::make_pair( path, handler ) );
 }
+
+
+ssize_t
+connection::process()
+{
+	uint8_t	buf[ 4192 ];
+	ssize_t	num;
+
+	while ( 1 )
+	{
+		memset( buf, 0, sizeof( buf ) );
+		num = read( ( buf_t ) buf, sizeof( buf ) );
+
+		if ( num > 0 )
+		{
+			size_t processed;
+
+			processed = http_parser_execute( m_parser, m_settings, ( const char* ) buf, num );
+
+			if ( processed != num )
+			{
+				nklog( log::error, "http_parser_execute() failed: bytes read = %ld, processed = %ld",
+									num, processed );
+				close();
+				break;
+			}
+			
+			if ( m_parser->upgrade )
+			{
+			}
+		}
+		else if ( num < 0 )
+		{
+			if ( platform::error() != ( int ) socket::error::would_block )
+			{
+				close();
+			}
+
+			break;
+		}
+		else
+		{
+			close();
+			http_parser_execute( m_parser, m_settings, NULL, 0 );
+			break;
+		}
+	}
+	
+	return num;
+}
+
+
+
+
+
+/*
+void
+connection::shutdown()
+{
+	runloop::instance()->unregisterSocket( this );
+
+#undef close
+	close();
+	
+	if ( m_closure )
+	{
+		socket::ptr temp( this );
+
+		m_closure( temp );
+	}
+}
+*/
+
+
+int
+connection::message_will_begin( http_parser *parser )
+{
+	connection *self = reinterpret_cast< connection* >( parser->data );
+	
+	nklog( log::verbose, "reading new message" );
+
+	self->m_parser->upgrade = 0;
+	self->m_parse_state	= NONE;
+	
+	self->m_uri_value.clear();
+	self->m_header_field.clear();
+	self->m_header_value.clear();
+	
+	self->m_handler	= NULL;
+	self->m_request = NULL;
+	
+	return 0;
+}
+
+
+int
+connection::uri_was_received( http_parser *parser, const char *buf, size_t len )
+{
+	connection	*self = reinterpret_cast< connection* >( parser->data );
+	std::string	str( buf, len );
+	
+	nklog( log::verbose, "uri was received: %s", str.c_str() );
+	
+	self->m_uri_value.append( str );
+	
+	return 0;
+}
+
+
+int
+connection::header_field_was_received( http_parser *parser, const char *buf, size_t len )
+{
+	connection	*self = reinterpret_cast< connection* >( parser->data );
+	int			ret = 0;
+	std::string	str( buf, len );
+	
+	
+	//if ( !self->m_request && !self->build_message() )
+	if ( !self->m_request )
+	{
+		ret = -1;
+		goto exit;
+	}
+	
+	if ( self->m_parse_state != FIELD )
+	{
+		if ( ( self->m_header_field.size() > 0 ) && ( self->m_header_value.size() > 0 ) )
+		{
+			self->m_request->add_to_header( self->m_header_field, self->m_header_value );
+		}
+		
+		self->m_header_field.assign( str );
+		self->m_parse_state = FIELD;
+	}
+	else
+	{
+		self->m_header_field.append( str );
+	}
+
+exit:
+
+	return ret;
+}
+
+
+int
+connection::header_value_was_received( http_parser *parser, const char *buf, size_t len )
+{
+	connection	*self = reinterpret_cast< connection* >( parser->data );
+	std::string	str( buf, len );
+	
+	if ( self->m_parse_state != VALUE )
+	{
+		self->m_header_value.assign( str );
+		self->m_parse_state = VALUE;
+	}
+	else
+	{
+		self->m_header_value.append( str );
+	}
+	
+	return 0;
+}
+
+	
+int
+connection::headers_were_received( http_parser *parser )
+{
+	connection			*self	= reinterpret_cast< connection* >( parser->data );
+	handlers::iterator	it;
+	int					ret		= 0;
+	
+	fprintf( stderr, "headers were received\n" );
+	
+	self->m_method = parser->method;
+	
+	it = m_handlers.find( parser->method );
+	
+	if ( it != m_handlers.end() )
+	{
+		for ( handler::list::iterator it2 = it->second.begin(); it2 != it->second.begin(); it2++ )
+		{
+			std::regex regex( ( *it2 )->m_path );
+			
+			if ( std::regex_search( self->m_uri_value, regex ) )
+			{
+				self->m_handler = *it2;
+				break;
+			}
+		}
+	}
+	
+	if ( !self->m_handler )
+	{
+		nklog( log::error, "unable to find handler for method %d -> %s", self->m_method, self->m_uri_value.c_str() );
+		ret = -1;
+		goto exit;
+	}
+	
+	self->m_request = self->m_handler->m_rwb();
+
+	if ( !self->m_request )
+	{
+		nklog( log::error, "unable to create request for method %d -> %s", self->m_method, self->m_uri_value.c_str() );
+		ret = -1;
+		goto exit;
+	}
+	
+	if ( ( self->m_header_field.size() > 0 ) && ( self->m_header_value.size() > 0 ) )
+	{
+		self->m_request->add_to_header( self->m_header_field, self->m_header_value );
+	}
+	
+	/*
+	for ( message::header::const_iterator it = self->m_request->heade().begin(); it != self->m_request->heade().end(); it++ )
+	{
+		nklog( log::verbose, "%s %s\n", it->first.c_str(), it->second.c_str() );
+	
+		if ( it->first == TEXT( "Content-Length" ) )
+		{
+			self->m_request->set_content_length( atoi( it->second.c_str() ) );
+		}
+		else if ( it->first == TEXT( "Content-Type" ) )
+		{
+			self->m_request->set_content_type( it->secoond );
+		}
+		else if ( it->first == "Host" )
+		{
+			self->m_request->set_host( it->second );
+		}
+		else if ( it->first == "Expect" )
+		{
+			m_message->set_expect( it->second );
+		}
+		else if ( *it1 == "Authorization" )
+		{
+			std::string base64_encoded;
+			std::string decoded;
+			size_t		pos;
+			
+			m_authorization	= *it2;
+			base64_encoded	= m_authorization.substr( m_authorization.find( ' ' ) + 1 );
+			decoded			= codec::base64::decode( base64_encoded );
+			pos				= decoded.find( ':' );
+			
+			if ( pos != -1 )
+			{
+				m_username	= decoded.substr( 0, pos );
+				m_password	= decoded.substr( pos + 1 );
+			}
+		}
+	}
+	*/
+
+exit:
+
+	return ret;
+}
+
+	
+int
+connection::body_was_received( http_parser *parser, const char *buf, size_t len )
+{
+	connection *self = reinterpret_cast< connection* >( parser->data );
+	
+	fprintf( stderr, "body_was_received\n" );
+	
+	self->m_handler->m_rbwr( self->m_request, ( const uint8_t* ) buf, len );
+	
+	return 0;
+}
+
+	
+int
+connection::message_was_received( http_parser *parser )
+{
+	connection *self = reinterpret_cast< connection* >( parser->data );
+	
+	fprintf( stderr, "message was received\n" );
+	
+	self->m_handler->m_r( self->m_request, [=]( response::ptr response )
+	{
+	} );
+	
+	return 0;
+}
+
+
+#if defined( __APPLE__ )
+#	pragma mark client implementation
+#endif
+#if 0
+client::client()
+:
+	m_reply( NULL )
+{
+	set_response_will_begin_handler( []( int code )
+	{
+		return response::ptr( new http::response( code ) );
+	} );
+	
+	set_message_was_received_handler( [this]( message::ptr message ) -> int
+	{
+		http::response::ptr response = dynamic_pointer_cast< http::response >( message );
+		
+		if ( m_reply )
+		{
+			m_reply( response );
+		}
+		
+		return 0;
+	} );
+}
+
+
+client::~client()
+{
+}
+
+
+void
+client::send( const request::ptr &request, reply reply )
+{
+	if ( m_reply )
+	{
+		response::ptr response = new http::response( -1 );
+		reply( response );
+		goto exit;
+	}
+
+	m_reply = reply;
+
+	if ( !m_socket->is_open() || !m_uri || ( request->uri()->host() != m_uri->host() ) || ( request->uri()->port() != m_uri->port() ) )
+	{
+		m_socket->close();
+		
+		if ( m_socket->open() != 0 )
+		{
+		}
+		
+		m_uri = request->uri();
+
+		ip::address::resolve( request->uri()->host(), request->uri()->port(), [&]( int status, ip::address::list addresses )
+		{
+			if ( status == 0 )
+			{
+				m_socket->connect( addresses[ 0 ], [&]( int status )
+				{
+					if ( status == 0 )
+					{
+						if ( ( request->uri()->scheme() == TEXT( "http" ) ) || ( m_socket->tls_connect() == 0 ) )
+						{
+							connection::send( request );
+						}
+						else
+						{
+							response::ptr response = new http::response( -1 );
+							nklog( log::error, "unable to setup tls" );
+							m_reply( response );
+						}
+					}
+				} );
+				
+			}
+		} );
+	}
+	else
+	{
+		connection::send( request );
+	}
+	
+exit:
+
+	return;
+}
+
+#if defined( __APPLE__ )
+#	pragma mark server implementation
+#endif
+
+service::service()
+{
+}
+
+
+service::~service()
+{
+}
+
+
+#endif
+
 
 #if defined( __APPLE__ )
 #	pragma mark message implementation
@@ -788,11 +800,11 @@ message::write( const uint8_t *buf, size_t len )
 
 
 bool
-message::send_body( connection::ptr conn ) const
+message::send_body( connection_ptr conn ) const
 {
 	std::string body = m_ostream.str();
 	
-	conn->write( reinterpret_cast< const uint8_t* >( body.c_str() ), body.size() );
+	conn->send( reinterpret_cast< const uint8_t* >( body.c_str() ), body.size() );
 	
 	return true;
 }
@@ -815,7 +827,7 @@ request::init()
 
 
 void
-request::send_prologue( connection::ptr conn ) const
+request::send_prologue( connection_ptr conn ) const
 {
 	*conn << m_method << " " << m_uri->path() << " HTTP/1.1\r\n";
 }
@@ -866,117 +878,74 @@ response::send_prologue( connection::ptr conn ) const
 
 
 const std::string&
-status::string( int code )
+string( status code )
 {
 	switch ( code )
 	{
-		case http::status::error:
+		case status::error:
 		{
 			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
-		case http::status::cont:
+		case status::cont:
 		{
 			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
-		case http::status::switchingProtocols:
+		case status::switchingProtocols:
 		{
 			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
-		case http::status::ok:
+		case status::ok:
 		{
 			static std::string s( "" );
 			return s;
 		}
 		break;
 
-		case http::status::created:
+		case status::created:
 		{
 			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
-		case http::status::accepted:
+		case status::accepted:
 		{
 			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
-		case http::status::notAuthoritative:
+		case status::notAuthoritative:
 		{
 			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
-		case http::status::noContent:
+		case status::noContent:
 		{
 			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
-		case http::status::resetContent:
+		case status::resetContent:
 		{
 			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
-		case http::status::partialContent:
-		{
-			static std::string s( "Error" );
-			return s;
-		}
-		break;
-
-
-		case http::status::multipleChoices:
-		{
-			static std::string s( "Error" );
-			return s;
-		}
-		break;
-
-		case http::status::movedPermanently:
-		{
-			static std::string s( "Error" );
-			return s;
-		}
-		break;
-
-		case http::status::movedTemporarily:
-		{
-			static std::string s( "Error" );
-			return s;
-		}
-		break;
-
-		case http::status::seeOther:
-		{
-			static std::string s( "Error" );
-			return s;
-		}
-		break;
-
-		case http::status::notModified:
-		{
-			static std::string s( "Error" );
-			return s;
-		}
-		break;
-
-		case http::status::useProxy:
+		case status::partialContent:
 		{
 			static std::string s( "Error" );
 			return s;
@@ -984,133 +953,42 @@ status::string( int code )
 		break;
 
 
-		case http::status::badRequest:
+		case status::multipleChoices:
 		{
 			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
-		case http::status::unauthorized:
+		case status::movedPermanently:
 		{
 			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
-		case http::status::paymentRequired:
+		case status::movedTemporarily:
 		{
 			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
-		case http::status::forbidden:
+		case status::seeOther:
 		{
 			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
-		case http::status::notFound:
+		case status::notModified:
 		{
 			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
-		case http::status::methodNotAllowed:
-		{
-			static std::string s( "Error" );
-			return s;
-		}
-		break;
-
-		case http::status::notAcceptable:
-		{
-			static std::string s( "Error" );
-			return s;
-		}
-		break;
-
-		case http::status::proxyAuthentication:
-		{
-			static std::string s( "Error" );
-			return s;
-		}
-		break;
-
-		case http::status::requestTimeout:
-		{
-			static std::string s( "Error" );
-			return s;
-		}
-		break;
-
-		case http::status::conflict:
-		{
-			static std::string s( "Error" );
-			return s;
-		}
-		break;
-
-		case http::status::gone:
-		{
-			static std::string s( "Error" );
-			return s;
-		}
-		break;
-
-		case http::status::lengthRequired:
-		{
-			static std::string s( "Error" );
-			return s;
-		}
-		break;
-
-		case http::status::precondition:
-		{
-			static std::string s( "Error" );
-			return s;
-		}
-		break;
-
-		case http::status::requestTooLarge:
-		{
-			static std::string s( "Error" );
-			return s;
-		}
-		break;
-
-		case http::status::uriTooLong:
-		{
-			static std::string s( "Error" );
-			return s;
-		}
-		break;
-
-		case http::status::unsupportedMediaType:
-		{
-			static std::string s( "Error" );
-			return s;
-		}
-		break;
-
-		case http::status::requestedRange:
-		{
-			static std::string s( "Error" );
-			return s;
-		}
-		break;
-
-		case http::status::expectationFailed:
-		{
-			static std::string s( "Error" );
-			return s;
-		}
-		break;
-
-		case http::status::upgradeRequired:
+		case status::useProxy:
 		{
 			static std::string s( "Error" );
 			return s;
@@ -1118,42 +996,175 @@ status::string( int code )
 		break;
 
 
-		case http::status::serverError:
+		case status::badRequest:
 		{
 			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
-		case http::status::notImplemented:
+		case status::unauthorized:
 		{
 			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
-		case http::status::badGateway:
+		case status::paymentRequired:
 		{
 			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
-		case http::status::serviceUnavailable:
+		case status::forbidden:
 		{
 			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
-		case http::status::gatewayTimeout:
+		case status::notFound:
 		{
 			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
-		case http::status::notSupported:
+		case status::methodNotAllowed:
+		{
+			static std::string s( "Error" );
+			return s;
+		}
+		break;
+
+		case status::notAcceptable:
+		{
+			static std::string s( "Error" );
+			return s;
+		}
+		break;
+
+		case status::proxyAuthentication:
+		{
+			static std::string s( "Error" );
+			return s;
+		}
+		break;
+
+		case status::requestTimeout:
+		{
+			static std::string s( "Error" );
+			return s;
+		}
+		break;
+
+		case status::conflict:
+		{
+			static std::string s( "Error" );
+			return s;
+		}
+		break;
+
+		case status::gone:
+		{
+			static std::string s( "Error" );
+			return s;
+		}
+		break;
+
+		case status::lengthRequired:
+		{
+			static std::string s( "Error" );
+			return s;
+		}
+		break;
+
+		case status::precondition:
+		{
+			static std::string s( "Error" );
+			return s;
+		}
+		break;
+
+		case status::requestTooLarge:
+		{
+			static std::string s( "Error" );
+			return s;
+		}
+		break;
+
+		case status::uriTooLong:
+		{
+			static std::string s( "Error" );
+			return s;
+		}
+		break;
+
+		case status::unsupportedMediaType:
+		{
+			static std::string s( "Error" );
+			return s;
+		}
+		break;
+
+		case status::requestedRange:
+		{
+			static std::string s( "Error" );
+			return s;
+		}
+		break;
+
+		case status::expectationFailed:
+		{
+			static std::string s( "Error" );
+			return s;
+		}
+		break;
+
+		case status::upgradeRequired:
+		{
+			static std::string s( "Error" );
+			return s;
+		}
+		break;
+
+		case status::serverError:
+		{
+			static std::string s( "Error" );
+			return s;
+		}
+		break;
+
+		case status::notImplemented:
+		{
+			static std::string s( "Error" );
+			return s;
+		}
+		break;
+
+		case status::badGateway:
+		{
+			static std::string s( "Error" );
+			return s;
+		}
+		break;
+
+		case status::serviceUnavailable:
+		{
+			static std::string s( "Error" );
+			return s;
+		}
+		break;
+
+		case status::gatewayTimeout:
+		{
+			static std::string s( "Error" );
+			return s;
+		}
+		break;
+
+		case status::notSupported:
 		{
 			static std::string s( "Error" );
 			return s;
@@ -1161,21 +1172,21 @@ status::string( int code )
 		break;
 
 
-		case http::status::authorizedCancelled:
+		case status::authorizedCancelled:
 		{
 			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
-		case http::status::pkiError:
+		case status::pkiError:
 		{
 			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
-		case http::status::webifDisabled:
+		case status::webifDisabled:
 		{
 			static std::string s( "Error" );
 			return s;

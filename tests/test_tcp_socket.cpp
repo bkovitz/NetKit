@@ -1,12 +1,11 @@
 #include "catch.hpp"
-#include <CoreApp/CATCPSocket.h>
-#include <CoreApp/CAIPAddress.h>
+#include <NetKit/NetKit.h>
 
-TEST_CASE( "CoreApp/socket", "socket tests" )
+TEST_CASE( "NetKit/socket", "socket tests" )
 {
 	SECTION( "constructors", "socket constructors" )
 	{
-		coreapp::tcp::client::ptr sock = new coreapp::tcp::client;
+		netkit::tcp::client::ptr sock = new netkit::tcp::client;
 
 		REQUIRE( sock );
 	}

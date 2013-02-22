@@ -1,11 +1,11 @@
-#ifndef _coreapp_xml_attribute_h
-#define _coreapp_xml_attribute_h
+#ifndef _netkit_xml_attribute_h
+#define _netkit_xml_attribute_h
 
-#include <CoreApp/CAXMLNode.h>
+#include <NetKit/NKXMLNode.h>
 
 struct _xmlAttr;
 
-namespace coreapp {
+namespace netkit {
 namespace xml {
 
 class attribute : public node

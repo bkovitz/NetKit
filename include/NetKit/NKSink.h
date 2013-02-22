@@ -2,7 +2,6 @@
 #define _netkit_sink_h
 
 #include <NetKit/NKObject.h>
-#include <list>
 
 namespace netkit {
 
@@ -14,10 +13,23 @@ class sink : public object
 public:
 
 	typedef smart_ptr< sink > ptr;
-	typedef std::list< sink > list;
 	
-	virtual int
-	read( source_ptr s ) = 0;
+	sink( const source_ptr &source );
+	
+	virtual ~sink();
+	
+	virtual ssize_t
+	process() = 0;
+	
+	ssize_t
+	send( const std::uint8_t *buf, size_t len );
+	
+	ssize_t
+	read( std::uint8_t *buf, size_t len );
+	
+private:
+
+	source_ptr m_source;
 };
 
 }

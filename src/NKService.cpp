@@ -1,4 +1,4 @@
-#include <CoreNetwork/CNServer.h>
+#include <NetKit/NKService.h>
 
 using namespace netkit;
 

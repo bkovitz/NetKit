@@ -1,13 +1,13 @@
-#include <CoreApp/CAIPAddress.h>
-#include <CoreApp/CADispatch.h>
-#include <CoreApp/CAOS.h>
-#include <CoreApp/CALog.h>
+#include <NetKit/NKIPAddress.h>
+#include <NetKit/NKDispatch.h>
+#include <NetKit/NKPlatform.h>
+#include <NetKit/NKLog.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <sstream>
 
-using namespace coreapp::ip;
+using namespace netkit::ip;
 
 
 inline bool
@@ -114,7 +114,7 @@ address::resolve( std::string host, uint16_t port, resolve_reply reply )
 		}
 		else
 		{
-			calog( log::error, "error in getaddrinfo: %s", gai_strerror( err ) );
+			nklog( log::error, "error in getaddrinfo: %s", gai_strerror( err ) );
 		}
 		
 		dispatch_async( dispatch_get_main_queue(), ^()
@@ -143,7 +143,7 @@ address::host() const
 
 #endif
 		{
-			calog( log::error, "error converting addr to string: %d", os::error() );
+			nklog( log::error, "error converting addr to string: %d", platform::error() );
 		}
 	}
 	else if ( m_native.ss_family == AF_INET6 )

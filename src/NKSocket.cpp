@@ -1,48 +1,70 @@
-#include <CoreApp/CASocket.h>
+#include <NetKit/NKSocket.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <fcntl.h>
 
-using namespace coreapp;
+using namespace netkit::socket;
 
-socket::socket( int domain, int type )
+server::server( int domain, int type )
+{
+	m_fd = ::socket( domain, type, 0 );
+	//set_blocking( false );
+}
+
+
+server::server( native fd )
 :
-	m_recv_handler( NULL ),
-	m_send_handler( NULL ),
-	m_recv_source( NULL )
+	m_fd( fd )
+{
+}
+
+
+void
+server::bind( std::initializer_list< adopt_f > l )
+{
+	m_adopters.assign( l.begin(), l.end() );
+}
+	
+	
+client::client( int domain, int type )
 {
 	m_fd = ::socket( domain, type, 0 );
 	set_blocking( false );
 }
 
 
-socket::socket( native fd )
-:
-	m_fd( fd ),
-	m_recv_handler( NULL ),
-	m_send_handler( NULL ),
-	m_recv_source( NULL )
+client::client( native fd )
 {
+	m_fd = fd;
 	set_blocking( false );
 }
 
 
-socket::~socket()
+client::~client()
 {
 	close();
 }
 
 
-void
-socket::close()
+int
+client::set_blocking( bool block )
 {
-	if ( m_recv_source )
-	{
-		dispatch_release( m_recv_source );
-		m_recv_source = NULL;
-	}
+#if defined( WIN32 )
+	u_long flags = block ? 0 : 1;
 
+	return ioctlsocket( m_fd, FIONBIO, &flags );
+#else
+	int flags = block ? fcntl( m_fd, F_GETFL, 0 ) & ~O_NONBLOCK : fcntl( m_fd, F_GETFL, 0 ) | O_NONBLOCK;
+
+	return fcntl( m_fd, F_SETFL, flags );
+#endif
+}
+
+
+void
+client::close()
+{
 	if ( m_fd != null )
 	{
 #if defined( WIN32 )
@@ -55,6 +77,7 @@ socket::close()
 }
 
 
+/*
 void
 socket::set_send_handler( handler h )
 {
@@ -88,28 +111,6 @@ socket::set_recv_handler( handler h )
 int
 socket::set_blocking( bool block )
 {
-	if ( block )
-	{
-#if defined( WIN32 )
-
-		u_long iMode = 0;
-
-		return ioctlsocket( m_fd, FIONBIO, &iMode );
-#else
-
-		return fcntl( m_fd, F_SETFL, fcntl( m_fd, F_GETFL, 0 ) & ~O_NONBLOCK );
-#endif
-	}
-	else
-	{
-#if defined( WIN32 )
-
-		u_long iMode = 1;
-
-		return ioctlsocket( m_fd, FIONBIO, &iMode );
-#else
-
-		return fcntl( m_fd, F_SETFL, fcntl( m_fd, F_GETFL, 0 ) | O_NONBLOCK );
-#endif
-	}
+	
 }
+*/

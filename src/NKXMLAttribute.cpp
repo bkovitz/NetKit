@@ -1,8 +1,8 @@
-#include <CoreApp/CAXMLAttribute.h>
+#include <NetKit/NKXMLAttribute.h>
 #include <libxml/tree.h>
 
-using namespace coreapp;
-using namespace coreapp::xml;
+using namespace netkit;
+using namespace netkit::xml;
 
 
 attribute::attribute()

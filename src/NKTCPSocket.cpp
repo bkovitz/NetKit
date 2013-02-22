@@ -1,8 +1,8 @@
-#include <CoreApp/CATCPSocket.h>
-#include <CoreApp/CAServer.h>
-#include <CoreApp/CALog.h>
-#include <CoreApp/CAOS.h>
-#include <CoreApp/CAError.h>
+#include <NetKit/NKTCPSocket.h>
+#include <NetKit/NKService.h>
+#include <NetKit/NKLog.h>
+#include <NetKit/NKPlatform.h>
+#include <NetKit/NKError.h>
 #include <sys/socket.h>
 #include <openssl/pem.h>
 #include <openssl/conf.h>
@@ -10,8 +10,9 @@
 #ifndef OPENSSL_NO_ENGINE
 #	include <openssl/engine.h>
 #endif
+#include <thread>
 
-using namespace coreapp::tcp;
+using namespace netkit::tcp;
 
 X509		*client::m_cert			= NULL;
 EVP_PKEY	*client::m_pkey			= NULL;
@@ -32,7 +33,7 @@ BIO_METHOD	client::m_tls_methods	=
 
 client::client()
 :
-	socket( AF_INET, SOCK_STREAM ),
+	socket::client( AF_INET, SOCK_STREAM ),
 	m_connected( false ),
 	m_tls_context( NULL ),
 	m_tls( NULL )
@@ -42,7 +43,7 @@ client::client()
 
 client::client( socket::native fd )
 :
-	socket( fd ),
+	socket::client( fd ),
 	m_connected( true ),
 	m_tls_context( NULL ),
 	m_tls( NULL )
@@ -69,17 +70,11 @@ client::~client()
 void
 client::connect( ip::address::ptr address, connect_reply reply )
 {
-	dispatch_async( dispatch_get_global_queue( DISPATCH_QUEUE_PRIORITY_DEFAULT, 0 ), ^()
+	std::thread t( [=]()
 	{
 		sockaddr_storage	saddr	= address->sockaddr();
 		socklen_t			slen	= saddr.ss_len;
 		int					ret;
-		
-		if ( m_recv_source )
-		{
-			dispatch_release( m_recv_source );
-			m_recv_source = NULL;
-		}
 		
 		set_blocking( true );
 		
@@ -89,12 +84,12 @@ client::connect( ip::address::ptr address, connect_reply reply )
 		
 		if ( ret == -1 )
 		{
-			calog( log::error, "connect errno = %d", errno );
+			nklog( log::error, "connect errno = %d", errno );
 		}
 		
-		dispatch_async( dispatch_get_main_queue(), ^()
+		runloop::instance()->dispatch_on_main_thread( [=]()
 		{
-			set_recv_handler( m_recv_handler );
+			//dset_recv_handler( m_recv_handler );
 			reply( ret );
 		} );
 	} );
@@ -130,7 +125,7 @@ client::send( const uint8_t *buf, size_t len ) const
 		}
 		else if ( num < 0 )
 		{
-			if ( os::error() == socket::error::wouldblock )
+			if ( platform::error() == ( int ) socket::error::would_block )
 			{
 				fd_set fds;
 
@@ -186,7 +181,7 @@ client::tls_setup()
 {
     BIO *bio_err	= NULL;
 	bool ok;
-	int ret = okay;
+	int ret = ( int ) error::none;
 
 	OpenSSL_add_all_algorithms();
 	SSL_load_error_strings();
@@ -231,13 +226,13 @@ client::tls_connect()
 {
 	BIO				*bio;           /* BIO data */
 	unsigned long	error;          /* Error code */
-	int				ret = okay;
+	int				ret = ( int ) error::none;
 	
 	if ( !m_cert )
 	{
 		ret = tls_setup();
 		
-		if ( ret != okay )
+		if ( ret != ( int ) error::none )
 		{
 			goto exit;
 		}
@@ -282,13 +277,13 @@ client::tls_accept()
 {
 	BIO				*bio;           /* BIO data */
 	unsigned long	error;          /* Error code */
-	int				ret = okay;
+	int				ret = ( int ) error::none;
 	
 	if ( !m_cert )
 	{
 		ret = tls_setup();
 		
-		if ( ret != okay )
+		if ( ret != ( int ) error::none )
 		{
 			goto exit;
 		}
@@ -334,12 +329,12 @@ exit:
 int
 client::open()
 {
-	if ( m_fd == null )
+	if ( m_fd == socket::null )
 	{
 		m_fd = ::socket( AF_INET, SOCK_STREAM, 0 );
 	}
 	
-	return ( m_fd != null ) ? 0 : -1;
+	return ( m_fd != socket::null ) ? 0 : -1;
 }
 
 
@@ -352,7 +347,7 @@ client::close()
 		m_connected = false;
 	}
 	
-	socket::close();
+	socket::client::close();
 }
 
 
@@ -603,7 +598,7 @@ client::callback(int p, int n, void *arg)
 
 server::server( const ip::address::ptr &addr )
 :
-	socket( AF_INET, SOCK_STREAM ),
+	socket::server( AF_INET, SOCK_STREAM ),
 	m_addr( addr )
 {
 	listen();
@@ -618,19 +613,12 @@ server::~server()
 int
 server::open()
 {
-	if ( m_fd == null )
+	if ( m_fd == socket::null )
 	{
 		m_fd = ::socket( AF_INET, SOCK_STREAM, 0 );
 	}
 	
-	return ( m_fd != null ) ? 0 : -1;
-}
-
-
-void
-server::add_listener( coreapp::server::ptr listener )
-{
-	m_listeners.push_back( listener );
+	return ( m_fd != socket::null ) ? 0 : -1;
 }
 
 
@@ -646,7 +634,7 @@ server::listen()
 	
 	if ( ret != 0 )
 	{
-		calog( log::error, "bind() failed: %d", os::error() );
+		nklog( log::error, "bind() failed: %d", platform::error() );
 		goto exit;
 	}
 	
@@ -655,7 +643,7 @@ server::listen()
 	
 	if ( ret != 0 )
 	{
-		calog( log::error, "getsockname() failed: %d", os::error() );
+		nklog( log::error, "getsockname() failed: %d", platform::error() );
 		goto exit;
 	}
 	
@@ -672,38 +660,53 @@ server::listen()
 	
 	if ( ret != 0 )
 	{
-		calog( log::error, "listen() failed: %d", os::error() );
+		nklog( log::error, "listen() failed: %d", platform::error() );
 		goto exit;
 	}
 	
-	set_recv_handler( [ this ]()
+	runloop::instance()->register_for_event( this, netkit::runloop::event::read, [=]( netkit::runloop::event event ) -> bool
 	{
 		client::ptr			sock;
 		ip::address::ptr	addr;
 		
-		sock = accept( addr );
+	//	sock = accept( addr );
 		
 		if ( sock )
 		{
-			sock->set_recv_handler( [ this, sock ]()
+			runloop::instance()->register_for_event( sock.get(), netkit::runloop::event::read, [=]( netkit::runloop::event event ) -> bool
 			{
 				uint8_t buf[ 64 ];
 				ssize_t	num;
+				bool	ret = false;
 				
 				num = sock->peek( buf, sizeof( buf ) );
 				
 				if ( num > 0 )
 				{
-					for ( listeners::iterator it = m_listeners.begin(); it != m_listeners.end(); it++ )
+					for ( adopters::list::iterator adopter = m_adopters.begin(); adopter != m_adopters.end(); adopter++ )
 					{
-						if ( ( *it )->adopt( sock, buf, num ) )
+						sink::ptr sink;
+						
+						sink = ( *adopter )( buf, num );
+						
+						if ( sink )
 						{
+							client::ptr dummy( sock );
+							dummy->bind( sink );
 							break;
 						}
 					}
 				}
+				else
+				{
+					ret = true;
+				}
+				
+				return ret;
 			} );
 		}
+		
+		return true;
 	} );
 	
 exit:
@@ -712,13 +715,13 @@ exit:
 }
 
 
-client::ptr
+netkit::socket::client::ptr
 server::accept( ip::address::ptr &addr )
 {
-	native					newFd;
+	socket::native			newFd;
 	struct sockaddr_storage	peer;
 	socklen_t				peerLen = sizeof( peer );
-	client::ptr				newSock;
+	socket::client::ptr		newSock;
 	
 	newFd = ::accept( m_fd, ( struct sockaddr* ) &peer, &peerLen );
 	
@@ -733,7 +736,7 @@ server::accept( ip::address::ptr &addr )
 
 			addr = new ip::address( peer );
 
-			newSock = new client( newFd );
+			//newSock = new client( newFd );
 			//memcpy( &newSock->m_peer, &peer, sizeof( peer ) );
 			//newSock->m_peerLen	= peerLen;
 			

@@ -1,11 +1,11 @@
-#ifndef _coreapp_xml_document_h
-#define _coreapp_xml_document_h
+#ifndef _netkit_xml_document_h
+#define _netkit_xml_document_h
 
-#include <CoreApp/CAXMLNode.h>
+#include <NetKit/NKXMLNode.h>
 
 struct _xmlDoc;
 
-namespace coreapp {
+namespace netkit {
 namespace xml {
 
 
