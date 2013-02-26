@@ -1,5 +1,5 @@
 #include <NetKit/NKTCPSocket.h>
-#include <NetKit/NKService.h>
+#include <NetKit/NKRunLoop.h>
 #include <NetKit/NKLog.h>
 #include <NetKit/NKPlatform.h>
 #include <NetKit/NKError.h>
@@ -42,6 +42,16 @@ client::client()
 
 
 client::client( socket::native fd )
+:
+	socket::client( fd ),
+	m_connected( true ),
+	m_tls_context( NULL ),
+	m_tls( NULL )
+{
+}
+
+
+client::client( socket::native fd, const ip::address::ptr &addr )
 :
 	socket::client( fd ),
 	m_connected( true ),
@@ -97,7 +107,32 @@ client::connect( ip::address::ptr address, connect_reply reply )
 
 
 ssize_t
-client::send( const uint8_t *buf, size_t len ) const
+client::peek( uint8_t *buf, size_t len )
+{
+	return ::recv( m_fd, buf, len, MSG_PEEK );
+}
+
+
+ssize_t
+client::recv( uint8_t *buf, size_t len )
+{
+	ssize_t num;
+	
+	if ( m_tls )
+	{
+		num = SSL_read( m_tls, buf, ( int ) len );
+	}
+	else
+	{
+		num = ::recv( m_fd, buf, len, 0 );
+	}
+	
+	return num;
+}
+
+
+ssize_t
+client::send( const uint8_t *buf, size_t len )
 {
 	ssize_t total = 0;
 
@@ -148,31 +183,6 @@ client::send( const uint8_t *buf, size_t len ) const
 	}
 
 	return total;
-}
-
-
-ssize_t
-client::recv( uint8_t *buf, size_t len ) const
-{
-	ssize_t num;
-	
-	if ( m_tls )
-	{
-		num = SSL_read( m_tls, buf, ( int ) len );
-	}
-	else
-	{
-		num = ::recv( m_fd, buf, len, 0 );
-	}
-	
-	return num;
-}
-
-	
-ssize_t
-client::peek( uint8_t *buf, size_t len ) const
-{
-	return ::recv( m_fd, buf, len, MSG_PEEK );
 }
 
 
@@ -628,6 +638,7 @@ server::listen()
 	sockaddr_storage	saddr	= m_addr->sockaddr();
 	sockaddr_storage	saddr2;
 	socklen_t			slen;
+	runloop::source		listen_source;
 	int					ret;
 	
 	ret = ::bind( m_fd, ( struct sockaddr* ) &saddr, saddr.ss_len );
@@ -664,50 +675,53 @@ server::listen()
 		goto exit;
 	}
 	
-	runloop::instance()->register_for_event( this, netkit::runloop::event::read, [=]( netkit::runloop::event event ) -> bool
+	listen_source = runloop::instance()->create_source( m_fd, netkit::runloop::event::read, [=]( runloop::source s, runloop::event event )
 	{
 		client::ptr			sock;
 		ip::address::ptr	addr;
 		
-	//	sock = accept( addr );
+		sock = accept( addr );
 		
 		if ( sock )
 		{
-			runloop::instance()->register_for_event( sock.get(), netkit::runloop::event::read, [=]( netkit::runloop::event event ) -> bool
+			auto source = runloop::instance()->create_source( sock->fd(), netkit::runloop::event::read, [=]( runloop::source s, runloop::event event )
 			{
-				uint8_t buf[ 64 ];
-				ssize_t	num;
-				bool	ret = false;
+				client::ptr dummy( sock );
 				
-				num = sock->peek( buf, sizeof( buf ) );
-				
-				if ( num > 0 )
+				if ( dummy->sink() )
 				{
-					for ( adopters::list::iterator adopter = m_adopters.begin(); adopter != m_adopters.end(); adopter++ )
-					{
-						sink::ptr sink;
-						
-						sink = ( *adopter )( buf, num );
-						
-						if ( sink )
-						{
-							client::ptr dummy( sock );
-							dummy->bind( sink );
-							break;
-						}
-					}
+					dummy->sink()->process();
 				}
 				else
 				{
-					ret = true;
-				}
+					uint8_t buf[ 64 ];
+					ssize_t	num;
 				
-				return ret;
+					num = dummy->peek( buf, sizeof( buf ) );
+				
+					if ( num > 0 )
+					{
+						for ( adopters::list::iterator adopter = m_adopters.begin(); adopter != m_adopters.end(); adopter++ )
+						{
+							sink::ptr sink;
+							
+							sink = ( *adopter )( sock, buf, num );
+	
+							if ( sink )
+							{
+								dummy->bind( sink );
+								break;
+							}
+						}
+					}
+				}
 			} );
+	
+			runloop::instance()->schedule( source );
 		}
-		
-		return true;
 	} );
+	
+	runloop::instance()->schedule( listen_source );
 	
 exit:
 
@@ -715,13 +729,13 @@ exit:
 }
 
 
-netkit::socket::client::ptr
+client::ptr
 server::accept( ip::address::ptr &addr )
 {
 	socket::native			newFd;
 	struct sockaddr_storage	peer;
 	socklen_t				peerLen = sizeof( peer );
-	socket::client::ptr		newSock;
+	client::ptr				newSock;
 	
 	newFd = ::accept( m_fd, ( struct sockaddr* ) &peer, &peerLen );
 	
@@ -736,9 +750,7 @@ server::accept( ip::address::ptr &addr )
 
 			addr = new ip::address( peer );
 
-			//newSock = new client( newFd );
-			//memcpy( &newSock->m_peer, &peer, sizeof( peer ) );
-			//newSock->m_peerLen	= peerLen;
+			newSock = new client( newFd, addr );
 			
 			if ( peer.ss_family == AF_INET )
 			{

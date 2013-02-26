@@ -3,7 +3,6 @@
 
 #include <NetKit/NKSink.h>
 #include <NetKit/NKSource.h>
-#include <NetKit/NKConnection.h>
 #include <NetKit/NKExpected.h>
 #include <map>
 
@@ -268,7 +267,7 @@ typedef std::function< void ( response::ptr response ) >				response_f;
 typedef std::function< void ( request::ptr request, response_f func ) >	request_f;
 
 	
-class connection : public netkit::connection
+class connection : public sink
 {
 public:
 

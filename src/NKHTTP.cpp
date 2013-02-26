@@ -71,6 +71,196 @@ strlcat( char *dst, const char *src, size_t siz)
 }
 #endif
 
+#if defined( __APPLE__ )
+#	pragma mark method implementation
+#endif
+
+const std::uint8_t method::delet		= HTTP_DELETE;
+const std::uint8_t method::get			= HTTP_GET;
+const std::uint8_t method::head			= HTTP_HEAD;
+const std::uint8_t method::post			= HTTP_POST;
+const std::uint8_t method::put			= HTTP_PUT;
+const std::uint8_t method::connect		= HTTP_CONNECT;
+const std::uint8_t method::options		= HTTP_OPTIONS;
+const std::uint8_t method::trace		= HTTP_TRACE;
+const std::uint8_t method::copy			= HTTP_COPY;
+const std::uint8_t method::lock			= HTTP_LOCK;
+const std::uint8_t method::mkcol		= HTTP_MKCOL;
+const std::uint8_t method::move			= HTTP_MOVE;
+const std::uint8_t method::propfind		= HTTP_PROPFIND;
+const std::uint8_t method::proppatch	= HTTP_PROPPATCH;
+const std::uint8_t method::search		= HTTP_SEARCH;
+const std::uint8_t method::unlock		= HTTP_UNLOCK;
+const std::uint8_t method::report		= HTTP_REPORT;
+const std::uint8_t method::mkactivity	= HTTP_MKACTIVITY;
+const std::uint8_t method::checkout		= HTTP_CHECKOUT;
+const std::uint8_t method::merge		= HTTP_MERGE;
+const std::uint8_t method::msearch		= HTTP_MSEARCH;
+const std::uint8_t method::notify		= HTTP_NOTIFY;
+const std::uint8_t method::subscribe	= HTTP_SUBSCRIBE;
+const std::uint8_t method::unsubscribe	= HTTP_UNSUBSCRIBE;
+const std::uint8_t method::patch		= HTTP_PATCH;
+const std::uint8_t method::purge		= HTTP_PURGE;
+
+std::string
+method::as_string( std::uint8_t val )
+{
+	return http_method_str( ( enum http_method ) val );
+}
+
+
+#if defined( __APPLE__ )
+#	pragma mark message implementation
+#endif
+
+message::message()
+{
+}
+	
+	
+message::~message()
+{
+}
+
+
+void
+message::add_to_header( const header &heder )
+{
+	for ( header::const_iterator it = heder.begin(); it != heder.end(); it++ )
+	{
+		add_to_header( it->first, it->second );
+	}
+}
+
+	
+void
+message::add_to_header( const std::string &key, int val )
+{
+	char buf[ 1024 ];
+		
+	std::sprintf_s( buf, sizeof( buf ), sizeof( buf ), "%d", val );
+	m_header.push_back( make_pair( key, buf ) );
+}
+
+
+void
+message::add_to_header( const std::string &key, const std::string &val )
+{
+	m_header.push_back( make_pair( key, val ) );
+	
+	if ( key == TEXT( "Content-Length" ) )
+	{
+		m_content_length = atoi( val.c_str() );
+	}
+	else if ( key == TEXT( "Content-Type" ) )
+	{
+		m_content_type = val;
+	}
+}
+
+
+void
+message::write( const uint8_t *buf, size_t len )
+{
+	m_ostream.write( reinterpret_cast< const char* >( buf ), len );
+}
+
+
+bool
+message::send_body( connection_ptr conn ) const
+{
+	std::string body = m_ostream.str();
+	
+	conn->send( reinterpret_cast< const uint8_t* >( body.c_str() ), body.size() );
+	
+	return true;
+}
+
+#if defined( __APPLE__ )
+#	pragma mark request implementation
+#endif
+
+request::request( int method, const uri::ptr &uri )
+:
+	m_method( method ),
+	m_uri( uri )
+{
+	init();
+}
+
+	
+request::request( const request &r )
+:
+	m_method( r.m_method ),
+	m_uri( r.m_uri )
+{
+	init();
+}
+
+
+request::~request()
+{
+}
+
+
+void
+request::init()
+{
+	add_to_header( "Host", m_uri->host() );
+	add_to_header( "Connection", "keep-alive" );
+}
+
+
+void
+request::send_prologue( connection_ptr conn ) const
+{
+	*conn << m_method << " " << m_uri->path() << " HTTP/1.1" << http::endl;
+}
+
+#if defined( __APPLE__ )
+#	pragma mark response implementation
+#endif
+
+response::response()
+:
+	m_status( 200 )
+{
+	init();
+}
+
+
+response::response( int status )
+:
+	m_status( status )
+{
+	init();
+}
+
+
+response::~response()
+{
+}
+
+
+void
+response::init()
+{
+	time_t     now = time(0);
+    struct tm  tstruct;
+    char       buf[80];
+    tstruct = *localtime(&now);
+    strftime(buf, sizeof(buf), "%a, %d %b %Y %I:%M:%S %Z", &tstruct);
+	
+	add_to_header( "Date", buf );
+}
+
+
+void
+response::send_prologue( connection::ptr conn ) const
+{
+	*conn << "HTTP/" << conn->http_major() << "." << conn->http_minor() << " " << m_status << " OK\r\n";
+}
+
 
 #if defined( __APPLE__ )
 #	pragma mark connection implementation
@@ -286,25 +476,26 @@ connection::adopt( source::ptr source, const std::uint8_t *buf, size_t len )
 bool
 connection::put( const message::ptr &message )
 {
-	//message->send_prologue( this );
+	message->send_prologue( this );
 
-//	*this << request->method() << " " << request->uri()->path() << " HTTP/1.1" << http::endl;
-	// *this << "Host: " << request->uri()->host() << endl;
-
-	for ( message::header::const_iterator it = message->heade().begin(); it != message->heade().end(); it++ )
+	for ( message::header::const_iterator it = message->heder().begin(); it != message->heder().end(); it++ )
 	{
-		*this << it->first << ": " << it->second << endl;
+		*this << it->first << ": " << it->second << http::endl;
 	}
 			
 	*this << http::endl;
 	
-//	message->send_body( this );
+	flush();
+	
+	message->send_body( this );
+	
+	return true;
 			
 	//write( &request->body()[ 0 ], request->body().size() );
 	
-	*this << http::endl;
+//	*this << http::endl;
 	
-	return flush();
+//	return flush();
 			
 	//*this << flush;
 	/*
@@ -336,7 +527,7 @@ connection::flush()
 	if ( msg.size() > 0 )
 	{
 		nklog( log::verbose, "sending msg: %s", msg.c_str() );
-		//num = m_socket->send( reinterpret_cast< const uint8_t* >( msg.c_str() ), msg.size() );
+		num = send( reinterpret_cast< const uint8_t* >( msg.c_str() ), msg.size() );
 		m_ostream.str( "" );
 		m_ostream.clear();
 	}
@@ -360,7 +551,7 @@ connection::process()
 	while ( 1 )
 	{
 		memset( buf, 0, sizeof( buf ) );
-		num = read( ( buf_t ) buf, sizeof( buf ) );
+		num = recv( ( buf_t ) buf, sizeof( buf ) );
 
 		if ( num > 0 )
 		{
@@ -458,6 +649,61 @@ connection::uri_was_received( http_parser *parser, const char *buf, size_t len )
 }
 
 
+bool
+connection::resolve( http_parser *parser )
+{
+	bool resolved = false;
+	
+	m_method = parser->method;
+	
+	auto it = m_handlers.find( parser->method );
+	
+	if ( it != m_handlers.end() )
+	{
+		for ( handler::list::iterator it2 = it->second.begin(); it2 != it->second.end(); it2++ )
+		{
+			std::regex regex( ( *it2 )->m_path );
+			
+			if ( std::regex_search( m_uri_value, regex ) )
+			{
+				m_handler = *it2;
+				break;
+			}
+		}
+	}
+	
+	if ( !m_handler )
+	{
+		nklog( log::error, "unable to find handler for method %d -> %s", m_method, m_uri_value.c_str() );
+		goto exit;
+	}
+	
+	if ( m_handler->m_rwb )
+	{
+		m_request = m_handler->m_rwb();
+	}
+	else
+	{
+		m_request = new http::request( parser->method, new uri( m_uri_value ) );
+	}
+
+	if ( !m_request )
+	{
+		nklog( log::error, "unable to create request for method %d -> %s", m_method, m_uri_value.c_str() );
+		goto exit;
+	}
+	
+	resolved = true;
+
+exit:
+
+	return resolved;
+}
+
+
+
+
+
 int
 connection::header_field_was_received( http_parser *parser, const char *buf, size_t len )
 {
@@ -465,18 +711,18 @@ connection::header_field_was_received( http_parser *parser, const char *buf, siz
 	int			ret = 0;
 	std::string	str( buf, len );
 	
-	
-	//if ( !self->m_request && !self->build_message() )
-	if ( !self->m_request )
-	{
-		ret = -1;
-		goto exit;
-	}
-	
 	if ( self->m_parse_state != FIELD )
 	{
 		if ( ( self->m_header_field.size() > 0 ) && ( self->m_header_value.size() > 0 ) )
 		{
+			if ( !self->m_handler )
+			{
+				if ( !self->resolve( parser ) )
+				{
+					// return 404
+				}
+			}
+			
 			self->m_request->add_to_header( self->m_header_field, self->m_header_value );
 		}
 		
@@ -522,45 +768,6 @@ connection::headers_were_received( http_parser *parser )
 	int					ret		= 0;
 	
 	fprintf( stderr, "headers were received\n" );
-	
-	self->m_method = parser->method;
-	
-	it = m_handlers.find( parser->method );
-	
-	if ( it != m_handlers.end() )
-	{
-		for ( handler::list::iterator it2 = it->second.begin(); it2 != it->second.begin(); it2++ )
-		{
-			std::regex regex( ( *it2 )->m_path );
-			
-			if ( std::regex_search( self->m_uri_value, regex ) )
-			{
-				self->m_handler = *it2;
-				break;
-			}
-		}
-	}
-	
-	if ( !self->m_handler )
-	{
-		nklog( log::error, "unable to find handler for method %d -> %s", self->m_method, self->m_uri_value.c_str() );
-		ret = -1;
-		goto exit;
-	}
-	
-	self->m_request = self->m_handler->m_rwb();
-
-	if ( !self->m_request )
-	{
-		nklog( log::error, "unable to create request for method %d -> %s", self->m_method, self->m_uri_value.c_str() );
-		ret = -1;
-		goto exit;
-	}
-	
-	if ( ( self->m_header_field.size() > 0 ) && ( self->m_header_value.size() > 0 ) )
-	{
-		self->m_request->add_to_header( self->m_header_field, self->m_header_value );
-	}
 	
 	/*
 	for ( message::header::const_iterator it = self->m_request->heade().begin(); it != self->m_request->heade().end(); it++ )
@@ -631,6 +838,7 @@ connection::message_was_received( http_parser *parser )
 	
 	self->m_handler->m_r( self->m_request, [=]( response::ptr response )
 	{
+		self->put( response );
 	} );
 	
 	return 0;
@@ -640,240 +848,18 @@ connection::message_was_received( http_parser *parser )
 #if defined( __APPLE__ )
 #	pragma mark client implementation
 #endif
-#if 0
-client::client()
+
+client::client( const request::ptr &request, auth_f auth_func, response_f response_func )
 :
-	m_reply( NULL )
+	m_request( request ),
+	m_auth_func( auth_func ),
+	m_response_func( response_func )
 {
-	set_response_will_begin_handler( []( int code )
-	{
-		return response::ptr( new http::response( code ) );
-	} );
-	
-	set_message_was_received_handler( [this]( message::ptr message ) -> int
-	{
-		http::response::ptr response = dynamic_pointer_cast< http::response >( message );
-		
-		if ( m_reply )
-		{
-			m_reply( response );
-		}
-		
-		return 0;
-	} );
 }
 
 
 client::~client()
 {
-}
-
-
-void
-client::send( const request::ptr &request, reply reply )
-{
-	if ( m_reply )
-	{
-		response::ptr response = new http::response( -1 );
-		reply( response );
-		goto exit;
-	}
-
-	m_reply = reply;
-
-	if ( !m_socket->is_open() || !m_uri || ( request->uri()->host() != m_uri->host() ) || ( request->uri()->port() != m_uri->port() ) )
-	{
-		m_socket->close();
-		
-		if ( m_socket->open() != 0 )
-		{
-		}
-		
-		m_uri = request->uri();
-
-		ip::address::resolve( request->uri()->host(), request->uri()->port(), [&]( int status, ip::address::list addresses )
-		{
-			if ( status == 0 )
-			{
-				m_socket->connect( addresses[ 0 ], [&]( int status )
-				{
-					if ( status == 0 )
-					{
-						if ( ( request->uri()->scheme() == TEXT( "http" ) ) || ( m_socket->tls_connect() == 0 ) )
-						{
-							connection::send( request );
-						}
-						else
-						{
-							response::ptr response = new http::response( -1 );
-							nklog( log::error, "unable to setup tls" );
-							m_reply( response );
-						}
-					}
-				} );
-				
-			}
-		} );
-	}
-	else
-	{
-		connection::send( request );
-	}
-	
-exit:
-
-	return;
-}
-
-#if defined( __APPLE__ )
-#	pragma mark server implementation
-#endif
-
-service::service()
-{
-}
-
-
-service::~service()
-{
-}
-
-
-#endif
-
-
-#if defined( __APPLE__ )
-#	pragma mark message implementation
-#endif
-
-message::message()
-{
-}
-	
-	
-message::~message()
-{
-}
-
-
-void
-message::add_to_header( const header &heder )
-{
-	for ( header::const_iterator it = heder.begin(); it != heder.end(); it++ )
-	{
-		add_to_header( it->first, it->second );
-	}
-}
-
-	
-void
-message::add_to_header( const std::string &key, int val )
-{
-	char buf[ 1024 ];
-		
-	std::sprintf_s( buf, sizeof( buf ), sizeof( buf ), "%d", val );
-	m_header.push_back( make_pair( key, buf ) );
-}
-
-
-void
-message::add_to_header( const std::string &key, const std::string &val )
-{
-	m_header.push_back( make_pair( key, val ) );
-	
-	if ( key == TEXT( "Content-Length" ) )
-	{
-		m_content_length = atoi( val.c_str() );
-	}
-	else if ( key == TEXT( "Content-Type" ) )
-	{
-		m_content_type = val;
-	}
-}
-
-
-void
-message::write( const uint8_t *buf, size_t len )
-{
-	m_ostream.write( reinterpret_cast< const char* >( buf ), len );
-}
-
-
-bool
-message::send_body( connection_ptr conn ) const
-{
-	std::string body = m_ostream.str();
-	
-	conn->send( reinterpret_cast< const uint8_t* >( body.c_str() ), body.size() );
-	
-	return true;
-}
-
-#if defined( __APPLE__ )
-#	pragma mark request implementation
-#endif
-
-request::~request()
-{
-}
-
-
-void
-request::init()
-{
-	add_to_header( "Host", m_uri->host() );
-	add_to_header( "Connection", "keep-alive" );
-}
-
-
-void
-request::send_prologue( connection_ptr conn ) const
-{
-	*conn << m_method << " " << m_uri->path() << " HTTP/1.1\r\n";
-}
-
-#if defined( __APPLE__ )
-#	pragma mark response implementation
-#endif
-
-response::response()
-:
-	m_status( 200 )
-{
-	init();
-}
-
-
-response::response( int status )
-:
-	m_status( status )
-{
-	init();
-}
-
-
-response::~response()
-{
-}
-
-
-void
-response::init()
-{
-	time_t     now = time(0);
-    struct tm  tstruct;
-    char       buf[80];
-    tstruct = *localtime(&now);
-    strftime(buf, sizeof(buf), "%a, %d %b %Y %I:%M:%S %Z", &tstruct);
-	
-	add_to_header( "Date", buf );
-}
-
-
-void
-response::send_prologue( connection::ptr conn ) const
-{
-	*conn << "HTTP/" << conn->http_major() << "." << conn->http_minor() << " " << m_status << " OK\r\n";
 }
 
 

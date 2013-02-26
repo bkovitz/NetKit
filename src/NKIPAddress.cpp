@@ -1,11 +1,12 @@
 #include <NetKit/NKIPAddress.h>
-#include <NetKit/NKDispatch.h>
+#include <NetKit/NKRunLoop.h>
 #include <NetKit/NKPlatform.h>
 #include <NetKit/NKLog.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <sstream>
+#include <thread>
 
 using namespace netkit::ip;
 
@@ -69,16 +70,16 @@ address::~address()
 
 
 void
-address::resolve( std::string host, uint16_t port, resolve_reply reply )
+address::resolve( std::string host, uint16_t port, resolve_reply_f reply )
 {
-	dispatch_async( dispatch_get_global_queue( DISPATCH_QUEUE_PRIORITY_DEFAULT, 0 ), ^()
+	std::thread t( [=]()
 	{
-		__block address::list	addrs;
-		struct addrinfo	*result;
-		struct addrinfo *res;
-		struct addrinfo hints;
-		std::ostringstream os;
-		int				err;
+		address::list			addrs;
+		struct addrinfo			*result;
+		struct addrinfo			*res;
+		struct addrinfo			hints;
+		std::ostringstream		os;
+		int						err;
 		
 		memset( &hints, 0, sizeof( hints ) );
 
@@ -117,12 +118,13 @@ address::resolve( std::string host, uint16_t port, resolve_reply reply )
 			nklog( log::error, "error in getaddrinfo: %s", gai_strerror( err ) );
 		}
 		
-		dispatch_async( dispatch_get_main_queue(), ^()
+		runloop::instance()->dispatch_on_main_thread( [=]()
 		{
-			resolve_reply temp = reply;
-			temp( err, addrs );
+			reply( err, addrs );
 		} );
 	} );
+	
+	t.detach();
 }
 
 

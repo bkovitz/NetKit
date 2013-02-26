@@ -17,7 +17,10 @@ public:
 	
 	virtual ~source();
 
-	sink::ptr
+	sink::ptr&
+	sink();
+	
+	const sink::ptr&
 	sink() const;
 	
 	void
@@ -27,7 +30,7 @@ public:
 	peek( std::uint8_t *buf, size_t len ) = 0;
 	
 	virtual ssize_t
-	read( std::uint8_t *buf, size_t len ) = 0;
+	recv( std::uint8_t *buf, size_t len ) = 0;
 	
 	virtual ssize_t
 	send( const std::uint8_t *buf, size_t len ) = 0;

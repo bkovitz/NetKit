@@ -17,10 +17,9 @@ class address : public object
 {
 public:
 
-	typedef std::function< void ( int status, std::deque< smart_ptr< address > > &addrs ) > resolve_reply;
-
 	typedef smart_ptr< address > ptr;
 	typedef std::deque< ptr > list;
+	typedef std::function< void ( int status, const list &addrs ) > resolve_reply_f;
 	
 public:
 
@@ -35,7 +34,7 @@ public:
 	virtual ~address();
 	
 	static void
-	resolve( std::string host, uint16_t port, resolve_reply reply );
+	resolve( std::string host, uint16_t port, resolve_reply_f reply );
 	
 	inline sockaddr_storage
 	sockaddr() const

@@ -1,34 +1,21 @@
 #include "catch.hpp"
 #include <NetKit/NetKit.h>
-#if defined( __APPLE__ )
-#	include <CoreFoundation/CoreFoundation.h>
-#endif
 #include <functional>
 
 using namespace netkit;
 
 TEST_CASE( "NetKit/http/client", "http client tests" )
 {
-	http::client::ptr	client	= new http::client;
-	http::request::ptr	request = new http::request( "http://www.porchdogsoft.com/test.html" );
+	http::request::ptr	request = new http::request( http::method::get, new uri( "http:://wwww.porchdogsoft.com/test.html" ) );
 	
-	request->set_method( "GET" );
-	
-	client->send( request, [&]( const http::response::ptr &response )
+	http::client::send( request, [=]( uint32_t error, http::response::ptr response )
 	{
 		REQUIRE( response->status() == 200 );
 		
 		REQUIRE( response->body() == "<html>hello</html>\n" );
 		
-#if defined( __APPLE__ )
-
-		CFRunLoopStop( CFRunLoopGetCurrent() );
-#endif
+		runloop::instance()->stop();
 	} );
 	
-#if defined( __APPLE__ )
-
-	CFRunLoopRun();
-	
-#endif
+	runloop::instance()->run();
 }

@@ -5,15 +5,28 @@
 
 namespace netkit {
 
-class runloop_impl : public runloop
+class runloop_mac : public runloop
 {
 public:
 
-	virtual void
-	register_for_event( object::ptr obj, event e, event_handler_f h );
+	runloop_mac();
+	
+	virtual ~runloop_mac();
+
+	virtual source
+	create_source( int fd, event e, event_f f );
+	
+	virtual source
+	create_source( std::time_t time, event_f f );
 	
 	virtual void
-	dispatch_on_main_thread( handler_f b );
+	schedule( source s );
+	
+	virtual void
+	cancel( source s );
+
+	virtual void
+	dispatch_on_main_thread( dispatch_f f );
 
 	virtual void
 	run();

@@ -3,7 +3,6 @@
 
 #include <NetKit/NKSocket.h>
 #include <NetKit/NKIPAddress.h>
-#include <NetKit/NKService.h>
 #include <NetKit/NKTypes.h>
 #include <openssl/ssl.h>
 #include <string>
@@ -12,6 +11,9 @@
 namespace netkit {
 
 namespace tcp {
+
+class client;
+typedef smart_ptr< client > client_ptr;
 
 class server : public socket::server
 {
@@ -33,7 +35,7 @@ public:
 		return m_addr->port();
 	}
 	
-	virtual socket::client::ptr
+	virtual client_ptr
 	accept( ip::address::ptr &addr );
 	
 protected:
@@ -41,8 +43,7 @@ protected:
 	int
 	listen();
 	
-	service::list		m_services;
-	ip::address::ptr	m_addr;
+	ip::address::ptr m_addr;
 };
 
 
@@ -58,6 +59,8 @@ public:
 	
 	client( socket::native fd );
 	
+	client( socket::native fd, const ip::address::ptr &addr );
+	
 	virtual ~client();
 	
 	virtual int
@@ -70,13 +73,13 @@ public:
 	connect( ip::address::ptr addr, connect_reply reply );
 	
 	virtual ssize_t
-	send( const uint8_t *buf, size_t len ) const;
+	peek( std::uint8_t *buf, size_t len );
 	
 	virtual ssize_t
-	recv( uint8_t *buf, size_t len ) const;
+	recv( std::uint8_t *buf, size_t len );
 	
 	virtual ssize_t
-	peek( uint8_t *buf, size_t len ) const;
+	send( const std::uint8_t *buf, size_t len );
 	
 	ip::address::ptr
 	peer();

@@ -6,10 +6,25 @@
 
 using namespace netkit::socket;
 
+static int
+set_blocking( native fd, bool block )
+{
+#if defined( WIN32 )
+	u_long flags = block ? 0 : 1;
+
+	return ioctlsocket( fd, FIONBIO, &flags );
+#else
+	int flags = block ? fcntl( fd, F_GETFL, 0 ) & ~O_NONBLOCK : fcntl( fd, F_GETFL, 0 ) | O_NONBLOCK;
+
+	return fcntl( fd, F_SETFL, flags );
+#endif
+}
+
+
 server::server( int domain, int type )
 {
 	m_fd = ::socket( domain, type, 0 );
-	//set_blocking( false );
+	set_blocking( false );
 }
 
 
@@ -17,6 +32,13 @@ server::server( native fd )
 :
 	m_fd( fd )
 {
+}
+
+
+int
+server::set_blocking( bool block )
+{
+	return ::set_blocking( m_fd, block );
 }
 
 
@@ -47,21 +69,6 @@ client::~client()
 }
 
 
-int
-client::set_blocking( bool block )
-{
-#if defined( WIN32 )
-	u_long flags = block ? 0 : 1;
-
-	return ioctlsocket( m_fd, FIONBIO, &flags );
-#else
-	int flags = block ? fcntl( m_fd, F_GETFL, 0 ) & ~O_NONBLOCK : fcntl( m_fd, F_GETFL, 0 ) | O_NONBLOCK;
-
-	return fcntl( m_fd, F_SETFL, flags );
-#endif
-}
-
-
 void
 client::close()
 {
@@ -74,6 +81,13 @@ client::close()
 #endif
 		m_fd = null;
 	}
+}
+
+
+int
+client::set_blocking( bool block )
+{
+	return ::set_blocking( m_fd, block );
 }
 
 

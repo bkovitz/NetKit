@@ -3,7 +3,6 @@
 
 #include <NetKit/NKSource.h>
 #include <NetKit/NKSink.h>
-#include <NetKit/NKRunLoop.h>
 #include <initializer_list>
 #include <functional>
 #include <errno.h>
@@ -47,9 +46,12 @@ class server : public object
 {
 public:
 
-	typedef std::function< sink::ptr ( const std::uint8_t *buf, size_t len ) >	adopt_f;
-	typedef std::list< adopt_f >												adopters;
+	typedef std::function< sink::ptr ( source::ptr source, const std::uint8_t *buf, size_t len ) >	adopt_f;
+	typedef std::list< adopt_f >																	adopters;
 
+	int
+	set_blocking( bool block );
+	
 	void
 	bind( std::initializer_list< adopt_f > l );
 	
@@ -75,14 +77,23 @@ public:
 	int
 	set_blocking( bool block );
 	
-	virtual void
-	close();
-	
 	inline bool
 	is_open() const
 	{
 		return ( m_fd != null ) ? true : false;
 	}
+	
+	virtual ssize_t
+	peek( std::uint8_t *buf, size_t len ) = 0;
+	
+	virtual ssize_t
+	recv( std::uint8_t *buf, size_t len ) = 0;
+	
+	virtual ssize_t
+	send( const std::uint8_t *buf, size_t len ) = 0;
+	
+	virtual void
+	close();
 	
 	inline native
 	fd() const
@@ -100,7 +111,7 @@ protected:
 	
 	virtual ~client();
 
-	native		m_fd;
+	native m_fd;
 };
 
 }

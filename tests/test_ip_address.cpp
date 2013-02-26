@@ -32,10 +32,10 @@ TEST_CASE( "NetKit/ip/address/3", "ip::address tests" )
 		REQUIRE( status == 0 );
 		REQUIRE( addrs.size() > 0 );
 		
-		CFRunLoopStop( CFRunLoopGetCurrent() );
+		runloop::instance()->stop();
 	} );
 
-	CFRunLoopRun();
+	runloop::instance()->run();
 }
 
 

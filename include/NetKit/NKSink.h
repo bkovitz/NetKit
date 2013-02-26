@@ -22,10 +22,10 @@ public:
 	process() = 0;
 	
 	ssize_t
-	send( const std::uint8_t *buf, size_t len );
+	recv( std::uint8_t *buf, size_t len );
 	
 	ssize_t
-	read( std::uint8_t *buf, size_t len );
+	send( const std::uint8_t *buf, size_t len );
 	
 private:
 

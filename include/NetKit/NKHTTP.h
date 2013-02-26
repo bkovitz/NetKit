@@ -1,9 +1,8 @@
 #ifndef _netkit_http_h
 #define _netkit_http_h
 
-#include <NetKit/NKConnection.h>
 #include <NetKit/NKTCPSocket.h>
-#include <NetKit/NKService.h>
+#include <NetKit/NKProxy.h>
 #include <NetKit/NKURI.h>
 #include <NetKit/cstring.h>
 #include <sstream>
@@ -24,6 +23,9 @@ typedef smart_ptr< connection > connection_ptr;
 
 struct method
 {
+	static std::string
+	as_string( std::uint8_t val );
+	
 	static const std::uint8_t delet;
 	static const std::uint8_t get;
 	static const std::uint8_t head;
@@ -44,7 +46,7 @@ struct method
 	static const std::uint8_t mkactivity;
 	static const std::uint8_t checkout;
 	static const std::uint8_t merge;
-	static const std::uint8_t m_search;
+	static const std::uint8_t msearch;
 	static const std::uint8_t notify;
 	static const std::uint8_t subscribe;
 	static const std::uint8_t unsubscribe;
@@ -67,7 +69,7 @@ public:
 	virtual ~message();
 	
 	inline const header&
-	heade() const
+	heder() const
 	{
 		return m_header;
 	}
@@ -137,32 +139,17 @@ public:
 
 	typedef smart_ptr< request > ptr;
 
-	inline request( const std::string &uri )
-	:
-		m_uri( new netkit::uri( uri ) ),
-		m_context( NULL )
-	{
-		init();
-	}
-
-	inline request( const uri::ptr &uri )
-	:
-		m_uri( uri ),
-		m_context( NULL )
-	{
-		init();
-	}
+	request( int method, const uri::ptr &uri );
 	
-	inline request( const request &r )
-	:
-		m_uri( r.m_uri ),
-		m_method( r.m_method ),
-		m_context( r.m_context )
-	{
-		init();
-	}
+	request( const request &r );
 
 	virtual ~request();
+	
+	inline int
+	method() const
+	{
+		return m_method;
+	}
 	
 	inline const uri::ptr&
 	uri() const
@@ -170,41 +157,42 @@ public:
 		return m_uri;
 	}
 	
-	inline std::string
-	method() const
+	inline const proxy::ptr&
+	proxy() const
 	{
-		return m_method;
+		return m_proxy;
 	}
 	
 	inline void
-	set_method( const std::string &method )
+	set_proxy( const proxy::ptr &proxy )
 	{
-		m_method = method;
+		m_proxy = proxy;
 	}
-	
-	inline void*
-	context() const
-	{
-		return m_context;
-	}
-	
-	inline void
-	set_context( void *context )
-	{
-		m_context = context;
-	}
-	
+		
 	virtual void
 	send_prologue( connection_ptr conn ) const;
+	
+	inline int32_t
+	tries() const
+	{
+		return m_tries;
+	}
+	
+	inline void
+	new_try()
+	{
+		++m_tries;
+	}
 	
 private:
 
 	void
 	init();
 
-	std::string			m_method;
-	netkit::uri::ptr	m_uri;
-	void				*m_context;
+	int				m_method;
+	uri::ptr		m_uri;
+	proxy::ptr		m_proxy;
+	std::int32_t	m_tries;
 };
 
 
@@ -384,6 +372,9 @@ protected:
 	static void
 	bind( std::uint8_t method, handler::ptr handler );
 	
+	bool
+	resolve( http_parser *parser );
+	
 	static handlers				m_handlers;
 	
 	std::uint8_t				m_method;
@@ -411,189 +402,33 @@ protected:
 };
 
 
-#if 0
-
-class connection : public netkit::connection< tcp::client >
+class client : public object
 {
 public:
 
+	typedef smart_ptr< client >													ptr;
+	typedef std::function< bool ( request::ptr &request, uint32_t status ) >	auth_f;
+	typedef std::function< void ( uint32_t error, response::ptr response ) >	response_f;
 	
-
-	typedef smart_ptr< connection > ptr;
+	static request::ptr
+	request( int method, const uri::ptr &uri );
 	
-public:
-
-	connection( int type );
-
-	connection( const tcp::client::ptr &sock, int type );
+	static void
+	send( const request::ptr &request, response_f response_func );
 	
-	virtual ~connection();
-
-	void
-	set_request_will_begin_handler( request_will_begin_handler handler );
-	
-	void
-	set_response_will_begin_handler( response_will_begin_handler handler );
-	
-	void
-	set_headers_were_received_handler( headers_were_received_handler handler );
-	
-	void
-	set_body_was_received_handler( body_was_received_handler handler );
-	
-	void
-	set_message_was_received_handler( message_was_received_handler handler );
-	
-	int
-	http_major() const;
-	
-	int
-	http_minor() const;
-	
-	bool
-	send( const message_ptr &message );
+	static void
+	send( const request::ptr &request, auth_f auth_func, response_f response_func );
 	
 protected:
 
-	typedef netkit::connection< tcp::client >	super;
-	
-	typedef std::vector< std::string >			strings;
-	
-	virtual void
-	can_send_data();
-
-	virtual void
-	can_recv_data();
-
-	request_will_begin_handler			m_request_will_begin_handler;
-	response_will_begin_handler			m_response_will_begin_handler;
-	headers_were_received_handler		m_headers_were_received_handler;
-	body_was_received_handler			m_body_was_received_handler;
-	message_was_received_handler		m_message_was_received_handler;
-	
-	std::string						m_uri_value;
-	std::string						m_header_field;
-	std::string						m_header_value;
-	int									m_operation;
-	time_t								m_start;
-	bool								m_okay;
-	blob								m_body;
-	
-	enum
-	{
-		NONE = 0,
-		FIELD,
-		VALUE
-	};
-	
-	http_parser_settings		*m_settings;
-	http_parser					*m_parser;
-	int							m_parse_state;
-
-	message_ptr					m_message;
-
-	std::string					m_expect;
-	std::string					m_host;
-	std::string					m_authorization;
-	std::string					m_username;
-	std::string					m_password;
-	
-private:
-
-	static int
-	message_will_begin( http_parser *parser );
-
-	static int
-	uri_was_received( http_parser *parser, const char *buf, size_t len );
-
-	static int
-	header_field_was_received( http_parser *parser, const char *buf, size_t len );
-
-	static int
-	header_value_was_received( http_parser *parser, const char *buf, size_t len );
-	
-	static int
-	headers_were_received( http_parser *parser );
-	
-	static int
-	body_was_received( http_parser *parser, const char *buf, size_t len );
-	
-	static int
-	message_was_received( http_parser *parser );
-	
-	bool
-	build_message();
-	
-	void
-	init( int type );
-};
-
-#endif
-
-
-#if 0
-class service : public netkit::service
-{
-public:
-
-	class handler
-	{
-	public:
-	
-		virtual request_ptr
-		message_will_begin( const uri::ptr &uri ) = 0;
-	
-		virtual int
-		headers_were_received( connection::ptr conn, request_ptr &request ) = 0;
-		
-		virtual int
-		message_was_received( connection::ptr conn, request_ptr &request ) = 0;
-	};
-	
-public:
-
-	typedef smart_ptr< service > ptr;
-	
-	service();
-	
-	virtual ~service();
-	
-	void
-	set_handler( const std::string &path, handler *handler );
-
-protected:
-
-	typedef std::deque< std::pair< std::string, handler* > > handlers;
-
-	typedef std::list< connection::ptr > connections;
-	
-	virtual bool
-	adopt( const socket::ptr &sock, uint8_t *peek, size_t len );
-	
-	connections m_connections;
-	handlers	m_handlers;
-};
-
-#endif
-
-
-class client : public connection
-{
-public:
-
-	typedef smart_ptr< client > ptr;
-	
-	client();
+	client( const request::ptr &request, auth_f auth_func, response_f response_func );
 	
 	virtual ~client();
 	
-	void
-	send( const request::ptr &request, response_f func );
-	
-protected:
-
-	uri::ptr	m_uri;
-	response_f	m_response;
+	request::ptr	m_request;
+	response::ptr	m_response;
+	auth_f			m_auth_func;
+	response_f		m_response_func;
 };
 
 
@@ -650,10 +485,10 @@ enum class status
 	webifDisabled					/* Web interface is disabled @private@ */
 };
 
-inline connection::ptr&
-endl( connection::ptr &conn )
+inline connection&
+endl( connection &conn )
 {
-	//conn << "\r\n";
+	conn << "\r\n";
 	return conn;
 }
 

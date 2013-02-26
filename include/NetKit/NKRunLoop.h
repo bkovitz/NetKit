@@ -2,7 +2,9 @@
 #define _netkit_runloop_h
 
 #include <NetKit/NKObject.h>
+#include <NetKit/NKSocket.h>
 #include <functional>
+#include <ctime>
 
 namespace netkit {
 
@@ -10,6 +12,8 @@ class runloop : public object
 {
 public:
 
+	typedef void *source;
+	
 	enum class event
 	{
 		connect		= ( 1 << 0 ),
@@ -22,17 +26,26 @@ public:
 	
 	typedef smart_ptr< runloop > ptr;
 
-	typedef std::function< void ( void ) >		handler_f;
-	typedef std::function< bool ( event e ) >	event_handler_f;
+	typedef std::function< void ( void ) >				dispatch_f;
+	typedef std::function< void ( source s, event e ) >	event_f;
 
 	static runloop::ptr
 	instance();
 	
-	virtual void
-	register_for_event( object::ptr obj, event e, event_handler_f h ) = 0;
+	virtual source
+	create_source( int fd, event e, event_f f ) = 0;
+	
+	virtual source
+	create_source( std::time_t time, event_f f ) = 0;
 	
 	virtual void
-	dispatch_on_main_thread( handler_f b ) = 0;
+	schedule( source s ) = 0;
+	
+	virtual void
+	cancel( source s ) = 0;
+	
+	virtual void
+	dispatch_on_main_thread( dispatch_f f ) = 0;
 
 	virtual void
 	run() = 0;

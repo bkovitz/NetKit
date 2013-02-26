@@ -16,12 +16,14 @@ sink::~sink()
 
 
 ssize_t
-sink::send( const std::uint8_t *buf, size_t len )
+sink::recv( std::uint8_t *buf, size_t len )
 {
+	return m_source->recv( buf, len );
 }
 
-	
+
 ssize_t
-sink::read( std::uint8_t *buf, size_t len )
+sink::send( const std::uint8_t *buf, size_t len )
 {
+	return m_source->send( buf, len );
 }
