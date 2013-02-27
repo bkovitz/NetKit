@@ -142,26 +142,20 @@ value::object()
 }
 
 
-value::value( json_t *impl )
+value::value( json_t *impl, bool strong_ref )
 :
 	m_impl( impl )
 {
+	if ( !strong_ref )
+	{
+		json_incref( m_impl );
+	}
 }
 
 
-value::value( const value &that )
-:
-	m_impl( that.m_impl )
-{
-	json_incref( m_impl );
-}
-
-	
 value::~value()
 {
-	fprintf( stderr, "in value::~value( this = 0x%lx, impl = 0x%lx, impl refs = %ld )\n", this, m_impl, m_impl->refcount );
-	//json_decref( m_impl );
-	fprintf( stderr, "finished with decref\n" );
+	json_decref( m_impl );
 }
 
 	
@@ -407,7 +401,7 @@ value::operator[]( size_t index )
 		
 		if ( impl )
 		{
-			ret = new value( impl );
+			ret = new value( impl, false );
 		}
 	}
 	
@@ -426,7 +420,7 @@ value::operator[]( int index )
 		
 		if ( impl )
 		{
-			ret = new value( impl );
+			ret = new value( impl, false );
 		}
 	}
 	
@@ -445,7 +439,7 @@ value::operator[]( size_t index ) const
 		
 		if ( impl )
 		{
-			ret = new value( impl );
+			ret = new value( impl, false );
 		}
 	}
 	
@@ -464,7 +458,7 @@ value::operator[]( int index ) const
 		
 		if ( impl )
 		{
-			ret = new value( impl );
+			ret = new value( impl, false );
 		}
 	}
 	
@@ -500,7 +494,7 @@ value::get( size_t index, const value::ptr &defaultValue ) const
 		
 		if ( impl )
 		{
-			ret = value::ptr( new value( impl ) );
+			ret = new value( impl, false );
 		}
 	}
 	
@@ -550,7 +544,7 @@ value::operator[]( const char *key )
 		
 		if ( impl )
 		{
-			ret = new value( impl );
+			ret = new value( impl, false );
 		}
 	}
 	
@@ -569,7 +563,7 @@ value::operator[]( const char *key ) const
 		
 		if ( impl )
 		{
-			ret = new value( impl );
+			ret = new value( impl, false );
 		}
 	}
 	
@@ -588,7 +582,7 @@ value::operator[]( const std::string &key )
 		
 		if ( impl )
 		{
-			ret = new value( impl );
+			ret = new value( impl, false );
 		}
 	}
 	
@@ -607,7 +601,7 @@ value::operator[]( const std::string &key ) const
 		
 		if ( impl )
 		{
-			ret = new value( impl );
+			ret = new value( impl, false );
 		}
 	}
 	
@@ -626,7 +620,7 @@ value::get( const char *key, const value::ptr &defaultValue ) const
 		
 		if ( impl )
 		{
-			ret = new value( impl );
+			ret = new value( impl, false );
 		}
 	}
 	
@@ -645,7 +639,7 @@ value::get( const std::string &key, const value::ptr &defaultValue ) const
 		
 		if ( impl )
 		{
-			ret = new value( impl );
+			ret = new value( impl, false );
 		}
 	}
 	

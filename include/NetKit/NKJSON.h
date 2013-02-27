@@ -197,7 +197,7 @@ public:
 	
 protected:
 
-	value( json_t *impl );
+	value( json_t *impl, bool strong_ref = true );
 	
 	value( const value &that );
 	
