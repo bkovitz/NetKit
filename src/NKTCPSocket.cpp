@@ -451,7 +451,7 @@ client::tls_puts( BIO *h, const char *str )
 {
 	client *self = reinterpret_cast< client* >( h->ptr );
 	
-	return ( int ) ( ::send( self->m_fd, ( const buf_t ) str, ( int ) strlen( str ), 0 ) );
+	return ( int ) ( ::send( self->m_fd, ( const std::uint8_t* ) str, ( int ) strlen( str ), 0 ) );
 }
 
 
@@ -461,7 +461,7 @@ client::tls_read( BIO *h, char *buf, int size )
 	client	*self = reinterpret_cast< client* >( h->ptr );
 	int				ret;
 
-	ret = ( int ) ::recv( self->m_fd, ( buf_t ) buf, size, 0 );
+	ret = ( int ) ::recv( self->m_fd, ( std::uint8_t* ) buf, size, 0 );
 
 	return ret;
 }
@@ -473,7 +473,7 @@ client::tls_write(BIO *h, const char *buf, int num )
 	client	*self = reinterpret_cast< client* >( h->ptr );
 	int				ret;
 
-	ret = ( int ) ::send( self->m_fd, ( const buf_t ) buf, num, 0 );
+	ret = ( int ) ::send( self->m_fd, ( const std::uint8_t* ) buf, num, 0 );
 
 	return ret;
 }

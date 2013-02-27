@@ -54,6 +54,58 @@ struct method
 	static const std::uint8_t purge;
 };
 
+enum class status
+{
+	error					= -1,
+	cont					= 100,
+	switching_protocols,
+	ok						= 200,
+	created,
+	accepted,
+	not_authoritative,
+	no_content,
+	reset_content,
+	partial_content,
+
+	multiple_choices		= 300,
+	moved_permanently,
+	moved_temporarily,
+	see_other,
+	not_modified,
+	use_proxy,
+
+	bad_request				= 400,
+	unauthorized,
+	payment_required,
+	forbidden,
+	not_found,
+	method_not_allowed,
+	not_acceptable,
+	proxy_authentication,
+	request_timeout,
+	conflict,
+	gone,
+	length_required,
+	precondition,
+	request_too_large,
+	uri_too_long,
+	unsupported_media_type,
+	requested_range,
+	expectation_failed,
+	upgrade_required		= 426,
+
+	server_error			= 500,
+	not_implemented,
+	bad_gateway,
+	service_unavailable,
+	gateway_timeout,
+	not_supported,
+
+	authorized_cancelled	= 1000,
+	pki_error,
+	webif_disabled
+};
+
 class message : public object
 {
 public:
@@ -82,6 +134,9 @@ public:
 
 	virtual void
 	add_to_header( const std::string &key, const std::string &val );
+	
+	virtual void
+	remove_from_header( const std::string &key );
 	
 	inline const std::string&
 	content_type() const
@@ -262,7 +317,7 @@ public:
 	process();
 	
 	bool
-	put( const message::ptr &message );
+	put( message::ptr message );
 	
 	int
 	http_major() const;
@@ -384,7 +439,7 @@ protected:
 	handler::ptr				m_handler;
 	time_t						m_start;
 	bool						m_okay;
-	blob						m_body;
+	std::vector< std::uint8_t >	m_body;
 	
 	http_parser_settings		*m_settings;
 	http_parser					*m_parser;
@@ -432,58 +487,7 @@ protected:
 };
 
 
-enum class status
-{
-	error				= -1,		/* An error response from httpXxxx() */
-	cont				= 100,		/* Everything OK, keep going... */
-	switchingProtocols,				/* HTTP upgrade to TLS/SSL */
 
-	ok					= 200,		/* OPTIONS/GET/HEAD/POST/TRACE command was successful */
-	created,						/* PUT command was successful */
-	accepted,						/* DELETE command was successful */
-	notAuthoritative,				/* Information isn't authoritative */
-	noContent,						/* Successful command, no new data */
-	resetContent,					/* Content was reset/recreated */
-	partialContent,					/* Only a partial file was recieved/sent */
-
-	multipleChoices		= 300,		/* Multiple files match request */
-	movedPermanently,				/* Document has moved permanently */
-	movedTemporarily,				/* Document has moved temporarily */
-	seeOther,						/* See this other link... */
-	notModified,					/* File not modified */
-	useProxy,						/* Must use a proxy to access this URI */
-
-	badRequest			= 400,		/* Bad request */
-	unauthorized,					/* Unauthorized to access host */
-	paymentRequired,				/* Payment required */
-	forbidden,						/* Forbidden to access this URI */
-	notFound,						/* URI was not found */
-	methodNotAllowed,				/* Method is not allowed */
-	notAcceptable,					/* Not Acceptable */
-	proxyAuthentication,			/* Proxy Authentication is Required */
-	requestTimeout,					/* Request timed out */
-	conflict,						/* Request is self-conflicting */
-	gone,							/* Server has gone away */
-	lengthRequired,					/* A content length or encoding is required */
-	precondition,					/* Precondition failed */
-	requestTooLarge,				/* Request entity too large */
-	uriTooLong,						/* URI too long */
-	unsupportedMediaType,			/* The requested media type is unsupported */
-	requestedRange,					/* The requested range is not satisfiable */
-	expectationFailed,				/* The expectation given in an Expect header field was not met */
-	upgradeRequired		= 426,		/* Upgrade to SSL/TLS required */
-
-	serverError			= 500,		/* Internal server error */
-	notImplemented,					/* Feature not implemented */
-	badGateway,						/* Bad gateway */
-	serviceUnavailable,				/* Service is unavailable */
-	gatewayTimeout,					/* Gateway connection timed out */
-	notSupported,					/* HTTP version not supported */
-
-	authorizedCancelled	= 1000,		/* User canceled authorization @since CUPS 1.4@ */
-	pkiError,						/* Error negotiating a secure connection @since CUPS 1.5/Mac OS X 10.7@ */
-	webifDisabled					/* Web interface is disabled @private@ */
-};
 
 inline connection&
 endl( connection &conn )

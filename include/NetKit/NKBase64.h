@@ -1,10 +1,10 @@
 #ifndef _netkit_base64_h
 #define _netkit_base64_h
 
-#include <NetKit/NKTypes.h>
 #include <string>
 
 namespace netkit {
+
 namespace codec {
 
 class base64
@@ -19,6 +19,7 @@ public:
 };
 
 }
+
 }
 
 #endif

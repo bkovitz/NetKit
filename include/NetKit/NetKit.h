@@ -1,7 +1,6 @@
 #ifndef _netkit_netkit_h
 #define _netkit_netkit_h
 
-#include <NetKit/NKTypes.h>
 #include <NetKit/NKObject.h>
 #include <NetKit/NKURI.h>
 #include <NetKit/NKIPAddress.h>

@@ -1,6 +1,5 @@
 #include <NetKit/NKJSONRPC.h>
 #include <NetKit/NKRunLoop.h>
-#include <NetKit/NKTypes.h>
 #include <NetKit/NKPlatform.h>
 
 using namespace netkit::jsonrpc;
@@ -49,7 +48,7 @@ connection::data_notification( socket::ptr sock, int event, void *context )
 			self->add( self->size() );
 		}
 		
-		num = self->recv( ( buf_t ) self->m_eptr, self->numBytesUnused(), 0 );
+		num = self->recv( ( std::uint8_t* ) self->m_eptr, self->numBytesUnused(), 0 );
 	
 		if ( num > 0 )
 		{
@@ -120,7 +119,7 @@ connection::send( Json::Value &value )
 
     while ( bytes_left )
     {
-		ssize_t num = socket::send( ( const buf_t ) msg.c_str() + bytes_written, bytes_left, 0 );
+		ssize_t num = socket::send( ( const std::uint8_t* ) msg.c_str() + bytes_written, bytes_left, 0 );
 
 		if ( num > 0 )
 		{

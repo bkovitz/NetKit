@@ -24,9 +24,6 @@
 #	define TEXT( X ) X
 #endif
 
-using namespace netkit::http;
-
-
 #if defined(WIN32)
 
 #	include <winspool.h>
@@ -35,41 +32,9 @@ using namespace netkit::http;
 #	include <string.h>
 #	define strcasecmp _stricmp
 
-/*
- * Appends src to string dst of size siz (unlike strncat, siz is the
- * full size of dst, not space left).  At most siz-1 characters
- * will be copied.  Always NUL terminates (unless siz <= strlen(dst)).
- * Returns strlen(initial dst) + strlen(src); if retval >= siz,
- * truncation occurred.
- */
-static size_t
-strlcat( char *dst, const char *src, size_t siz)
-{
-	register char *d = dst;
-	register const char *s = src;
-	register size_t n = siz;
-	size_t dlen;
-
-	/* Find the end of dst and adjust bytes left but don't go past end */
-	while (n-- != 0 && *d != '\0')
-		d++;
-	dlen = d - dst;
-	n = siz - dlen;
-
-	if (n == 0)
-		return(dlen + strlen(s));
-	while (*s != '\0') {
-		if (n != 1) {
-			*d++ = *s;
-			n--;
-		}
-		s++;
-	}
-	*d = '\0';
-
-	return(dlen + (s - src));	/* count does not include NUL */
-}
 #endif
+
+using namespace netkit::http;
 
 #if defined( __APPLE__ )
 #	pragma mark method implementation
@@ -114,6 +79,9 @@ method::as_string( std::uint8_t val )
 #endif
 
 message::message()
+:
+	m_content_type( "text/plain" ),
+	m_content_length( 0 )
 {
 }
 	
@@ -155,6 +123,20 @@ message::add_to_header( const std::string &key, const std::string &val )
 	else if ( key == TEXT( "Content-Type" ) )
 	{
 		m_content_type = val;
+	}
+}
+
+
+void
+message::remove_from_header( const std::string &key )
+{
+	for ( auto it = m_header.begin(); it != m_header.end(); it++ )
+	{
+		if ( it->first == key )
+		{
+			m_header.erase( it );
+			break;
+		}
 	}
 }
 
@@ -474,9 +456,20 @@ connection::adopt( source::ptr source, const std::uint8_t *buf, size_t len )
 
 
 bool
-connection::put( const message::ptr &message )
+connection::put( message::ptr message )
 {
+	auto len = message->body().size();
+	
 	message->send_prologue( this );
+	
+	if ( len > 0 )
+	{
+		message->add_to_header( "Content-Length", ( int ) len );
+	}
+	else
+	{
+		message->remove_from_header( "Content-Length" );
+	}
 
 	for ( message::header::const_iterator it = message->heder().begin(); it != message->heder().end(); it++ )
 	{
@@ -551,7 +544,7 @@ connection::process()
 	while ( 1 )
 	{
 		memset( buf, 0, sizeof( buf ) );
-		num = recv( ( buf_t ) buf, sizeof( buf ) );
+		num = recv( ( std::uint8_t* ) buf, sizeof( buf ) );
 
 		if ( num > 0 )
 		{
@@ -701,9 +694,6 @@ exit:
 }
 
 
-
-
-
 int
 connection::header_field_was_received( http_parser *parser, const char *buf, size_t len )
 {
@@ -719,7 +709,13 @@ connection::header_field_was_received( http_parser *parser, const char *buf, siz
 			{
 				if ( !self->resolve( parser ) )
 				{
-					// return 404
+					response::ptr response = new http::response( 404 );
+					response->add_to_header( "Connection", "Close" );
+					response->add_to_header( "Content-Type", "text/html" );
+					*response << "<html>Error 404: Content Not Found</html>";
+					self->put( response );
+					ret = -1;
+					goto exit;
 				}
 			}
 			
@@ -882,7 +878,7 @@ string( status code )
 		}
 		break;
 
-		case status::switchingProtocols:
+		case status::switching_protocols:
 		{
 			static std::string s( "Error" );
 			return s;
@@ -910,71 +906,28 @@ string( status code )
 		}
 		break;
 
-		case status::notAuthoritative:
+		case status::not_authoritative:
 		{
 			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
-		case status::noContent:
+		case status::no_content:
 		{
 			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
-		case status::resetContent:
+		case status::reset_content:
 		{
 			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
-		case status::partialContent:
-		{
-			static std::string s( "Error" );
-			return s;
-		}
-		break;
-
-
-		case status::multipleChoices:
-		{
-			static std::string s( "Error" );
-			return s;
-		}
-		break;
-
-		case status::movedPermanently:
-		{
-			static std::string s( "Error" );
-			return s;
-		}
-		break;
-
-		case status::movedTemporarily:
-		{
-			static std::string s( "Error" );
-			return s;
-		}
-		break;
-
-		case status::seeOther:
-		{
-			static std::string s( "Error" );
-			return s;
-		}
-		break;
-
-		case status::notModified:
-		{
-			static std::string s( "Error" );
-			return s;
-		}
-		break;
-
-		case status::useProxy:
+		case status::partial_content:
 		{
 			static std::string s( "Error" );
 			return s;
@@ -982,7 +935,49 @@ string( status code )
 		break;
 
 
-		case status::badRequest:
+		case status::multiple_choices:
+		{
+			static std::string s( "Error" );
+			return s;
+		}
+		break;
+
+		case status::moved_permanently:
+		{
+			static std::string s( "Error" );
+			return s;
+		}
+		break;
+
+		case status::moved_temporarily:
+		{
+			static std::string s( "Error" );
+			return s;
+		}
+		break;
+
+		case status::see_other:
+		{
+			static std::string s( "Error" );
+			return s;
+		}
+		break;
+
+		case status::not_modified:
+		{
+			static std::string s( "Error" );
+			return s;
+		}
+		break;
+
+		case status::use_proxy:
+		{
+			static std::string s( "Error" );
+			return s;
+		}
+		break;
+
+		case status::bad_request:
 		{
 			static std::string s( "Error" );
 			return s;
@@ -996,7 +991,7 @@ string( status code )
 		}
 		break;
 
-		case status::paymentRequired:
+		case status::payment_required:
 		{
 			static std::string s( "Error" );
 			return s;
@@ -1010,35 +1005,35 @@ string( status code )
 		}
 		break;
 
-		case status::notFound:
+		case status::not_found:
 		{
 			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
-		case status::methodNotAllowed:
+		case status::method_not_allowed:
 		{
 			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
-		case status::notAcceptable:
+		case status::not_acceptable:
 		{
 			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
-		case status::proxyAuthentication:
+		case status::proxy_authentication:
 		{
 			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
-		case status::requestTimeout:
+		case status::request_timeout:
 		{
 			static std::string s( "Error" );
 			return s;
@@ -1059,7 +1054,7 @@ string( status code )
 		}
 		break;
 
-		case status::lengthRequired:
+		case status::length_required:
 		{
 			static std::string s( "Error" );
 			return s;
@@ -1073,112 +1068,110 @@ string( status code )
 		}
 		break;
 
-		case status::requestTooLarge:
+		case status::request_too_large:
 		{
 			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
-		case status::uriTooLong:
+		case status::uri_too_long:
 		{
 			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
-		case status::unsupportedMediaType:
+		case status::unsupported_media_type:
 		{
 			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
-		case status::requestedRange:
+		case status::requested_range:
 		{
 			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
-		case status::expectationFailed:
+		case status::expectation_failed:
 		{
 			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
-		case status::upgradeRequired:
+		case status::upgrade_required:
 		{
 			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
-		case status::serverError:
+		case status::server_error:
 		{
 			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
-		case status::notImplemented:
+		case status::not_implemented:
 		{
 			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
-		case status::badGateway:
+		case status::bad_gateway:
 		{
 			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
-		case status::serviceUnavailable:
+		case status::service_unavailable:
 		{
 			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
-		case status::gatewayTimeout:
+		case status::gateway_timeout:
 		{
 			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
-		case status::notSupported:
+		case status::not_supported:
 		{
 			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
-
-		case status::authorizedCancelled:
+		case status::authorized_cancelled:
 		{
 			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
-		case status::pkiError:
+		case status::pki_error:
 		{
 			static std::string s( "Error" );
 			return s;
 		}
 		break;
 
-		case status::webifDisabled:
+		case status::webif_disabled:
 		{
 			static std::string s( "Error" );
 			return s;
 		}
 		break;
-
 
 		default:
 		{

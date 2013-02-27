@@ -40,7 +40,6 @@
 		D23DF56D15F698F90027A8F1 /* NKSmartPtr.h in Headers */ = {isa = PBXBuildFile; fileRef = D23DF55515F698F90027A8F1 /* NKSmartPtr.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D23DF56E15F698F90027A8F1 /* NKTCPSocket.h in Headers */ = {isa = PBXBuildFile; fileRef = D23DF55615F698F90027A8F1 /* NKTCPSocket.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D23DF57015F698F90027A8F1 /* NKSocket.h in Headers */ = {isa = PBXBuildFile; fileRef = D23DF55815F698F90027A8F1 /* NKSocket.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		D23DF57215F698F90027A8F1 /* NKTypes.h in Headers */ = {isa = PBXBuildFile; fileRef = D23DF55A15F698F90027A8F1 /* NKTypes.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D23DF57315F698F90027A8F1 /* NKXMPP.h in Headers */ = {isa = PBXBuildFile; fileRef = D23DF55B15F698F90027A8F1 /* NKXMPP.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D23DF57C15F69C4F0027A8F1 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D23DF52E15F698390027A8F1 /* Foundation.framework */; };
 		D23DF57E15F69D1E0027A8F1 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D23DF57D15F69D1E0027A8F1 /* CoreFoundation.framework */; };
@@ -207,7 +206,6 @@
 		D23DF55515F698F90027A8F1 /* NKSmartPtr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NKSmartPtr.h; path = include/NetKit/NKSmartPtr.h; sourceTree = "<group>"; };
 		D23DF55615F698F90027A8F1 /* NKTCPSocket.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NKTCPSocket.h; path = include/NetKit/NKTCPSocket.h; sourceTree = "<group>"; };
 		D23DF55815F698F90027A8F1 /* NKSocket.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NKSocket.h; path = include/NetKit/NKSocket.h; sourceTree = "<group>"; };
-		D23DF55A15F698F90027A8F1 /* NKTypes.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NKTypes.h; path = include/NetKit/NKTypes.h; sourceTree = "<group>"; };
 		D23DF55B15F698F90027A8F1 /* NKXMPP.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NKXMPP.h; path = include/NetKit/NKXMPP.h; sourceTree = "<group>"; };
 		D23DF57D15F69D1E0027A8F1 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
 		D23DF57F15F69D300027A8F1 /* NKLog.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = NKLog.cpp; path = src/Mac/NKLog.cpp; sourceTree = "<group>"; };
@@ -437,7 +435,6 @@
 				D239D37F16D69451007FB101 /* NKSource.h */,
 				D23DF5BD15F6D5490027A8F1 /* NKTCPSocket.cpp */,
 				D23DF55615F698F90027A8F1 /* NKTCPSocket.h */,
-				D23DF55A15F698F90027A8F1 /* NKTypes.h */,
 				D23DF5D715F964C10027A8F1 /* NKURI.cpp */,
 				D23DF5D815F964C20027A8F1 /* NKURI.h */,
 				D2E25BAC16701A88009C6073 /* Database */,
@@ -583,7 +580,6 @@
 				D23DF56D15F698F90027A8F1 /* NKSmartPtr.h in Headers */,
 				D23DF56E15F698F90027A8F1 /* NKTCPSocket.h in Headers */,
 				D23DF57015F698F90027A8F1 /* NKSocket.h in Headers */,
-				D23DF57215F698F90027A8F1 /* NKTypes.h in Headers */,
 				D23DF57315F698F90027A8F1 /* NKXMPP.h in Headers */,
 				D23DF58815F69F980027A8F1 /* NKLog.h in Headers */,
 				D23DF58A15F6A3040027A8F1 /* (null) in Headers */,

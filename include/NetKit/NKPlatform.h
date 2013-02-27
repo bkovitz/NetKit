@@ -1,7 +1,6 @@
 #ifndef _netkit_platform_h
 #define _netkit_platform_h
 
-#include <NetKit/NKTypes.h>
 #include <string>
 
 #if defined( WIN32 )

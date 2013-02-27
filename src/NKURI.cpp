@@ -1,6 +1,5 @@
 #include "NKURI.h"
 #include "cstring.h"
-#include "NKTypes.h"
 #include <uriparser/Uri.h>
 #include <string>
 #include <algorithm>
@@ -193,7 +192,7 @@ uri::assign( const std::string& s )
 		
 		temp.assign( path->text.first, path->text.afterLast - path->text.first );
 		temp = decode( temp );
-		m_path += TEXT( "/" ) + temp;
+		m_path += "/" + temp;
 	}
 	
 	m_query.assign( uri.query.first, uri.query.afterLast - uri.query.first );

@@ -4,7 +4,6 @@
 #include <NetKit/NKSmartPtr.h>
 #include <NetKit/NKObject.h>
 #include <NetKit/NKURI.h>
-#include <NetKit/NKTypes.h>
 #include <NetKit/NKError.h>
 #include <memory>
 #include <string>

@@ -3,7 +3,6 @@
 
 #include <NetKit/NKSocket.h>
 #include <NetKit/NKIPAddress.h>
-#include <NetKit/NKTypes.h>
 #include <openssl/ssl.h>
 #include <string>
 #include <deque>

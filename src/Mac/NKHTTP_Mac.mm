@@ -49,6 +49,8 @@ client_mac::event_callback( CFReadStreamRef stream, CFStreamEventType event, voi
 {
 	client_mac *self = reinterpret_cast< client_mac* >( context );
 	
+	nklog( log::verbose, "in event_callback: event = %d", event );
+
 	switch ( event )
 	{
 		case kCFStreamEventHasBytesAvailable:
@@ -60,9 +62,7 @@ client_mac::event_callback( CFReadStreamRef stream, CFStreamEventType event, voi
 			
 			if ( num )
 			{
-				std::size_t old_size = self->m_response->body().size();
-				self->m_response->body().resize( old_size + num );
-				memcpy( &self->m_response->body()[ old_size ], buf, num );
+				self->m_response->write( buf, num );
 			}
 			else if ( num < 0 )
 			{

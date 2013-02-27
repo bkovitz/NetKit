@@ -15,8 +15,6 @@ TEST_CASE( "NetKit/http/server/1", "http server tests" )
 	{
 		http::response::ptr response = new http::response( 200 );
 		
-		response->add_to_header( "Content-Length", 5 );
-		
 		*response << "hello";
 		
 		func( response );
@@ -58,7 +56,8 @@ TEST_CASE( "NetKit/http/server/2", "http server tests" )
 	
 	http::client::send( request, [&]( int32_t error, const http::response::ptr &response )
 	{
-		REQUIRE( response->status() == 200 );
+		REQUIRE( response->status() == 404 );
+		runloop::instance()->stop();
 	} );
 	
 	runloop::instance()->run();
