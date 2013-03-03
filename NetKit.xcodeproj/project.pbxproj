@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D2033DC316E1811000DBE69B /* NKOutputFilter.h in Headers */ = {isa = PBXBuildFile; fileRef = D2033DC116E1811000DBE69B /* NKOutputFilter.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D2033DC416E1811000DBE69B /* NKUnicode.h in Headers */ = {isa = PBXBuildFile; fileRef = D2033DC216E1811000DBE69B /* NKUnicode.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D2033DC616E1813C00DBE69B /* NKUnicode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D2033DC516E1813C00DBE69B /* NKUnicode.cpp */; };
 		D20D20FF1608FF2B0037A994 /* NKOAuth.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D20D20FC1608FF2B0037A994 /* NKOAuth.cpp */; };
 		D20D21011608FF2B0037A994 /* NKXMPP.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D20D20FE1608FF2B0037A994 /* NKXMPP.cpp */; };
 		D20D21051608FF4F0037A994 /* NKOAuth.h in Headers */ = {isa = PBXBuildFile; fileRef = D20D21031608FF4F0037A994 /* NKOAuth.h */; };
@@ -65,21 +68,6 @@
 		D254EFC016C43DA500851E44 /* NKPlatform.h in Headers */ = {isa = PBXBuildFile; fileRef = D254EFBB16C43DA500851E44 /* NKPlatform.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D254EFC116C43DA500851E44 /* NKRunLoop.h in Headers */ = {isa = PBXBuildFile; fileRef = D254EFBC16C43DA500851E44 /* NKRunLoop.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D254EFC616C43DB500851E44 /* NKJSON.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D254EFC316C43DB500851E44 /* NKJSON.cpp */; };
-		D254F06616C4468A00851E44 /* dump.c in Sources */ = {isa = PBXBuildFile; fileRef = D254F05716C4468A00851E44 /* dump.c */; };
-		D254F06716C4468A00851E44 /* error.c in Sources */ = {isa = PBXBuildFile; fileRef = D254F05816C4468A00851E44 /* error.c */; };
-		D254F06816C4468A00851E44 /* hashtable.c in Sources */ = {isa = PBXBuildFile; fileRef = D254F05916C4468A00851E44 /* hashtable.c */; };
-		D254F06916C4468A00851E44 /* hashtable.h in Headers */ = {isa = PBXBuildFile; fileRef = D254F05A16C4468A00851E44 /* hashtable.h */; };
-		D254F06A16C4468A00851E44 /* jansson_private.h in Headers */ = {isa = PBXBuildFile; fileRef = D254F05B16C4468A00851E44 /* jansson_private.h */; };
-		D254F06B16C4468A00851E44 /* jansson.h in Headers */ = {isa = PBXBuildFile; fileRef = D254F05C16C4468A00851E44 /* jansson.h */; };
-		D254F06C16C4468A00851E44 /* load.c in Sources */ = {isa = PBXBuildFile; fileRef = D254F05D16C4468A00851E44 /* load.c */; };
-		D254F06D16C4468A00851E44 /* memory.c in Sources */ = {isa = PBXBuildFile; fileRef = D254F05E16C4468A00851E44 /* memory.c */; };
-		D254F06E16C4468A00851E44 /* pack_unpack.c in Sources */ = {isa = PBXBuildFile; fileRef = D254F05F16C4468A00851E44 /* pack_unpack.c */; };
-		D254F06F16C4468A00851E44 /* strbuffer.c in Sources */ = {isa = PBXBuildFile; fileRef = D254F06016C4468A00851E44 /* strbuffer.c */; };
-		D254F07016C4468A00851E44 /* strbuffer.h in Headers */ = {isa = PBXBuildFile; fileRef = D254F06116C4468A00851E44 /* strbuffer.h */; };
-		D254F07116C4468A00851E44 /* strconv.c in Sources */ = {isa = PBXBuildFile; fileRef = D254F06216C4468A00851E44 /* strconv.c */; };
-		D254F07216C4468A00851E44 /* utf.c in Sources */ = {isa = PBXBuildFile; fileRef = D254F06316C4468A00851E44 /* utf.c */; };
-		D254F07316C4468A00851E44 /* utf.h in Headers */ = {isa = PBXBuildFile; fileRef = D254F06416C4468A00851E44 /* utf.h */; };
-		D254F07416C4468A00851E44 /* value.c in Sources */ = {isa = PBXBuildFile; fileRef = D254F06516C4468A00851E44 /* value.c */; };
 		D26F050A15FA5BA5003F7389 /* UriCommon.c in Sources */ = {isa = PBXBuildFile; fileRef = D26F04F815FA5BA5003F7389 /* UriCommon.c */; };
 		D26F050B15FA5BA5003F7389 /* UriCommon.h in Headers */ = {isa = PBXBuildFile; fileRef = D26F04F915FA5BA5003F7389 /* UriCommon.h */; };
 		D26F050C15FA5BA5003F7389 /* UriCompare.c in Sources */ = {isa = PBXBuildFile; fileRef = D26F04FA15FA5BA5003F7389 /* UriCompare.c */; };
@@ -109,7 +97,6 @@
 		D2740F3D15FBAA8600589649 /* NetKit.h in Headers */ = {isa = PBXBuildFile; fileRef = D2740F3C15FBAA8600589649 /* NetKit.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D2A8BA41162BC0B900D0C09A /* libxml2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D2A8BA40162BC0B900D0C09A /* libxml2.dylib */; };
 		D2A8BA43162BC15000D0C09A /* test_xml.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D2A8BA42162BC15000D0C09A /* test_xml.cpp */; };
-		D2AE754116C44A60002DF1FB /* libjansson.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D254EFCF16C4457700851E44 /* libjansson.a */; };
 		D2AE754316C44AA2002DF1FB /* test_json.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D2AE754216C44AA2002DF1FB /* test_json.cpp */; };
 		D2E25B9A16701A45009C6073 /* NKDatabase.h in Headers */ = {isa = PBXBuildFile; fileRef = D2E25B9516701A45009C6073 /* NKDatabase.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D2E25B9B16701A45009C6073 /* NKXMLAttribute.h in Headers */ = {isa = PBXBuildFile; fileRef = D2E25B9616701A45009C6073 /* NKXMLAttribute.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -147,13 +134,6 @@
 			remoteGlobalIDString = D23DF52515F698390027A8F1;
 			remoteInfo = NetKit;
 		};
-		D254EFD416C445D600851E44 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = D23DF51C15F698390027A8F1 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = D254EFCE16C4457700851E44;
-			remoteInfo = jansson;
-		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -169,6 +149,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		D2033DC116E1811000DBE69B /* NKOutputFilter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NKOutputFilter.h; path = include/NetKit/NKOutputFilter.h; sourceTree = "<group>"; };
+		D2033DC216E1811000DBE69B /* NKUnicode.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NKUnicode.h; path = include/NetKit/NKUnicode.h; sourceTree = "<group>"; };
+		D2033DC516E1813C00DBE69B /* NKUnicode.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = NKUnicode.cpp; path = src/NKUnicode.cpp; sourceTree = "<group>"; };
 		D20D20FC1608FF2B0037A994 /* NKOAuth.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = NKOAuth.cpp; path = src/NKOAuth.cpp; sourceTree = "<group>"; };
 		D20D20FE1608FF2B0037A994 /* NKXMPP.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = NKXMPP.cpp; path = src/NKXMPP.cpp; sourceTree = "<group>"; };
 		D20D21031608FF4F0037A994 /* NKOAuth.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NKOAuth.h; path = include/NetKit/NKOAuth.h; sourceTree = "<group>"; };
@@ -231,22 +214,6 @@
 		D254EFBC16C43DA500851E44 /* NKRunLoop.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NKRunLoop.h; path = include/NetKit/NKRunLoop.h; sourceTree = "<group>"; };
 		D254EFC316C43DB500851E44 /* NKJSON.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = NKJSON.cpp; path = src/NKJSON.cpp; sourceTree = "<group>"; };
 		D254EFC416C43DB500851E44 /* NKJSONRPC.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = NKJSONRPC.cpp; path = src/NKJSONRPC.cpp; sourceTree = "<group>"; };
-		D254EFCF16C4457700851E44 /* libjansson.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libjansson.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		D254F05716C4468A00851E44 /* dump.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = dump.c; path = ThirdParty/jansson/src/dump.c; sourceTree = "<group>"; };
-		D254F05816C4468A00851E44 /* error.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = error.c; path = ThirdParty/jansson/src/error.c; sourceTree = "<group>"; };
-		D254F05916C4468A00851E44 /* hashtable.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = hashtable.c; path = ThirdParty/jansson/src/hashtable.c; sourceTree = "<group>"; };
-		D254F05A16C4468A00851E44 /* hashtable.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = hashtable.h; path = ThirdParty/jansson/src/hashtable.h; sourceTree = "<group>"; };
-		D254F05B16C4468A00851E44 /* jansson_private.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = jansson_private.h; path = ThirdParty/jansson/src/jansson_private.h; sourceTree = "<group>"; };
-		D254F05C16C4468A00851E44 /* jansson.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = jansson.h; path = ThirdParty/jansson/src/jansson.h; sourceTree = "<group>"; };
-		D254F05D16C4468A00851E44 /* load.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = load.c; path = ThirdParty/jansson/src/load.c; sourceTree = "<group>"; };
-		D254F05E16C4468A00851E44 /* memory.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = memory.c; path = ThirdParty/jansson/src/memory.c; sourceTree = "<group>"; };
-		D254F05F16C4468A00851E44 /* pack_unpack.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pack_unpack.c; path = ThirdParty/jansson/src/pack_unpack.c; sourceTree = "<group>"; };
-		D254F06016C4468A00851E44 /* strbuffer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = strbuffer.c; path = ThirdParty/jansson/src/strbuffer.c; sourceTree = "<group>"; };
-		D254F06116C4468A00851E44 /* strbuffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = strbuffer.h; path = ThirdParty/jansson/src/strbuffer.h; sourceTree = "<group>"; };
-		D254F06216C4468A00851E44 /* strconv.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = strconv.c; path = ThirdParty/jansson/src/strconv.c; sourceTree = "<group>"; };
-		D254F06316C4468A00851E44 /* utf.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = utf.c; path = ThirdParty/jansson/src/utf.c; sourceTree = "<group>"; };
-		D254F06416C4468A00851E44 /* utf.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = utf.h; path = ThirdParty/jansson/src/utf.h; sourceTree = "<group>"; };
-		D254F06516C4468A00851E44 /* value.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = value.c; path = ThirdParty/jansson/src/value.c; sourceTree = "<group>"; };
 		D26F04F315FA5B6A003F7389 /* liburiparser.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = liburiparser.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		D26F04F815FA5BA5003F7389 /* UriCommon.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = UriCommon.c; path = ThirdParty/uriparser/src/UriCommon.c; sourceTree = "<group>"; };
 		D26F04F915FA5BA5003F7389 /* UriCommon.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = UriCommon.h; path = ThirdParty/uriparser/src/UriCommon.h; sourceTree = "<group>"; };
@@ -304,7 +271,6 @@
 				D23DF57C15F69C4F0027A8F1 /* Foundation.framework in Frameworks */,
 				D23DF5CC15F7C8D80027A8F1 /* libssl.dylib in Frameworks */,
 				D23DF5CE15F7C8DF0027A8F1 /* libcrypto.dylib in Frameworks */,
-				D2AE754116C44A60002DF1FB /* libjansson.a in Frameworks */,
 				D2740F3915FBA87700589649 /* libhttp-parser.a in Frameworks */,
 				D26F051C15FA5BFE003F7389 /* liburiparser.a in Frameworks */,
 				D2A8BA41162BC0B900D0C09A /* libxml2.dylib in Frameworks */,
@@ -317,13 +283,6 @@
 			files = (
 				D2740F2015FA5FAC00589649 /* CoreFoundation.framework in Frameworks */,
 				D23DF5B315F6B1190027A8F1 /* NetKit.framework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		D254EFCC16C4457700851E44 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -370,7 +329,6 @@
 				D23DF59A15F6AFCD0027A8F1 /* tests */,
 				D2740F3415FBA84300589649 /* http-parser */,
 				D26F04F715FA5B77003F7389 /* uriparser */,
-				D254EFD616C445F600851E44 /* jansson */,
 				D23DF52815F698390027A8F1 /* Frameworks */,
 				D23DF52715F698390027A8F1 /* Products */,
 			);
@@ -383,7 +341,6 @@
 				D23DF59815F6AFCD0027A8F1 /* UnitTests */,
 				D26F04F315FA5B6A003F7389 /* liburiparser.a */,
 				D2740F3015FBA83E00589649 /* libhttp-parser.a */,
-				D254EFCF16C4457700851E44 /* libjansson.a */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -420,6 +377,7 @@
 				D20D21031608FF4F0037A994 /* NKOAuth.h */,
 				D23DF55015F698F90027A8F1 /* NKObject.cpp */,
 				D23DF55115F698F90027A8F1 /* NKObject.h */,
+				D2033DC116E1811000DBE69B /* NKOutputFilter.h */,
 				D254EFBB16C43DA500851E44 /* NKPlatform.h */,
 				D20ED13516DB123B00177887 /* NKProxy.cpp */,
 				D20ED13316DB123300177887 /* NKProxy.h */,
@@ -435,6 +393,8 @@
 				D239D37F16D69451007FB101 /* NKSource.h */,
 				D23DF5BD15F6D5490027A8F1 /* NKTCPSocket.cpp */,
 				D23DF55615F698F90027A8F1 /* NKTCPSocket.h */,
+				D2033DC516E1813C00DBE69B /* NKUnicode.cpp */,
+				D2033DC216E1811000DBE69B /* NKUnicode.h */,
 				D23DF5D715F964C10027A8F1 /* NKURI.cpp */,
 				D23DF5D815F964C20027A8F1 /* NKURI.h */,
 				D2E25BAC16701A88009C6073 /* Database */,
@@ -481,28 +441,6 @@
 				D23DF54D15F698F90027A8F1 /* NKJSONRPC.h */,
 			);
 			name = JSON;
-			sourceTree = "<group>";
-		};
-		D254EFD616C445F600851E44 /* jansson */ = {
-			isa = PBXGroup;
-			children = (
-				D254F05716C4468A00851E44 /* dump.c */,
-				D254F05816C4468A00851E44 /* error.c */,
-				D254F05916C4468A00851E44 /* hashtable.c */,
-				D254F05A16C4468A00851E44 /* hashtable.h */,
-				D254F05B16C4468A00851E44 /* jansson_private.h */,
-				D254F05C16C4468A00851E44 /* jansson.h */,
-				D254F05D16C4468A00851E44 /* load.c */,
-				D254F05E16C4468A00851E44 /* memory.c */,
-				D254F05F16C4468A00851E44 /* pack_unpack.c */,
-				D254F06016C4468A00851E44 /* strbuffer.c */,
-				D254F06116C4468A00851E44 /* strbuffer.h */,
-				D254F06216C4468A00851E44 /* strconv.c */,
-				D254F06316C4468A00851E44 /* utf.c */,
-				D254F06416C4468A00851E44 /* utf.h */,
-				D254F06516C4468A00851E44 /* value.c */,
-			);
-			name = jansson;
 			sourceTree = "<group>";
 		};
 		D257A0C316CD73A80003C945 /* HTTP */ = {
@@ -603,18 +541,8 @@
 				D20ED13116D8379900177887 /* NKRunLoop_Mac.h in Headers */,
 				D20ED13416DB123300177887 /* NKProxy.h in Headers */,
 				D20ED13916DB366D00177887 /* NKHTTP_Mac.h in Headers */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		D254EFCD16C4457700851E44 /* Headers */ = {
-			isa = PBXHeadersBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				D254F06916C4468A00851E44 /* hashtable.h in Headers */,
-				D254F06A16C4468A00851E44 /* jansson_private.h in Headers */,
-				D254F06B16C4468A00851E44 /* jansson.h in Headers */,
-				D254F07016C4468A00851E44 /* strbuffer.h in Headers */,
-				D254F07316C4468A00851E44 /* utf.h in Headers */,
+				D2033DC316E1811000DBE69B /* NKOutputFilter.h in Headers */,
+				D2033DC416E1811000DBE69B /* NKUnicode.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -662,7 +590,6 @@
 			dependencies = (
 				D2365E3415FD909E000B6EE3 /* PBXTargetDependency */,
 				D2365E3215FD909B000B6EE3 /* PBXTargetDependency */,
-				D254EFD516C445D600851E44 /* PBXTargetDependency */,
 			);
 			name = NetKit;
 			productName = NetKit;
@@ -686,24 +613,6 @@
 			productName = UnitTests;
 			productReference = D23DF59815F6AFCD0027A8F1 /* UnitTests */;
 			productType = "com.apple.product-type.tool";
-		};
-		D254EFCE16C4457700851E44 /* jansson */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = D254EFD216C4457700851E44 /* Build configuration list for PBXNativeTarget "jansson" */;
-			buildPhases = (
-				D254EFD316C4459C00851E44 /* ShellScript */,
-				D254EFCB16C4457700851E44 /* Sources */,
-				D254EFCC16C4457700851E44 /* Frameworks */,
-				D254EFCD16C4457700851E44 /* Headers */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = jansson;
-			productName = jansson;
-			productReference = D254EFCF16C4457700851E44 /* libjansson.a */;
-			productType = "com.apple.product-type.library.static";
 		};
 		D26F04F215FA5B6A003F7389 /* uriparser */ = {
 			isa = PBXNativeTarget;
@@ -766,7 +675,6 @@
 				D23DF59715F6AFCD0027A8F1 /* UnitTests */,
 				D26F04F215FA5B6A003F7389 /* uriparser */,
 				D2740F2F15FBA83E00589649 /* http-parser */,
-				D254EFCE16C4457700851E44 /* jansson */,
 			);
 		};
 /* End PBXProject section */
@@ -795,19 +703,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "if [ ! -d ThirdParty/http-parser ]\nthen\n    git clone git://github.com/joyent/http-parser.git ThirdParty/http-parser\nfi";
-		};
-		D254EFD316C4459C00851E44 /* ShellScript */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "if [ ! -d ThirdParty/jansson ]\nthen\n    PATH=$PATH:/opt/local/bin\n    git clone git://github.com/akheron/jansson.git ThirdParty/jansson\n    cd ThirdParty/jansson\n    autoreconf --warnings=none -i\n    ./configure\nfi";
 		};
 		D2D54DF815FD8742004EF217 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -877,6 +772,7 @@
 				D20ED13216D8379900177887 /* NKRunLoop_Mac.mm in Sources */,
 				D20ED13616DB123C00177887 /* NKProxy.cpp in Sources */,
 				D20ED13A16DB366D00177887 /* NKHTTP_Mac.mm in Sources */,
+				D2033DC616E1813C00DBE69B /* NKUnicode.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -892,23 +788,6 @@
 				D219FD37160124FF00877C70 /* test_http_server.cpp in Sources */,
 				D2A8BA43162BC15000D0C09A /* test_xml.cpp in Sources */,
 				D2AE754316C44AA2002DF1FB /* test_json.cpp in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		D254EFCB16C4457700851E44 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				D254F06616C4468A00851E44 /* dump.c in Sources */,
-				D254F06716C4468A00851E44 /* error.c in Sources */,
-				D254F06816C4468A00851E44 /* hashtable.c in Sources */,
-				D254F06C16C4468A00851E44 /* load.c in Sources */,
-				D254F06D16C4468A00851E44 /* memory.c in Sources */,
-				D254F06E16C4468A00851E44 /* pack_unpack.c in Sources */,
-				D254F06F16C4468A00851E44 /* strbuffer.c in Sources */,
-				D254F07116C4468A00851E44 /* strconv.c in Sources */,
-				D254F07216C4468A00851E44 /* utf.c in Sources */,
-				D254F07416C4468A00851E44 /* value.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -958,11 +837,6 @@
 			isa = PBXTargetDependency;
 			target = D23DF52515F698390027A8F1 /* NetKit */;
 			targetProxy = D23DF5B115F6B10A0027A8F1 /* PBXContainerItemProxy */;
-		};
-		D254EFD516C445D600851E44 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = D254EFCE16C4457700851E44 /* jansson */;
-			targetProxy = D254EFD416C445D600851E44 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -1117,48 +991,6 @@
 			};
 			name = Release;
 		};
-		D254EFD016C4457700851E44 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = YES;
-				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
-				CLANG_CXX_LIBRARY = "libc++";
-				CLANG_WARN_CONSTANT_CONVERSION = YES;
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN_ENUM_CONVERSION = YES;
-				CLANG_WARN_INT_CONVERSION = YES;
-				EXECUTABLE_PREFIX = lib;
-				HEADER_SEARCH_PATHS = (
-					./ThirdParty/jansson,
-					./ThirdParty/jansson/src,
-				);
-				MACOSX_DEPLOYMENT_TARGET = 10.7;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = macosx10.7;
-			};
-			name = Debug;
-		};
-		D254EFD116C4457700851E44 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = YES;
-				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
-				CLANG_CXX_LIBRARY = "libc++";
-				CLANG_WARN_CONSTANT_CONVERSION = YES;
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN_ENUM_CONVERSION = YES;
-				CLANG_WARN_INT_CONVERSION = YES;
-				EXECUTABLE_PREFIX = lib;
-				HEADER_SEARCH_PATHS = (
-					./ThirdParty/jansson,
-					./ThirdParty/jansson/src,
-				);
-				MACOSX_DEPLOYMENT_TARGET = 10.7;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = macosx10.7;
-			};
-			name = Release;
-		};
 		D26F04F515FA5B6B003F7389 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1229,15 +1061,6 @@
 			buildConfigurations = (
 				D23DF5A015F6AFCD0027A8F1 /* Debug */,
 				D23DF5A115F6AFCD0027A8F1 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		D254EFD216C4457700851E44 /* Build configuration list for PBXNativeTarget "jansson" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				D254EFD016C4457700851E44 /* Debug */,
-				D254EFD116C4457700851E44 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

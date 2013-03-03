@@ -27,74 +27,75 @@
  * either expressed or implied, of the FreeBSD Project.
  *
  */
- 
+/*
+ * Copyright (c) 2011 Anhero Inc.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
 #ifndef _netkit_json_h
 #define _netkit_json_h
 
-#include <NetKit/NKSink.h>
-#include <NetKit/NKSource.h>
+#include <NetKit/NKObject.h>
+#include <NetKit/NKSmartPtr.h>
 #include <NetKit/NKExpected.h>
+#include <streambuf>
+#include <iostream>
+#include <vector>
+#include <string>
 #include <map>
 
-struct json_t;
+class array_map;
+class object_map;
 
 namespace netkit {
 
 namespace json {
 
-class value : public object
+class value : public netkit::object
 {
 public:
 
-	static const int32_t	flatten_flag_compact;
-	static const int32_t	flatten_flag_ensure_ascii;
-	static const int32_t	flatten_flag_sort_keys;
-	static const int32_t	flatten_flag_preserve_order;
-	static const int32_t	flatten_flag_encode_any;
-	static const int32_t	flatten_flag_escape_slash;
-
-public:
-
 	typedef smart_ptr< value > ptr;
-	
-	static expected< value::ptr >
-	load( const char *input );
-	
-	static value::ptr
-	null();
-	
-	static value::ptr
-	boolean( bool val );
-	
-	static value::ptr
-	integer();
-	
-	static value::ptr
-	integer( int32_t value );
-	
-	static value::ptr
-	integer( uint32_t value );
-	
-	static value::ptr
-	integer( int64_t value );
-	
-	static value::ptr
-	integer( uint64_t value );
-	
-	static value::ptr
-	real( float val );
-	
-	static value::ptr
-	real( double val );
-	
-	static value::ptr
-	string();
-	
-	static value::ptr
-	string( const char *val );
-	
-	static value::ptr
-	string( const std::string &val );
+
+	friend std::ostream &operator<<(std::ostream &output, const value &v);
+
+	enum class type
+	{
+		string,
+		integer,
+		real,
+		object,
+		array,
+		boolean,
+		null,
+		unknown
+	};
+
+	static std::string
+	escape_minimum_characters(const std::string &str);
+
+	static std::string
+	escape_all_characters(const std::string &str);
+
+	static const std::string
+	escape_to_unicode(char charToEscape);
 	
 	static value::ptr
 	array();
@@ -102,222 +103,410 @@ public:
 	static value::ptr
 	object();
 	
-	bool
-	is_null() const;
+	static expected< value::ptr >
+	load( const std::string& s );
 	
-	bool
-	is_bool() const;
+	value();
+
+	value(std::istream &input);
+
+	value( const std::string &v );
+
+	value( const char *v );
+
+	value( int v);
+
+	value( double v );
+
+	value( bool v );
+
+	value( const value &v );
 	
+	value( enum type t );
+
+	~value();
+
+	value&
+	operator=(const value &src);
+		
 	bool
-	is_integer() const;
-	
+	operator==(const value &rhs) const;
+
 	bool
-	is_real() const;
-	
+	operator!=(const value &rhs) const;
+		
 	bool
-	is_numeric() const;
-	
+	operator<(const value &rhs) const;
+		
+	bool
+	operator<=(const value &rhs) const;
+		
+	bool
+	operator>(const value &rhs) const;
+		
+	bool
+	operator>=(const value &rhs) const;
+
+	value::ptr
+	operator[](const char *key);
+
+	value::ptr
+	operator[](const std::string &key);
+
+	value::ptr
+	operator[](size_t index);
+
+	type
+	type() const;
+
 	bool
 	is_string() const;
-	
+
 	bool
-	is_array() const;
-	
+	is_integer() const;
+
+	bool
+	is_real() const;
+
 	bool
 	is_object() const;
-	
-	expected< const char* >
-	as_cstring() const;
-	
+
+	bool
+	is_array() const;
+
+	bool
+	is_bool() const;
+
+	bool
+	is_null() const;
+
 	expected< std::string >
 	as_string() const;
-	
-	expected< int32_t >
-	as_int() const;
-	
-	expected< uint32_t >
-	as_uint() const;
-	
-	expected< int64_t >
-	as_int64() const;
-	
-	expected< uint64_t >
-	as_uint64() const;
-	
-	expected< float >
-	as_float() const;
-	
+
+	void
+	set_string(const std::string &newString);
+
+	expected< int >
+	as_integer() const;
+
+	void
+	set_integer(int newInt);
+
 	expected< double >
-	as_double() const;
-	
+	as_real() const;
+
+	void
+	set_real(double newDouble);
+
 	expected< bool >
 	as_bool() const;
 
-	bool
-	empty() const;
+	void
+	set_bool(bool newBoolean);
 
 	bool
-	operator!() const;
+	is_member( const std::string &key );
+	
+	void
+	set_object(const object_map &newobject);
 
 	void
-	clear();
-
+	set_array(const array_map &newarray);
+	
+	void
+	set_null();
+	
+	bool
+	append( const value::ptr &v );
+	
 	size_t
 	size() const;
 
 	void
-	resize( size_t size );
+	load_from_string(const std::string &json);
 
-	value::ptr
-	operator[]( size_t index );
-	
-	value::ptr
-	operator[]( int index );
+	void
+	load_from_stream(std::istream &input);
 
-	const value::ptr
-	operator[]( size_t index ) const;
+	void
+	load_from_file(const std::string &filePath);
 
-	const value::ptr
-	operator[]( int index ) const;
+	void
+	write_to_stream(std::ostream &output, bool indent = true, bool escapeAll = false) const;
 
-	value::ptr
-	get( size_t index, const value::ptr &defaultValue ) const;
-	
-	bool
-	is_valid_index( size_t index ) const;
-	
-	bool
-	append( const value::ptr &value );
-
-	value::ptr
-	operator[]( const char *key );
-	
-	const value::ptr
-	operator[]( const char *key ) const;
-	
-	value::ptr
-	operator[]( const std::string &key );
-	
-	const value::ptr
-	operator[]( const std::string &key ) const;
-	
-	bool
-	set( const char *key, const value::ptr &val );
-	
-	value::ptr
-	get( const char *key, const value::ptr &defaultValue ) const;
-	
-	value::ptr
-	get( const std::string &key, const value::ptr &defaultValue ) const;
-	
-	bool
-	remove_member( const char* key );
-	
-	bool
-	remove_member( const std::string &key );
-
-	bool
-	is_member( const char *key ) const;
-	
-	bool
-	is_member( const std::string &key ) const;
+	void
+	write_to_file(const std::string &filePath, bool indent = true, bool escapeAll = false) const;
 	
 	std::string
-	flatten( int32_t flags ) const;
+	flatten( int flags ) const;
 	
-protected:
+	void
+	assign( const value &v );
 
-	value( json_t *impl, bool strong_ref = true );
-	
-	value( const value &that );
-	
-	virtual ~value();
-	
 private:
 
-	json_t *m_impl;
-};
+	union data
+	{
+		std::string		*m_string;
+		int				*m_integer;
+		double			*m_real;
+		array_map		*m_array;
+		object_map		*m_object;
+		bool			*m_bool;
 
+		data();
 
-class message : public object
-{
-public:
+		data( std::string *newStringvalue);
 
-	typedef smart_ptr< message > ptr;
+		data( int *newIntvalue);
 
-	message();
-	
-	virtual ~message();
+		data( double *newDoublevalue);
 
-	std::string
-	version();
-	
-	value::ptr
-	id();
-	
-protected:
+		data( object_map *newobjectvalue);
 
-	value::ptr m_root;
-};
+		data( array_map *newArrayvalue);
 
+		data(bool *newBoolvalue);
+	};
 
-class request : public message
-{
-public:
+	static bool
+	is_hex_digit(char digit);
 
-	typedef smart_ptr< request > ptr;
-	
-	request();
-	
-	virtual ~request();
+	static bool
+	is_white_space(char whiteSpace);
 
-	std::string
-	method();
-	
-	value::ptr
-	params();
-};
-
-
-class response : public message
-{
-public:
-
-	typedef smart_ptr< response > ptr;
-	
-	value::ptr
-	result();
-	
-	value::ptr
-	error();
-};
-
-
-typedef std::function< void ( response::ptr response ) >				response_f;
-typedef std::function< void ( request::ptr request, response_f func ) >	request_f;
-
-	
-class connection : public sink
-{
-public:
-
-	static sink::ptr
-	adopt( const std::uint8_t *buf, size_t len );
-	
 	static void
-	bind( const std::string &method, request_f func );
+	read_string(std::istream &input, std::string &result);
+
+	static void
+	read_object(std::istream &input, object_map &result);
+
+	static void
+	read_array(std::istream &input, array_map &result);
+
+	static void
+	read_number(std::istream &input, value &result);
+
+	static void
+	read_to_non_white_space(std::istream &input, char &currentCharacter);
 	
-	virtual ssize_t
-	read( source::ptr s );
+	void
+	clear();
 	
+	void
+	output(std::ostream &output, bool indent = true, bool escapeAll = false) const;
+
+	enum type	m_type;
+	data		m_data;
+};
+
+class escaper
+{
+public:
+
+	escaper();
+
+	std::streambuf::int_type operator()(std::streambuf &destination, std::streambuf::int_type character);
+
 private:
 
-	typedef std::map< std::string, request_f > bindings;
-	
-	static bindings m_bindings;
+	bool m_after_back_slash;
+	bool m_in_string;
 };
+
+std::ostream&
+operator<<(std::ostream &output, const array_map &a);
+
+std::ostream&
+operator<<(std::ostream& output, const object_map& o);
 
 }
+
+template <>
+class smart_ptr< json::value >
+{
+public:
+
+	typedef smart_ptr this_type;
+	typedef json::value* this_type::*unspecified_bool_type;
+        
+	inline smart_ptr()
+	:
+		m_ref( new json::value() )
+	{
+		m_ref->retain();
+	}
+    
+	inline smart_ptr( bool v )
+	:
+		m_ref( new json::value( v ) )
+	{
+		m_ref->retain();
+	}
+	
+	inline smart_ptr( int32_t v )
+	:
+		m_ref( new json::value( v ) )
+	{
+		m_ref->retain();
+	}
+	
+	inline smart_ptr( double v )
+	:
+		m_ref( new json::value( v ) )
+	{
+		m_ref->retain();
+	}
+	
+	inline smart_ptr( const char *v )
+	:
+		m_ref( new json::value( v ) )
+	{
+		m_ref->retain();
+	}
+	
+	inline smart_ptr( const std::string &v )
+	:
+		m_ref( new json::value( v ) )
+	{
+		m_ref->retain();
+	}
+	
+	inline smart_ptr( json::value *ref)
+	:
+		m_ref( ref )
+	{
+		m_ref->retain();
+	}
+
+	inline smart_ptr( const smart_ptr<json::value> &that )
+	:
+		m_ref( that.m_ref )
+	{
+		m_ref->retain();
+	}
+
+	inline ~smart_ptr()
+	{
+		m_ref->release();
+	}
+	
+	json::value*
+	get() const
+	{
+		return m_ref;
+	}
+
+	inline json::value&
+	operator*()
+	{
+		return *m_ref;
+	}
+	
+	inline json::value*
+	operator->()
+	{
+		return m_ref;
+	}
+	
+	inline const json::value*
+	operator->() const
+	{
+		return m_ref;
+	}
+    
+	inline smart_ptr<json::value>&
+	operator=( const smart_ptr<json::value> &that )
+	{
+		m_ref->assign( *that.m_ref );
+		
+		return *this;
+	}
+	
+	inline bool
+	operator==( const smart_ptr<json::value> &that )
+	{
+		return ( *m_ref == *that.m_ref );
+	}
+
+	inline operator bool () const
+	{
+		return ( !m_ref->is_null() );
+	}
+	
+	inline operator unspecified_bool_type () const
+	{
+		return ( m_ref->is_null() ) ? 0 : &this_type::m_ref;
+	}
+	
+	inline bool
+	operator!() const
+	{
+		return ( m_ref->is_null() );
+	}
+	
+	inline smart_ptr< json::value >
+	operator[]( size_t index )
+	{
+		return ( *m_ref )[ index ];
+	}
+	
+	inline const smart_ptr< json::value >
+	operator[]( size_t index ) const
+	{
+		return ( *m_ref )[ index ];
+	}
+	
+	inline smart_ptr< json::value >
+	operator[]( const char *key )
+	{
+		return ( *m_ref )[ key ];
+	}
+	
+	inline const smart_ptr< json::value >
+	operator[]( const char *key ) const
+	{
+		return ( *m_ref )[ key ];
+	}
+	
+	inline smart_ptr< json::value >
+	operator[]( const std::string &key )
+	{
+		return ( *m_ref )[ key ];
+	}
+	
+	inline const smart_ptr< json::value >
+	operator[]( const std::string &key ) const
+	{
+		return ( *m_ref )[ key ];
+	}
+	
+	template< class Other >
+	operator smart_ptr< Other >()
+	{
+		smart_ptr< Other > p( m_ref );
+		return p;
+	}
+	
+	template< class Other >
+	operator const smart_ptr< Other >() const
+	{
+		smart_ptr< Other > p( m_ref );
+		return p;
+	}
+	
+	inline void
+	swap( smart_ptr &rhs )
+	{
+		json::value * tmp = m_ref;
+		m_ref = rhs.m_ref;
+		rhs.m_ref = tmp;
+	}
+	
+private:
+
+	json::value *m_ref;
+};
 
 }
 

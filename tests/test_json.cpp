@@ -44,54 +44,54 @@ TEST_CASE( "NetKit/json/1", "json decoding tests" )
 	REQUIRE( root->is_object() );
 	REQUIRE( root->is_member( "firstName" ) );
 	
-	netkit::json::value::ptr val = ( *root )[ "firstName" ];
+	netkit::json::value::ptr val = root[ "firstName" ];
 	REQUIRE( val->is_string() );
 	REQUIRE( val->as_string().get() == "John" );
 	
-	val = ( *root )[ "lastName" ];
+	val = root[ "lastName" ];
 	REQUIRE( val->is_string() );
 	REQUIRE( val->as_string().get() == "Smith" );
 	
-	val = ( *root )[ "age" ];
+	val = root[ "age" ];
 	REQUIRE( val->is_integer() );
-	REQUIRE( val->as_int().get() == 25 );
+	REQUIRE( val->as_integer().get() == 25 );
 	
-	val = ( *root )[ "human" ];
+	val = root[ "human" ];
 	REQUIRE( val->is_bool() );
 	REQUIRE( val->as_bool().get() == true );
 	
-	val = ( *root )[ "address" ];
+	val = root[ "address" ];
 	REQUIRE( val->is_object() );
 	
-	child = ( *val )[ "streetAddress" ];
+	child = val[ "streetAddress" ];
 	REQUIRE( child->is_string() );
 	REQUIRE( child->as_string().get() == "21 2nd Street" );
 	
-	child = ( *val )[ "city" ];
+	child = val[ "city" ];
 	REQUIRE( child->is_string() );
 	REQUIRE( child->as_string().get() == "New York" );
 	
-	child = ( *val )[ "state" ];
+	child = val[ "state" ];
 	REQUIRE( child->is_string() );
 	REQUIRE( child->as_string().get() == "NY" );
 	
-	child = ( *val )[ "postalCode" ];
+	child = val[ "postalCode" ];
 	REQUIRE( child->is_integer() );
-	REQUIRE( child->as_int().get() == 10021 );
+	REQUIRE( child->as_integer().get() == 10021 );
 	
-	val = ( *root )[ "phoneNumber" ];
+	val = root[ "phoneNumber" ];
 	REQUIRE( val->is_array() );
 	for ( int i = 0; i < val->size(); i++ )
 	{
-		child = ( *val )[ i ];
+		child = val[ i ];
 		REQUIRE( child->is_object() );
 		
-		REQUIRE( ( *child )[ "type" ]->is_string() );
-		REQUIRE( ( *child )[ "number" ]->is_string() );
-		REQUIRE( ( *child )[ "age" ]->is_null() );
+		REQUIRE( child[ "type" ]->is_string() );
+		REQUIRE( child[ "number" ]->is_string() );
+		REQUIRE( child[ "age" ]->is_null() );
 	}
 	
-	val = ( *root )[ "im" ];
+	val = root[ "im" ];
 	REQUIRE( val->is_null() );
 }
 
@@ -103,30 +103,43 @@ TEST_CASE( "NetKit/json/2", "json encoding tests" )
 	netkit::json::value::ptr	obj;
 	bool						ok;
 	
-	ok = val->set( "firstName", netkit::json::value::string( "John" ) );
-	REQUIRE( ok );
+	REQUIRE( !val[ "not_there" ]->as_string().is_valid() );
 	
-	ok = val->set( "lastName", netkit::json::value::string( "Doe" ) );
-	REQUIRE( ok );
+	val[ "firstName" ] = "John";
+	val[ "firstName" ]->as_string().is_valid();
+	REQUIRE( val[ "firstName" ]->as_string().is_valid() );
+	REQUIRE( val[ "firstName" ]->as_string().get() == "John" );
 	
-	obj = netkit::json::value::object();
-	ok = obj->set( "city", netkit::json::value::string( "los angeles" ) );
-	REQUIRE( ok );
+	val[ "lastName" ] = "Doe";
+	REQUIRE( val[ "lastName" ]->as_string().is_valid() );
+	REQUIRE( val[ "lastName" ]->as_string().get() == "Doe" );
 	
-	ok = val->set( "map", obj );
-	REQUIRE( ok );
+	val[ "age" ] = 59;
+	REQUIRE( val[ "age" ]->as_integer().is_valid() );
+	REQUIRE( val[ "age" ]->as_integer().get() == 59 );
+	
+	val[ "inner" ] = netkit::json::value::object();
+	
+	val[ "inner" ][ "firstName" ] = "Exene";
+	REQUIRE( val[ "inner" ][ "firstName" ]->as_string().is_valid() );
+	REQUIRE( val[ "inner" ][ "firstName" ]->as_string().get() == "Exene" );
+	
+	val[ "inner" ][ "lastName" ] = "Cervenka";
+	REQUIRE( val[ "inner" ][ "lastName" ]->as_string().is_valid() );
+	REQUIRE( val[ "inner" ][ "lastName" ]->as_string().get() == "Cervenka" );
+	
+	val[ "map" ] = obj;
 	
 	arr = netkit::json::value::array();
-	ok = arr->append( netkit::json::value::integer( 7 ) );
+	ok = arr->append( 7 );
 	REQUIRE( ok );
-	ok = arr->append( netkit::json::value::integer( 8 ) );
+	ok = arr->append( 8 );
 	REQUIRE( ok );
-	ok = arr->append( netkit::json::value::integer( 9 ) );
-	REQUIRE( ok );
-	
-	ok = val->set( "numbers", arr );
+	ok = arr->append( 9 );
 	REQUIRE( ok );
 	
-	std::string s = val->flatten( netkit::json::value::flatten_flag_preserve_order );
+	val[ "numbers" ] = arr;
+	
+	std::string s = val->flatten( 0 );
 	fprintf( stderr, "s = %s\n", s.c_str() );
 }

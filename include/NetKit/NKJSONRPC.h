@@ -82,6 +82,12 @@ protected:
     {
         return m_end - m_eptr;
     }
+	
+	inline size_t
+	num_bytes_unused()
+	{
+		return m_end - m_eptr;
+	}
 
     inline size_t
     size()
