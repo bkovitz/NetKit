@@ -80,7 +80,7 @@ class client : public socket::client
 {
 public:
 
-	typedef std::function< void ( int status ) > connect_reply;
+	typedef std::function< void ( int status ) > connect_reply_f;
 
 	typedef smart_ptr< client > ptr;
 	
@@ -99,7 +99,7 @@ public:
 	close();
 	
 	void
-	connect( ip::address::ptr addr, connect_reply reply );
+	connect( ip::address::ptr addr, connect_reply_f reply );
 	
 	virtual ssize_t
 	peek( std::uint8_t *buf, size_t len );

@@ -37,6 +37,7 @@ sink::sink( const source_ptr &source )
 :
 	m_source( source )
 {
+	m_source->bind( this );
 }
 
 

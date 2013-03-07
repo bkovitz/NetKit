@@ -30,6 +30,7 @@
  
 #include "NKRunLoop_Mac.h"
 #include <CoreFoundation/CoreFoundation.h>
+#include <NetKit/NKSocket.h>
 #include <dispatch/dispatch.h>
 
 using namespace netkit;

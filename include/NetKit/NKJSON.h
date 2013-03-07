@@ -55,6 +55,9 @@
 #include <NetKit/NKObject.h>
 #include <NetKit/NKSmartPtr.h>
 #include <NetKit/NKExpected.h>
+#include <NetKit/NKSink.h>
+#include <NetKit/NKSource.h>
+#include <NetKit/cstring.h>
 #include <streambuf>
 #include <iostream>
 #include <vector>
@@ -87,6 +90,12 @@ public:
 		null,
 		unknown
 	};
+	
+	enum class output_flags
+	{
+		none	= 0,
+		pretty	= 1
+	};
 
 	static std::string
 	escape_minimum_characters(const std::string &str);
@@ -102,6 +111,9 @@ public:
 	
 	static value::ptr
 	object();
+	
+	static const value::ptr
+	null();
 	
 	static expected< value::ptr >
 	load( const std::string& s );
@@ -125,6 +137,9 @@ public:
 	value( enum type t );
 
 	~value();
+	
+	bool
+	equal( const value &v ) const;
 
 	value&
 	operator=(const value &src);
@@ -180,32 +195,32 @@ public:
 	bool
 	is_null() const;
 
-	expected< std::string >
-	as_string() const;
+	std::string
+	as_string( const std::string &default_value = "" ) const;
 
 	void
-	set_string(const std::string &newString);
+	set_string( const std::string &v );
 
-	expected< int >
-	as_integer() const;
-
-	void
-	set_integer(int newInt);
-
-	expected< double >
-	as_real() const;
+	int
+	as_integer( int default_value = 0 ) const;
 
 	void
-	set_real(double newDouble);
+	set_integer( int v );
 
-	expected< bool >
-	as_bool() const;
+	double
+	as_real( double default_value = 0.0f ) const;
 
 	void
-	set_bool(bool newBoolean);
+	set_real( double v );
 
 	bool
-	is_member( const std::string &key );
+	as_bool( bool default_value = false ) const;
+
+	void
+	set_bool( bool v );
+
+	bool
+	is_member( const std::string &key ) const;
 	
 	void
 	set_object(const object_map &newobject);
@@ -238,7 +253,7 @@ public:
 	write_to_file(const std::string &filePath, bool indent = true, bool escapeAll = false) const;
 	
 	std::string
-	flatten( int flags ) const;
+	flatten( output_flags flags = output_flags::none ) const;
 	
 	void
 	assign( const value &v );
@@ -314,11 +329,159 @@ private:
 	bool m_in_string;
 };
 
+class connection : public sink
+{
+public:
+
+	typedef std::function< void ( value::ptr response ) >				reply_f;
+	typedef std::function< void ( value::ptr request, reply_f func ) >	request_f;
+	typedef smart_ptr< connection >										ptr;
+	
+	connection( const source::ptr &source );
+	
+	virtual ~connection();
+
+	static sink::ptr
+	adopt( source::ptr source, const std::uint8_t *buf, size_t len );
+	
+	static void
+	bind( const std::string &method, request_f func );
+	
+	static void
+	route_notification( const value::ptr &request );
+	
+	static void
+	route_request( const value::ptr &request, reply_f func );
+	
+	bool
+	send_notification( value::ptr request );
+	
+	bool
+	send_request( value::ptr request, reply_f reply );
+	
+	virtual ssize_t
+	process();
+	
+protected:
+
+	typedef std::map< std::string, request_f >	request_handlers;
+	typedef std::map< std::int32_t, reply_f >	reply_handlers;
+	
+	virtual bool
+	send( value::ptr request );
+	
+	inline size_t
+    num_bytes_used()
+    {
+		return m_eptr - m_base;
+    }
+	
+	inline size_t
+	num_bytes_unused()
+	{
+		return m_end - m_eptr;
+	}
+
+    inline size_t
+    size()
+    {
+        return m_end - m_base;
+    }
+
+    inline void
+    add( size_t numBytes )
+    {
+        size_t bytesUsed = num_bytes_used();
+        size_t oldSize = size();
+        size_t newSize = oldSize + numBytes;
+
+        m_base = ( unsigned char* ) realloc( m_base, newSize );
+
+        m_eptr = m_base + bytesUsed;
+        m_end = m_base + newSize;
+    }
+
+    inline void
+    shift( size_t index )
+    {
+        if ( ( m_base + index ) < m_eptr )
+        {
+            int delta = ( int ) ( ( m_eptr - ( m_base + index ) ) );
+            std::memmove_s( m_base, size(), m_base + index, delta );
+            m_eptr = m_base + delta;
+        }
+        else
+        {
+            m_eptr = m_base;
+        }
+    }
+	
+	std::string
+	encode( const std::string &s );
+	
+	bool
+	really_process();
+	
+	bool
+	validate( const value::ptr &root, value::ptr error );
+	
+	void
+	shutdown();
+	
+	static request_handlers				m_request_handlers;
+	reply_handlers						m_reply_handlers;
+	static std::atomic< std::int32_t >	m_id;
+	
+	std::string							m_token;
+	std::uint8_t						*m_base;
+	std::uint8_t						*m_eptr;
+	std::uint8_t						*m_end;
+};
+
+class client : public object
+{
+public:
+
+	typedef std::function< void ( int32_t error_code, const std::string &error_message, json::value::ptr result ) > reply_f;
+	typedef smart_ptr< client >																						ptr;
+
+	client( const source::ptr &source );
+	
+protected:
+
+	bool
+	send_notification( const std::string &method, value::ptr params );
+	
+	bool
+	send_request( const std::string &method, value::ptr params, reply_f reply );
+	
+protected:
+
+	connection::ptr m_connection;
+};
+
 std::ostream&
 operator<<(std::ostream &output, const array_map &a);
 
 std::ostream&
 operator<<(std::ostream& output, const object_map& o);
+
+std::ostream&
+operator<<( std::ostream &os, const std::vector< json::value::ptr > &a );
+
+std::ostream&
+operator<<( std::ostream &os, const std::map< std::string, json::value::ptr > &m );
+
+enum class error
+{
+	parse				= -32700,
+	invalid_request		= -32600,
+	method_not_found	= -32601,
+	invalid_params		= -32602,
+	internal_error		= -32603,
+	disconnected		= -32000,
+	unknown				= -32099
+};
 
 }
 
@@ -330,6 +493,8 @@ public:
 	typedef smart_ptr this_type;
 	typedef json::value* this_type::*unspecified_bool_type;
         
+	friend std::ostream &operator<<(std::ostream &output, const smart_ptr &v);
+	
 	inline smart_ptr()
 	:
 		m_ref( new json::value() )
@@ -426,9 +591,16 @@ public:
 	inline bool
 	operator==( const smart_ptr<json::value> &that )
 	{
+		fprintf( stderr, "comparing %d to %d\n", m_ref->type(), that.m_ref->type() );
 		return ( *m_ref == *that.m_ref );
 	}
 
+	inline bool
+	operator!=( const smart_ptr<json::value> &that )
+	{
+		return ( *m_ref != *that.m_ref );
+	}
+	
 	inline operator bool () const
 	{
 		return ( !m_ref->is_null() );
@@ -507,6 +679,34 @@ private:
 
 	json::value *m_ref;
 };
+
+template<>
+inline bool
+operator==( smart_ptr< json::value > const &a, smart_ptr< json::value > const &b )
+{
+	return ( a->equal( *b.get() ) );
+}
+
+template<>
+inline bool
+operator!=( smart_ptr< json::value > const &a, smart_ptr< json::value > const &b )
+{
+	return ( *a.get() != *b.get() );
+}
+
+template<>
+inline bool
+operator==( smart_ptr< json::value > const &a, json::value *b )
+{
+	return ( *a.get() == *b );
+}
+
+template<>
+inline bool
+operator!=( smart_ptr< json::value > const &a, json::value *b )
+{
+	return ( *a.get() != *b );
+}
 
 }
 

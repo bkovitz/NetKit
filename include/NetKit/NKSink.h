@@ -57,7 +57,7 @@ public:
 	ssize_t
 	send( const std::uint8_t *buf, size_t len );
 	
-private:
+protected:
 
 	source_ptr m_source;
 };

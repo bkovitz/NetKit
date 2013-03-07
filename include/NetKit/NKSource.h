@@ -65,6 +65,9 @@ public:
 	virtual ssize_t
 	send( const std::uint8_t *buf, size_t len ) = 0;
 	
+	virtual void
+	close() = 0;
+	
 protected:
 
 	sink::ptr m_sink;

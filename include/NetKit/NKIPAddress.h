@@ -41,6 +41,7 @@
 
 
 namespace netkit {
+
 namespace ip {
 
 class address : public object

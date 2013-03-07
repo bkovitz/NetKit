@@ -183,7 +183,6 @@
 		D23DF54A15F698F90027A8F1 /* NKHTTP.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NKHTTP.h; path = include/NetKit/NKHTTP.h; sourceTree = "<group>"; };
 		D23DF54B15F698F90027A8F1 /* NKIPAddress.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = NKIPAddress.cpp; path = src/NKIPAddress.cpp; sourceTree = "<group>"; };
 		D23DF54C15F698F90027A8F1 /* NKIPAddress.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NKIPAddress.h; path = include/NetKit/NKIPAddress.h; sourceTree = "<group>"; };
-		D23DF54D15F698F90027A8F1 /* NKJSONRPC.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NKJSONRPC.h; path = include/NetKit/NKJSONRPC.h; sourceTree = "<group>"; };
 		D23DF55015F698F90027A8F1 /* NKObject.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = NKObject.cpp; path = src/NKObject.cpp; sourceTree = "<group>"; };
 		D23DF55115F698F90027A8F1 /* NKObject.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NKObject.h; path = include/NetKit/NKObject.h; sourceTree = "<group>"; };
 		D23DF55515F698F90027A8F1 /* NKSmartPtr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NKSmartPtr.h; path = include/NetKit/NKSmartPtr.h; sourceTree = "<group>"; };
@@ -213,7 +212,6 @@
 		D254EFBB16C43DA500851E44 /* NKPlatform.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NKPlatform.h; path = include/NetKit/NKPlatform.h; sourceTree = "<group>"; };
 		D254EFBC16C43DA500851E44 /* NKRunLoop.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NKRunLoop.h; path = include/NetKit/NKRunLoop.h; sourceTree = "<group>"; };
 		D254EFC316C43DB500851E44 /* NKJSON.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = NKJSON.cpp; path = src/NKJSON.cpp; sourceTree = "<group>"; };
-		D254EFC416C43DB500851E44 /* NKJSONRPC.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = NKJSONRPC.cpp; path = src/NKJSONRPC.cpp; sourceTree = "<group>"; };
 		D26F04F315FA5B6A003F7389 /* liburiparser.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = liburiparser.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		D26F04F815FA5BA5003F7389 /* UriCommon.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = UriCommon.c; path = ThirdParty/uriparser/src/UriCommon.c; sourceTree = "<group>"; };
 		D26F04F915FA5BA5003F7389 /* UriCommon.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = UriCommon.h; path = ThirdParty/uriparser/src/UriCommon.h; sourceTree = "<group>"; };
@@ -437,8 +435,6 @@
 			children = (
 				D254EFC316C43DB500851E44 /* NKJSON.cpp */,
 				D254EFBA16C43DA500851E44 /* NKJSON.h */,
-				D254EFC416C43DB500851E44 /* NKJSONRPC.cpp */,
-				D23DF54D15F698F90027A8F1 /* NKJSONRPC.h */,
 			);
 			name = JSON;
 			sourceTree = "<group>";

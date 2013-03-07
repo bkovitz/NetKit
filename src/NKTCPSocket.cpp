@@ -108,7 +108,7 @@ client::~client()
 
 
 void
-client::connect( ip::address::ptr address, connect_reply reply )
+client::connect( ip::address::ptr address, connect_reply_f reply )
 {
 	std::thread t( [=]()
 	{
@@ -129,10 +129,23 @@ client::connect( ip::address::ptr address, connect_reply reply )
 		
 		runloop::instance()->dispatch_on_main_thread( [=]()
 		{
-			//dset_recv_handler( m_recv_handler );
 			reply( ret );
+			
+			if ( m_sink )
+			{
+				auto source = runloop::instance()->create_source( m_fd, runloop::event::read, [=]( runloop::source s, runloop::event e )
+				{
+					m_sink->process();
+				} );
+				
+				runloop::instance()->schedule( source );
+				
+				set_source( source );
+			}
 		} );
 	} );
+	
+	t.detach();
 }
 
 
@@ -155,6 +168,17 @@ client::recv( uint8_t *buf, size_t len )
 	else
 	{
 		num = ::recv( m_fd, buf, len, 0 );
+		
+		fprintf( stderr, "read %d bytes\n", num );
+		if ( num == 0 )
+		{
+			fprintf( stderr, "errno = %d\n", errno );
+			num = -1;
+		}
+		else if ( ( num == -1 ) && ( errno == EWOULDBLOCK ) )
+		{
+			num = 0;
+		}
 	}
 	
 	return num;
@@ -212,6 +236,7 @@ client::send( const uint8_t *buf, size_t len )
 		}
 	}
 
+fprintf( stderr, "sent %d bytes\n", total );
 	return total;
 }
 
@@ -739,7 +764,6 @@ server::listen()
 	
 							if ( sink )
 							{
-								dummy->bind( sink );
 								break;
 							}
 						}
@@ -748,6 +772,8 @@ server::listen()
 			} );
 	
 			runloop::instance()->schedule( source );
+			
+			sock->set_source( source );
 		}
 	} );
 	

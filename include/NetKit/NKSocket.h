@@ -31,6 +31,7 @@
 #ifndef _netkit_socket_h
 #define _netkit_socket_h
 
+#include <NetKit/NKRunLoop.h>
 #include <NetKit/NKSource.h>
 #include <NetKit/NKSink.h>
 #include <initializer_list>
@@ -104,6 +105,18 @@ public:
 
 	typedef smart_ptr< client > ptr;
 
+	inline runloop::source
+	source() const
+	{
+		return m_source;
+	}
+	
+	inline void
+	set_source( runloop::source s )
+	{
+		m_source = s;
+	}
+	
 	int
 	set_blocking( bool block );
 	
@@ -141,7 +154,8 @@ protected:
 	
 	virtual ~client();
 
-	native m_fd;
+	runloop::source	m_source;
+	native			m_fd;
 };
 
 }

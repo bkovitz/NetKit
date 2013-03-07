@@ -32,7 +32,6 @@
 #define _netkit_runloop_h
 
 #include <NetKit/NKObject.h>
-#include <NetKit/NKSocket.h>
 #include <functional>
 #include <ctime>
 

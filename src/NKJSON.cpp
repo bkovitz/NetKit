@@ -52,6 +52,7 @@
 #include <NetKit/NKJSON.h>
 #include <NetKit/NKOutputFilter.h>
 #include <NetKit/NKUnicode.h>
+#include <NetKit/NKPlatform.h>
 #include <NetKit/NKLog.h>
 #include <cassert>
 #include <sstream>
@@ -626,7 +627,7 @@ object_map::operator=(const object_map &other)
 bool
 object_map::operator==(const object_map &rhs) const
 {
-	return m_data == rhs.m_data;
+	return ( m_data == rhs.m_data );
 }
 
 	
@@ -1365,6 +1366,15 @@ value::object()
 }
 
 
+const value::ptr
+value::null()
+{
+	static const value::ptr v = new value;
+	
+	return v;
+}
+
+
 expected< value::ptr >
 value::load( const std::string &s )
 {
@@ -1496,6 +1506,80 @@ value::~value()
 }
 
 
+bool
+value::equal( const value &v ) const
+{
+	bool	result;
+
+	if ( this == &v )
+	{
+		result = true;
+		goto exit;
+	}
+	
+	if ( m_type != v.m_type)
+	{
+		result = false;
+		goto exit;
+	}
+	
+	switch ( m_type )
+	{
+		case type::string:
+		{
+			result = (*m_data.m_string == *v.m_data.m_string);
+		}
+		break;
+
+		case type::integer:
+		{
+			result = (*m_data.m_integer == *v.m_data.m_integer);
+		}
+		break;
+
+		case type::real:
+		{
+			result = (*m_data.m_real == *v.m_data.m_real);
+		}
+		break;
+
+		case type::object:
+		{
+			result = (*m_data.m_object == *v.m_data.m_object);
+		}
+		break;
+
+		case type::array:
+		{
+			result = (*m_data.m_array == *v.m_data.m_array);
+		}
+		break;
+
+		case type::boolean:
+		{
+			result = (*m_data.m_bool == *v.m_data.m_bool);
+		}
+		break;
+		
+		case type::null:
+		{
+			result = true;
+		}
+		break;
+
+		default:
+		{
+			result = false;
+		}
+		break;
+	}
+	
+exit:
+
+	return result;
+}
+
+
 void
 value::assign( const value &v )
 {
@@ -1551,61 +1635,14 @@ value::operator=(const value &v)
 bool
 value::operator==(const value &rhs) const
 {
-	bool result;
-
-	if ( this == &rhs )
-	{
-		result = true;
-		goto exit;
-	}
-	
-	if ( m_type != rhs.m_type)
-	{
-		result = false;
-		goto exit;
-	}
-	
-	switch ( m_type )
-	{
-		case type::string:
-			result = (*m_data.m_string == *m_data.m_string);
-			break;
-
-		case type::integer:
-			result = (*m_data.m_integer == *m_data.m_integer);
-			break;
-
-		case type::real:
-			result = (*m_data.m_real == *m_data.m_real);
-			break;
-
-		case type::object:
-			result = (*m_data.m_object == *m_data.m_object);
-			break;
-
-		case type::array:
-			result = (*m_data.m_array == *m_data.m_array);
-			break;
-
-		case type::boolean:
-			result = (*m_data.m_bool == *m_data.m_bool);
-			break;
-
-		default:
-			result = false;
-			break;
-	}
-	
-exit:
-
-	return result;
+	return equal( rhs );
 }
 
 
 bool
 value::operator!=(const value &rhs) const
 {
-	return !( *this == rhs );
+	return !equal( rhs );
 }
 
 
@@ -1654,11 +1691,17 @@ value::operator<(const value &rhs) const
 		return result;
 	}
 
-	bool value::operator<=(const value &rhs) const {
-		return *this < rhs || *this == rhs;
-	}
 
-	bool value::operator>(const value &rhs) const {
+bool
+value::operator<=(const value &rhs) const
+{
+	return *this < rhs || *this == rhs;
+}
+
+
+bool
+value::operator>(const value &rhs) const
+{
 		bool result = false;
 
 		if (this != &rhs) {
@@ -1698,9 +1741,12 @@ value::operator<(const value &rhs) const
 		return result;
 	}
 
-	bool value::operator>=(const value &rhs) const {
-		return *this > rhs || *this == rhs;
-	}
+
+bool
+value::operator>=(const value &rhs) const
+{
+	return *this > rhs || *this == rhs;
+}
 
 
 value::ptr
@@ -1767,7 +1813,7 @@ value::is_real() const
 
 
 bool
-value::is_member( const std::string &key )
+value::is_member( const std::string &key ) const
 {
 	if ( m_type == type::object )
 	{
@@ -1809,17 +1855,10 @@ value::is_null() const
 }
 
 
-expected< std::string >
-value::as_string() const
+std::string
+value::as_string( const std::string &default_value ) const
 {
-	if ( m_type == type::string )
-	{
-		return *m_data.m_string;
-	}
-	else
-	{
-		return std::logic_error( "value is not a string" );
-	}
+	return ( m_type == type::string ) ? *m_data.m_string : default_value;
 }
 
 
@@ -1839,17 +1878,10 @@ value::set_string(std::string const &newString)
 }
 
 
-expected< int >
-value::as_integer() const
+int
+value::as_integer( int default_value ) const
 {
-	if ( m_type == type::integer )
-	{
-		return *m_data.m_integer;
-	}
-	else
-	{
-		return std::logic_error( "value is not a string" );
-	}
+	return ( m_type == type::integer ) ? *m_data.m_integer : default_value;
 }
 
 
@@ -1869,17 +1901,10 @@ value::set_integer(int newInt)
 }
 
 
-expected< double >
-value::as_real() const
+double
+value::as_real( double default_value ) const
 {
-	if ( m_type == type::real )
-	{
-		return *m_data.m_real;
-	}
-	else
-	{
-		return std::logic_error( "value is not a real number" );
-	}
+	return ( m_type == type::real ) ? *m_data.m_real : default_value;
 }
 
 
@@ -1934,15 +1959,15 @@ value::set_array(const array_map &newarray)
 bool
 value::append( const value::ptr &v )
 {
-	if ( m_type == type::array )
+	if ( m_type != type::array )
 	{
-		m_data.m_array->push_back( v );
-		return true;
+		clear();
+		m_type = type::array;
+		m_data.m_array = new array_map;
 	}
-	else
-	{
-		return false;
-	}
+	
+	m_data.m_array->push_back( v );
+	return true;
 }
 
 
@@ -1964,17 +1989,10 @@ value::size() const
 }
 
 
-expected< bool >
-value::as_bool() const
+bool
+value::as_bool( bool default_value ) const
 {
-	if ( m_type == type::boolean )
-	{
-		return *m_data.m_bool;
-	}
-	else
-	{
-		return std::logic_error( "value is not boolean" );
-	}
+	return ( m_type == type::boolean ) ? *m_data.m_bool : default_value;
 }
 
 
@@ -2075,32 +2093,32 @@ value::load_from_stream(std::istream &input)
 										}
 										else
 										{
-											std::cout << "invalid characters found" << std::endl;
+											nklog( log::error, "invalid characters found" );
 										}
 									}
 									else
 									{
-										std::cout << "json input ends incorrectly" << std::endl;
+										nklog( log::error, "json input ends incorrectly" );
 									}
 								}
 								else
 								{
-									std::cout << "invalid characters found" << std::endl;
+									nklog( log::error, "invalid characters found" );
 								}
 							}
 							else
 							{
-								std::cout << "json input ends incorrectly" << std::endl;
+								nklog( log::error, "json input ends incorrectly" );
 							}
 						}
 						else
 						{
-							std::cout << "invalid characters found" << std::endl;
+							nklog( log::error, "invalid characters found" );
 						}
 					}
 					else
 					{
-						std::cout << "json input ends incorrectly" << std::endl;
+						nklog( log::error, "json input ends incorrectly" );
 					}
 				}
 				else if (currentCharacter == numbers::MINUS || (currentCharacter >= numbers::DIGITS[0] && currentCharacter <= numbers::DIGITS[9]))
@@ -2177,14 +2195,14 @@ value::load_from_stream(std::istream &input)
 				}
 				else if (!is_white_space(currentCharacter))
 				{
-					std::cout << "Invalid character found: '" << currentCharacter << "'" << std::endl;
+					nklog( log::error, "invalid character found" );
 				}
 			}
 		}
 	}
 	else
 	{
-		std::cout << "File is not in UTF-8, not parsing." << std::endl;
+		nklog( log::error, "file is not in UTF-8 format" );
 	}
 }
 
@@ -2202,7 +2220,7 @@ value::load_from_file(const std::string &filePath)
 	}
 	else
 	{
-		std::cout << "Failed to open file to load the json: " << filePath << std::endl;
+		nklog( log::error, "failed to open file '%s", filePath.c_str() );
 	}
 }
 
@@ -2227,17 +2245,17 @@ value::write_to_file(const std::string &filePath, bool indent, bool escapeAll) c
 	}
 	else
 	{
-		std::cout << "Failed to open file to write the json into: " << filePath << std::endl;
+		nklog( log::error, "failed to open file '%s'", filePath.c_str() );
 	}
 }
 
 
 std::string
-value::flatten( int flags ) const
+value::flatten( output_flags flags ) const
 {
 	std::ostringstream os;
 	
-	write_to_stream( os );
+	write_to_stream( os, ( flags == output_flags::pretty ) ? true : false, true );
 	
 	return os.str();
 }
@@ -2388,7 +2406,7 @@ value::read_string(std::istream &input, std::string &result)
 								else
 								{
 									noUnicodeError = false;
-									std::cout << "Invalid \\u character, skipping it." << std::endl;
+									nklog( log::warning, "invalid \\u character...skipping" );
 								}
 
 								++tmpCounter;
@@ -2475,7 +2493,7 @@ value::read_object(std::istream &input, object_map &result)
 			}
 			else if (!is_white_space(currentCharacter))
 			{
-				std::cout << "Expected '\"', got '" << currentCharacter << "', ignoring it." << std::endl;
+				nklog( log::warning, "expected '\"\', got %c. ignoring...", currentCharacter );
 			}
 		}
 	}
@@ -2558,7 +2576,7 @@ value::read_number(std::istream &input, value &result)
 			}
 			else
 			{
-				std::cout << "Expected a digit, '.', 'e' or 'E', got '" << currentCharacter << "' instead, ignoring it." << std::endl;
+				nklog( log::warning, "expected [0-9][.][e][E], got %c. ignoring...", currentCharacter );
 			}
 		}
 		else if (currentCharacter >= '0' && currentCharacter <= '9')
@@ -2711,20 +2729,27 @@ value::output(std::ostream &output, bool indent, bool escapeAll) const
 
 
 std::ostream&
+netkit::operator<<(std::ostream &output, const value::ptr &v)
+{
+	return output << *v.get();
+}
+
+
+std::ostream&
 netkit::json::operator<<(std::ostream &output, const value &v)
 {
 	switch (v.type())
 	{
 		case value::type::string:
-			output << structural::BEGIN_END_STRING << value::escape_minimum_characters(v.as_string().get()) << structural::BEGIN_END_STRING;
+			output << structural::BEGIN_END_STRING << value::escape_minimum_characters( v.as_string() ) << structural::BEGIN_END_STRING;
 			break;
 
 		case value::type::integer:
-			output << v.as_integer().get();
+			output << v.as_integer();
 			break;
 
 		case value::type::real:
-			output << v.as_real().get();
+			output << v.as_real();
 			break;
 
 		case value::type::object:
@@ -2736,7 +2761,7 @@ netkit::json::operator<<(std::ostream &output, const value &v)
 			break;
 
 		case value::type::boolean:
-			output << (v.as_bool().get() ? literals::TRUE_STRING: literals::FALSE_STRING);
+			output << (v.as_bool() ? literals::TRUE_STRING: literals::FALSE_STRING);
 			break;
 
 		case value::type::null:
@@ -2748,4 +2773,461 @@ netkit::json::operator<<(std::ostream &output, const value &v)
 	}
 
 	return output;
+}
+
+
+#if defined( __APPLE__ )
+#	pragma mark connection implementation
+#endif
+
+connection::request_handlers	connection::m_request_handlers;
+std::atomic< std::int32_t >		connection::m_id( 1 );
+
+connection::connection( const source::ptr &source )
+:
+	sink( source ),
+	m_base( NULL ),
+	m_eptr( NULL ),
+	m_end( NULL )
+{
+	add( 4192 );
+}
+
+
+connection::~connection()
+{
+	free( m_base );
+}
+
+
+sink::ptr
+connection::adopt( source::ptr source, const std::uint8_t *buf, size_t len )
+{
+	sink::ptr	conn;
+	unsigned	index = 0;
+
+	while ( isdigit( buf[ index ] ) && ( index < len ) )
+	{
+		index++;
+	}
+	
+	if ( index == len )
+	{
+		goto exit;
+	}
+	
+	if ( buf[ index++ ] != ':' )
+	{
+		goto exit;
+	}
+	
+	if ( index == len )
+	{
+		goto exit;
+	}
+	
+	if ( buf[ index ] != '{' )
+	{
+		goto exit;
+	}
+
+	try
+	{
+		conn = new connection( source );
+	}
+	catch ( ... )
+	{
+		// log this
+	}
+	
+exit:
+
+	return conn;
+}
+
+
+void
+connection::bind( const std::string &method, request_f func )
+{
+	m_request_handlers[ method ] = func;
+}
+
+
+ssize_t
+connection::process()
+{
+	ssize_t num = 0;
+	
+	while ( 1 )
+	{
+		if ( num_bytes_unused() == 0 )
+		{
+			add( size() );
+		}
+		
+		num = recv( m_eptr, num_bytes_unused() );
+	
+	fprintf( stderr, "read %d bytes\n", num );
+		if ( num > 0 )
+		{
+			m_eptr += num;
+
+			if ( !really_process() )
+			{
+				shutdown();
+				break;
+			}
+		}
+		else if ( num < 0 )
+		{
+			shutdown();
+			break;
+		}
+		else
+		{
+			break;
+		}
+	}
+	
+	return num;
+}
+
+
+bool
+connection::send_notification( value::ptr request )
+{
+	request[ "jsonrpc" ] = "2.0";
+	
+	return send( request );
+}
+
+
+bool
+connection::send_request( value::ptr request, reply_f reply )
+{
+	int32_t id = ++m_id;
+	bool	ok = false;
+	
+	request[ "jsonrpc" ]	= "2.0";
+	request[ "id" ]			= id;
+	
+	if ( !send( request ) )
+	{
+		nklog( log::error, "unable to send request" );
+		goto exit;
+	}
+	
+	m_reply_handlers[ id ] = reply;
+	ok = true;
+	
+exit:
+	
+	return ok;
+}
+
+
+bool
+connection::send( value::ptr request )
+{
+	std::string			msg;
+	int					bytes_left;
+	int					bytes_written;
+	
+	msg = request->flatten();
+    msg = encode( msg );
+    
+	bytes_left		= ( int ) msg.size();
+	bytes_written	= 0;
+
+    while ( bytes_left )
+    {
+		ssize_t num = sink::send( ( const std::uint8_t* ) msg.c_str() + bytes_written, bytes_left );
+
+		if ( num > 0 )
+		{
+			bytes_left		-= num;
+			bytes_written	+= num;
+		}
+		else if ( num == 0 )
+		{
+			break;
+		}
+		else
+		{
+			break;
+		}
+	}
+	
+	return ( bytes_left == 0 ) ? true : false;
+}
+
+
+std::string
+connection::encode( const std::string &msg )
+{
+	char buf[ 64 ];
+	
+	std::sprintf_s( buf, sizeof( buf ), sizeof( buf ), "%lu:", msg.size() );
+	return std::string( buf ) + msg + ",";
+}
+
+
+bool
+connection::really_process()
+{
+	value::ptr		root;
+	value::ptr		error;
+    unsigned long	len = 0;
+	size_t			index = 0;
+	size_t			i = 0;
+	std::uint8_t	*colon;
+	std::string		msg;
+	bool			ok = true;
+
+	while ( num_bytes_used() )
+	{
+		index = -1;
+	    
+		for ( colon = m_base; colon != m_eptr; colon++ )
+		{
+			if ( *colon == ':' )
+			{
+				index = colon - m_base;
+				break;
+			}
+		}
+		
+		if ( index == -1 )
+		{
+			// If we have more than 10 bytes and no ':', then let's assume this buffer is no good
+
+			ok = num_bytes_used() < 10;
+			goto exit;
+		}
+
+		len = 0;
+
+		for ( i = 0 ; i < index ; i++ )
+		{
+			if ( isdigit( m_base[i] ) )
+			{
+        		len = len * 10 + ( m_base[ i ] - ( char ) 0x30 );
+			}
+			else
+			{
+				ok = false;
+				goto exit;
+			}
+		}
+		
+		if ( size() < ( index + len + 2 ) )
+		{
+			add( ( index + len + 2 ) - size() );
+			goto exit;
+		}
+		
+		if ( num_bytes_used() < len )
+		{
+			goto exit;
+		}
+
+		if ( m_base[ index + len + 1 ] != ',' )
+		{
+			ok = false;
+			goto exit;
+		}
+
+fprintf( stderr, "read: %s\n", msg.c_str() );
+		msg.assign( ( const char* ) m_base, index + 1, len );
+	    
+		shift( index + len + 2 );
+
+		auto ret = value::load( msg.c_str() );
+		
+		if ( !ret.is_valid() )
+		{
+			ok = false;
+			goto exit;
+		}
+		
+		fprintf( stderr, "msg = %s\n", msg.c_str() );
+		root = ret.get();
+		
+		if ( !root[ "method" ]->is_null() )
+		{
+			if ( validate( root, error ) )
+			{
+				auto id = root[ "id" ];
+				auto it = m_request_handlers.find( root[ "method" ]->as_string() );
+				
+				if ( it != m_request_handlers.end() )
+				{
+					it->second( root[ "params" ], [=]( value::ptr response )
+					{
+						if ( !id->is_null() && !response->is_null() )
+						{
+							response[ "jsonrpc" ]	= "2.0";
+							response[ "id" ]		= id;
+							
+							connection::ptr nckeep( this );
+							nckeep->send( response );
+						}
+					} );
+				}
+				else if ( !root[ "id" ]->is_null() )
+				{
+					value::ptr response;
+					value::ptr error;
+					
+					error[ "code" ]			= ( int ) error::method_not_found;
+					error[ "message" ]		= "Method not found.";
+				
+					response[ "id" ]		= root[ "id" ];
+					response[ "jsonrpc" ]	= "2.0";
+					response[ "error" ]		= error;
+				
+					send( response );
+				}
+			}
+			else
+			{
+				value::ptr response;
+					
+				response[ "id" ]		= root[ "id" ];
+				response[ "jsonrpc" ]	= "2.0";
+				response[ "error" ]		= error;
+				
+				send( response );
+			}
+		}
+		else
+		{
+			auto it = m_reply_handlers.find( root[ "id" ]->as_integer() );
+				
+			if ( it != m_reply_handlers.end() )
+			{
+				it->second( root );
+	
+				m_reply_handlers.erase( it );
+			}
+		}
+	}
+		
+exit:
+
+	return ok;
+}
+
+
+bool
+connection::validate( const value::ptr &root, value::ptr error)
+{
+	value::ptr	err;
+	bool		ok = true;
+      
+	if ( !root->is_object() || !root->is_member( "jsonrpc" ) || ( root[ "jsonrpc" ] != value::ptr( "2.0" ) ) )
+	{
+        err[ "code" ]		= ( int ) error::invalid_request;
+        err[ "message" ]	= "Invalid JSON-RPC request.";
+		
+		error[ "id" ]		= value::null();
+		error[ "jsonrpc" ]	= "2.0";
+		error[ "error" ]	= err;
+		
+		ok = false;
+	}
+	else if ( root->is_member( "id" ) && ( root[ "id" ]->is_array() || root[ "id" ]->is_object() ) )
+	{
+        err[ "code" ]		= ( int ) error::invalid_request;
+        err[ "message" ]	= "Invalid JSON-RPC request.";
+		
+		error[ "id" ]		= value::null();
+		error[ "jsonrpc" ]	= "2.0";
+		error[ "error" ]	= err;
+		
+		ok = false;
+	}
+	else if ( !root->is_member( "method" ) || !root["method"]->is_string() )
+	{
+        err[ "code" ]		= ( int ) error::invalid_request;
+        err[ "message" ]	= "Invalid JSON-RPC request.";
+		
+		error[ "id" ]		= value::null();
+		error["jsonrpc" ]	= "2.0";
+		error[ "error" ]	= err;
+		
+		ok = false;
+	}
+
+	return ok;
+}
+
+
+void
+connection::shutdown()
+{
+	value::ptr result;
+	value::ptr error;
+	
+	m_source->close();
+	
+	error[ "code" ]		= ( int ) error::internal_error;
+	error[ "message" ]	= "Lost connection";
+	result[ "error" ]	= error;
+
+	for ( auto it = m_reply_handlers.begin(); it != m_reply_handlers.end(); it++ )
+	{
+		it->second( result );
+	}
+}
+
+#if defined( __APPLE__ )
+#	pragma mark client implementation
+#endif
+
+client::client( const source::ptr &source )
+:
+	m_connection( new connection( source ) )
+{
+}
+
+
+bool
+client::send_notification( const std::string &method, value::ptr params )
+{
+	json::value::ptr request;
+	
+	request[ "method" ] = method;
+	request[ "params" ] = params;
+	
+	return m_connection->send_notification( request );
+}
+
+	
+bool
+client::send_request( const std::string &method, value::ptr params, reply_f reply )
+{
+	json::value::ptr request;
+	
+	request[ "method" ] = method;
+	request[ "params" ] = params;
+	
+	return m_connection->send_request( request, [=]( value::ptr response )
+	{
+		int32_t		error_code = 0;
+		std::string	error_message;
+		value::ptr	result;
+	
+		if ( response[ "error" ]->is_null() )
+		{
+			result = response[ "result" ];
+		}
+		else
+		{
+			error_code		= response[ "error" ][ "code" ]->as_integer();
+			error_message	= response[ "error" ][ "message" ]->as_string();
+		}
+			
+        reply( error_code, error_message, result );
+	} );
 }

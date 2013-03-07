@@ -80,6 +80,8 @@ server::bind( std::initializer_list< adopt_f > l )
 	
 	
 client::client( int domain, int type )
+:
+	m_source( NULL )
 {
 	m_fd = ::socket( domain, type, 0 );
 	set_blocking( false );
@@ -87,8 +89,10 @@ client::client( int domain, int type )
 
 
 client::client( native fd )
+:
+	m_source( NULL ),
+	m_fd( fd )
 {
-	m_fd = fd;
 	set_blocking( false );
 }
 
@@ -102,6 +106,12 @@ client::~client()
 void
 client::close()
 {
+	if ( m_source )
+	{
+		runloop::instance()->cancel( m_source );
+		m_source = NULL;
+	}
+	
 	if ( m_fd != null )
 	{
 #if defined( WIN32 )
@@ -119,42 +129,3 @@ client::set_blocking( bool block )
 {
 	return ::set_blocking( m_fd, block );
 }
-
-
-/*
-void
-socket::set_send_handler( handler h )
-{
-}
-
-	
-void
-socket::set_recv_handler( handler h )
-{
-	if ( !m_recv_source && ( m_fd != null ) )
-	{
-		m_recv_source = dispatch_source_create( DISPATCH_SOURCE_TYPE_READ, m_fd, 0, dispatch_get_main_queue() );
-		
-		dispatch_source_set_event_handler( m_recv_source,  ^( void )
-		{
-			m_recv_handler();
-		} );
-    
-		dispatch_source_set_cancel_handler( m_recv_source,  ^( void )
-		{
-			//close(my_file);
-		} );
-    
-		dispatch_resume( m_recv_source );
-	}
-	
-	m_recv_handler = h;
-}
-
-
-int
-socket::set_blocking( bool block )
-{
-	
-}
-*/
