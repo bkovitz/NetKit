@@ -68,6 +68,59 @@
 		D254EFC016C43DA500851E44 /* NKPlatform.h in Headers */ = {isa = PBXBuildFile; fileRef = D254EFBB16C43DA500851E44 /* NKPlatform.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D254EFC116C43DA500851E44 /* NKRunLoop.h in Headers */ = {isa = PBXBuildFile; fileRef = D254EFBC16C43DA500851E44 /* NKRunLoop.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D254EFC616C43DB500851E44 /* NKJSON.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D254EFC316C43DB500851E44 /* NKJSON.cpp */; };
+		D26B0EA716F7C744008379E0 /* cstring.h in Headers */ = {isa = PBXBuildFile; fileRef = D23DF5D115F922160027A8F1 /* cstring.h */; };
+		D26B0EA816F7C744008379E0 /* NetKit.h in Headers */ = {isa = PBXBuildFile; fileRef = D2740F3C15FBAA8600589649 /* NetKit.h */; };
+		D26B0EA916F7C744008379E0 /* NKBase64.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D2740F2815FBA45900589649 /* NKBase64.cpp */; };
+		D26B0EAA16F7C744008379E0 /* NKBase64.h in Headers */ = {isa = PBXBuildFile; fileRef = D2740F2915FBA45900589649 /* NKBase64.h */; };
+		D26B0EAB16F7C744008379E0 /* NKError.h in Headers */ = {isa = PBXBuildFile; fileRef = D23DF54715F698F90027A8F1 /* NKError.h */; };
+		D26B0EAC16F7C744008379E0 /* NKExpected.h in Headers */ = {isa = PBXBuildFile; fileRef = D254EFB916C43DA500851E44 /* NKExpected.h */; };
+		D26B0EAD16F7C744008379E0 /* NKIPAddress.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D23DF54B15F698F90027A8F1 /* NKIPAddress.cpp */; };
+		D26B0EAE16F7C744008379E0 /* NKIPAddress.h in Headers */ = {isa = PBXBuildFile; fileRef = D23DF54C15F698F90027A8F1 /* NKIPAddress.h */; };
+		D26B0EAF16F7C744008379E0 /* NKLog.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D23DF57F15F69D300027A8F1 /* NKLog.cpp */; };
+		D26B0EB016F7C744008379E0 /* NKLog.h in Headers */ = {isa = PBXBuildFile; fileRef = D23DF58715F69F980027A8F1 /* NKLog.h */; };
+		D26B0EB116F7C744008379E0 /* NKOAuth.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D20D20FC1608FF2B0037A994 /* NKOAuth.cpp */; };
+		D26B0EB216F7C744008379E0 /* NKOAuth.h in Headers */ = {isa = PBXBuildFile; fileRef = D20D21031608FF4F0037A994 /* NKOAuth.h */; };
+		D26B0EB316F7C744008379E0 /* NKObject.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D23DF55015F698F90027A8F1 /* NKObject.cpp */; };
+		D26B0EB416F7C744008379E0 /* NKObject.h in Headers */ = {isa = PBXBuildFile; fileRef = D23DF55115F698F90027A8F1 /* NKObject.h */; };
+		D26B0EB516F7C744008379E0 /* NKOutputFilter.h in Headers */ = {isa = PBXBuildFile; fileRef = D2033DC116E1811000DBE69B /* NKOutputFilter.h */; };
+		D26B0EB616F7C744008379E0 /* NKPlatform.h in Headers */ = {isa = PBXBuildFile; fileRef = D254EFBB16C43DA500851E44 /* NKPlatform.h */; };
+		D26B0EB716F7C744008379E0 /* NKProxy.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D20ED13516DB123B00177887 /* NKProxy.cpp */; };
+		D26B0EB816F7C744008379E0 /* NKProxy.h in Headers */ = {isa = PBXBuildFile; fileRef = D20ED13316DB123300177887 /* NKProxy.h */; };
+		D26B0EB916F7C744008379E0 /* NKRunLoop.h in Headers */ = {isa = PBXBuildFile; fileRef = D254EFBC16C43DA500851E44 /* NKRunLoop.h */; };
+		D26B0EBA16F7C744008379E0 /* NKRunLoop_Mac.h in Headers */ = {isa = PBXBuildFile; fileRef = D20ED12F16D8379900177887 /* NKRunLoop_Mac.h */; };
+		D26B0EBB16F7C744008379E0 /* NKRunLoop_Mac.mm in Sources */ = {isa = PBXBuildFile; fileRef = D20ED13016D8379900177887 /* NKRunLoop_Mac.mm */; };
+		D26B0EBC16F7C744008379E0 /* NKSink.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D239D38216D6A8B2007FB101 /* NKSink.cpp */; };
+		D26B0EBD16F7C744008379E0 /* NKSink.h in Headers */ = {isa = PBXBuildFile; fileRef = D239D37E16D69451007FB101 /* NKSink.h */; };
+		D26B0EBE16F7C744008379E0 /* NKSmartPtr.h in Headers */ = {isa = PBXBuildFile; fileRef = D23DF55515F698F90027A8F1 /* NKSmartPtr.h */; };
+		D26B0EBF16F7C744008379E0 /* NKSocket.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D23DF5BF15F6D5490027A8F1 /* NKSocket.cpp */; };
+		D26B0EC016F7C744008379E0 /* NKSocket.h in Headers */ = {isa = PBXBuildFile; fileRef = D23DF55815F698F90027A8F1 /* NKSocket.h */; };
+		D26B0EC116F7C744008379E0 /* NKSource.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D239D38316D6A8B2007FB101 /* NKSource.cpp */; };
+		D26B0EC216F7C744008379E0 /* NKSource.h in Headers */ = {isa = PBXBuildFile; fileRef = D239D37F16D69451007FB101 /* NKSource.h */; };
+		D26B0EC316F7C744008379E0 /* NKTCPSocket.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D23DF5BD15F6D5490027A8F1 /* NKTCPSocket.cpp */; };
+		D26B0EC416F7C744008379E0 /* NKTCPSocket.h in Headers */ = {isa = PBXBuildFile; fileRef = D23DF55615F698F90027A8F1 /* NKTCPSocket.h */; };
+		D26B0EC516F7C744008379E0 /* NKUnicode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D2033DC516E1813C00DBE69B /* NKUnicode.cpp */; };
+		D26B0EC616F7C744008379E0 /* NKUnicode.h in Headers */ = {isa = PBXBuildFile; fileRef = D2033DC216E1811000DBE69B /* NKUnicode.h */; };
+		D26B0EC716F7C744008379E0 /* NKURI.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D23DF5D715F964C10027A8F1 /* NKURI.cpp */; };
+		D26B0EC816F7C744008379E0 /* NKURI.h in Headers */ = {isa = PBXBuildFile; fileRef = D23DF5D815F964C20027A8F1 /* NKURI.h */; };
+		D26B0EC916F7C74C008379E0 /* NKDatabase.h in Headers */ = {isa = PBXBuildFile; fileRef = D2E25B9516701A45009C6073 /* NKDatabase.h */; };
+		D26B0ECA16F7C74C008379E0 /* NKDatabase_SQLite.h in Headers */ = {isa = PBXBuildFile; fileRef = D2E25BA016701A55009C6073 /* NKDatabase_SQLite.h */; };
+		D26B0ECB16F7C74C008379E0 /* NKDatabase_SQLite.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D2E25B9F16701A55009C6073 /* NKDatabase_SQLite.cpp */; };
+		D26B0ECC16F7C754008379E0 /* NKHTTP.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D23DF5D215F922170027A8F1 /* NKHTTP.cpp */; };
+		D26B0ECD16F7C754008379E0 /* NKHTTP.h in Headers */ = {isa = PBXBuildFile; fileRef = D23DF54A15F698F90027A8F1 /* NKHTTP.h */; };
+		D26B0ECE16F7C754008379E0 /* NKHTTP_Mac.mm in Sources */ = {isa = PBXBuildFile; fileRef = D20ED13816DB366C00177887 /* NKHTTP_Mac.mm */; };
+		D26B0ECF16F7C754008379E0 /* NKHTTP_Mac.h in Headers */ = {isa = PBXBuildFile; fileRef = D20ED13716DB366C00177887 /* NKHTTP_Mac.h */; };
+		D26B0ED016F7C75C008379E0 /* NKJSON.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D254EFC316C43DB500851E44 /* NKJSON.cpp */; };
+		D26B0ED116F7C75C008379E0 /* NKJSON.h in Headers */ = {isa = PBXBuildFile; fileRef = D254EFBA16C43DA500851E44 /* NKJSON.h */; };
+		D26B0ED216F7C764008379E0 /* NKXMLNode.h in Headers */ = {isa = PBXBuildFile; fileRef = D2E25B9916701A45009C6073 /* NKXMLNode.h */; };
+		D26B0ED316F7C764008379E0 /* NKXMLNode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D2E25BA416701A55009C6073 /* NKXMLNode.cpp */; };
+		D26B0ED416F7C764008379E0 /* NKXMLAttribute.h in Headers */ = {isa = PBXBuildFile; fileRef = D2E25B9616701A45009C6073 /* NKXMLAttribute.h */; };
+		D26B0ED516F7C764008379E0 /* NKXMLAttribute.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D2E25BA116701A55009C6073 /* NKXMLAttribute.cpp */; };
+		D26B0ED616F7C764008379E0 /* NKXMLDocument.h in Headers */ = {isa = PBXBuildFile; fileRef = D2E25B9716701A45009C6073 /* NKXMLDocument.h */; };
+		D26B0ED716F7C764008379E0 /* NKXMLDocument.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D2E25BA216701A55009C6073 /* NKXMLDocument.cpp */; };
+		D26B0ED816F7C764008379E0 /* NKXMLElement.h in Headers */ = {isa = PBXBuildFile; fileRef = D2E25B9816701A45009C6073 /* NKXMLElement.h */; };
+		D26B0ED916F7C764008379E0 /* NKXMLElement.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D2E25BA316701A55009C6073 /* NKXMLElement.cpp */; };
+		D26B0EDA16F7C764008379E0 /* NKXMPP.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D20D20FE1608FF2B0037A994 /* NKXMPP.cpp */; };
+		D26B0EDB16F7C764008379E0 /* NKXMPP.h in Headers */ = {isa = PBXBuildFile; fileRef = D23DF55B15F698F90027A8F1 /* NKXMPP.h */; };
 		D26F050A15FA5BA5003F7389 /* UriCommon.c in Sources */ = {isa = PBXBuildFile; fileRef = D26F04F815FA5BA5003F7389 /* UriCommon.c */; };
 		D26F050B15FA5BA5003F7389 /* UriCommon.h in Headers */ = {isa = PBXBuildFile; fileRef = D26F04F915FA5BA5003F7389 /* UriCommon.h */; };
 		D26F050C15FA5BA5003F7389 /* UriCompare.c in Sources */ = {isa = PBXBuildFile; fileRef = D26F04FA15FA5BA5003F7389 /* UriCompare.c */; };
@@ -212,6 +265,7 @@
 		D254EFBB16C43DA500851E44 /* NKPlatform.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NKPlatform.h; path = include/NetKit/NKPlatform.h; sourceTree = "<group>"; };
 		D254EFBC16C43DA500851E44 /* NKRunLoop.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NKRunLoop.h; path = include/NetKit/NKRunLoop.h; sourceTree = "<group>"; };
 		D254EFC316C43DB500851E44 /* NKJSON.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = NKJSON.cpp; path = src/NKJSON.cpp; sourceTree = "<group>"; };
+		D26B0EA316F7C652008379E0 /* libNetKit.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libNetKit.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		D26F04F315FA5B6A003F7389 /* liburiparser.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = liburiparser.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		D26F04F815FA5BA5003F7389 /* UriCommon.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = UriCommon.c; path = ThirdParty/uriparser/src/UriCommon.c; sourceTree = "<group>"; };
 		D26F04F915FA5BA5003F7389 /* UriCommon.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = UriCommon.h; path = ThirdParty/uriparser/src/UriCommon.h; sourceTree = "<group>"; };
@@ -284,6 +338,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D26B0EA016F7C652008379E0 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		D26F04F015FA5B6A003F7389 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -322,7 +383,6 @@
 			isa = PBXGroup;
 			children = (
 				D20ED13F16DC0EF200177887 /* CoreServices.framework */,
-				D20ED13D16DC0E9C00177887 /* SecurityFoundation.framework */,
 				D23DF52F15F698390027A8F1 /* NetKit */,
 				D23DF59A15F6AFCD0027A8F1 /* tests */,
 				D2740F3415FBA84300589649 /* http-parser */,
@@ -339,6 +399,7 @@
 				D23DF59815F6AFCD0027A8F1 /* UnitTests */,
 				D26F04F315FA5B6A003F7389 /* liburiparser.a */,
 				D2740F3015FBA83E00589649 /* libhttp-parser.a */,
+				D26B0EA316F7C652008379E0 /* libNetKit.a */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -346,6 +407,7 @@
 		D23DF52815F698390027A8F1 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				D20ED13D16DC0E9C00177887 /* SecurityFoundation.framework */,
 				D23DF58F15F6AC530027A8F1 /* SystemConfiguration.framework */,
 				D23DF57D15F69D1E0027A8F1 /* CoreFoundation.framework */,
 				D23DF52E15F698390027A8F1 /* Foundation.framework */,
@@ -542,6 +604,44 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D26B0EA116F7C652008379E0 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D26B0EA716F7C744008379E0 /* cstring.h in Headers */,
+				D26B0EA816F7C744008379E0 /* NetKit.h in Headers */,
+				D26B0EAA16F7C744008379E0 /* NKBase64.h in Headers */,
+				D26B0EAB16F7C744008379E0 /* NKError.h in Headers */,
+				D26B0EAC16F7C744008379E0 /* NKExpected.h in Headers */,
+				D26B0EAE16F7C744008379E0 /* NKIPAddress.h in Headers */,
+				D26B0EB016F7C744008379E0 /* NKLog.h in Headers */,
+				D26B0EB216F7C744008379E0 /* NKOAuth.h in Headers */,
+				D26B0EB416F7C744008379E0 /* NKObject.h in Headers */,
+				D26B0EB516F7C744008379E0 /* NKOutputFilter.h in Headers */,
+				D26B0EB616F7C744008379E0 /* NKPlatform.h in Headers */,
+				D26B0EB816F7C744008379E0 /* NKProxy.h in Headers */,
+				D26B0EB916F7C744008379E0 /* NKRunLoop.h in Headers */,
+				D26B0EBA16F7C744008379E0 /* NKRunLoop_Mac.h in Headers */,
+				D26B0EBD16F7C744008379E0 /* NKSink.h in Headers */,
+				D26B0EBE16F7C744008379E0 /* NKSmartPtr.h in Headers */,
+				D26B0EC016F7C744008379E0 /* NKSocket.h in Headers */,
+				D26B0EC216F7C744008379E0 /* NKSource.h in Headers */,
+				D26B0EC416F7C744008379E0 /* NKTCPSocket.h in Headers */,
+				D26B0EC616F7C744008379E0 /* NKUnicode.h in Headers */,
+				D26B0EC816F7C744008379E0 /* NKURI.h in Headers */,
+				D26B0EC916F7C74C008379E0 /* NKDatabase.h in Headers */,
+				D26B0ECA16F7C74C008379E0 /* NKDatabase_SQLite.h in Headers */,
+				D26B0ECD16F7C754008379E0 /* NKHTTP.h in Headers */,
+				D26B0ECF16F7C754008379E0 /* NKHTTP_Mac.h in Headers */,
+				D26B0ED116F7C75C008379E0 /* NKJSON.h in Headers */,
+				D26B0ED216F7C764008379E0 /* NKXMLNode.h in Headers */,
+				D26B0ED416F7C764008379E0 /* NKXMLAttribute.h in Headers */,
+				D26B0ED616F7C764008379E0 /* NKXMLDocument.h in Headers */,
+				D26B0ED816F7C764008379E0 /* NKXMLElement.h in Headers */,
+				D26B0EDB16F7C764008379E0 /* NKXMPP.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		D26F04F115FA5B6A003F7389 /* Headers */ = {
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
@@ -570,9 +670,9 @@
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
-		D23DF52515F698390027A8F1 /* NetKit */ = {
+		D23DF52515F698390027A8F1 /* NetKit Framework */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D23DF53B15F698390027A8F1 /* Build configuration list for PBXNativeTarget "NetKit" */;
+			buildConfigurationList = D23DF53B15F698390027A8F1 /* Build configuration list for PBXNativeTarget "NetKit Framework" */;
 			buildPhases = (
 				D2D54DF815FD8742004EF217 /* ShellScript */,
 				D23DF52115F698390027A8F1 /* Sources */,
@@ -587,7 +687,7 @@
 				D2365E3415FD909E000B6EE3 /* PBXTargetDependency */,
 				D2365E3215FD909B000B6EE3 /* PBXTargetDependency */,
 			);
-			name = NetKit;
+			name = "NetKit Framework";
 			productName = NetKit;
 			productReference = D23DF52615F698390027A8F1 /* NetKit.framework */;
 			productType = "com.apple.product-type.framework";
@@ -609,6 +709,23 @@
 			productName = UnitTests;
 			productReference = D23DF59815F6AFCD0027A8F1 /* UnitTests */;
 			productType = "com.apple.product-type.tool";
+		};
+		D26B0EA216F7C652008379E0 /* NetKit Static Library */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D26B0EA416F7C652008379E0 /* Build configuration list for PBXNativeTarget "NetKit Static Library" */;
+			buildPhases = (
+				D26B0E9F16F7C652008379E0 /* Sources */,
+				D26B0EA016F7C652008379E0 /* Frameworks */,
+				D26B0EA116F7C652008379E0 /* Headers */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "NetKit Static Library";
+			productName = "NetKit Static Library";
+			productReference = D26B0EA316F7C652008379E0 /* libNetKit.a */;
+			productType = "com.apple.product-type.library.static";
 		};
 		D26F04F215FA5B6A003F7389 /* uriparser */ = {
 			isa = PBXNativeTarget;
@@ -667,7 +784,8 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				D23DF52515F698390027A8F1 /* NetKit */,
+				D23DF52515F698390027A8F1 /* NetKit Framework */,
+				D26B0EA216F7C652008379E0 /* NetKit Static Library */,
 				D23DF59715F6AFCD0027A8F1 /* UnitTests */,
 				D26F04F215FA5B6A003F7389 /* uriparser */,
 				D2740F2F15FBA83E00589649 /* http-parser */,
@@ -787,6 +905,35 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D26B0E9F16F7C652008379E0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D26B0EA916F7C744008379E0 /* NKBase64.cpp in Sources */,
+				D26B0EAD16F7C744008379E0 /* NKIPAddress.cpp in Sources */,
+				D26B0EAF16F7C744008379E0 /* NKLog.cpp in Sources */,
+				D26B0EB116F7C744008379E0 /* NKOAuth.cpp in Sources */,
+				D26B0EB316F7C744008379E0 /* NKObject.cpp in Sources */,
+				D26B0EB716F7C744008379E0 /* NKProxy.cpp in Sources */,
+				D26B0EBB16F7C744008379E0 /* NKRunLoop_Mac.mm in Sources */,
+				D26B0EBC16F7C744008379E0 /* NKSink.cpp in Sources */,
+				D26B0EBF16F7C744008379E0 /* NKSocket.cpp in Sources */,
+				D26B0EC116F7C744008379E0 /* NKSource.cpp in Sources */,
+				D26B0EC316F7C744008379E0 /* NKTCPSocket.cpp in Sources */,
+				D26B0EC516F7C744008379E0 /* NKUnicode.cpp in Sources */,
+				D26B0EC716F7C744008379E0 /* NKURI.cpp in Sources */,
+				D26B0ECB16F7C74C008379E0 /* NKDatabase_SQLite.cpp in Sources */,
+				D26B0ECC16F7C754008379E0 /* NKHTTP.cpp in Sources */,
+				D26B0ECE16F7C754008379E0 /* NKHTTP_Mac.mm in Sources */,
+				D26B0ED016F7C75C008379E0 /* NKJSON.cpp in Sources */,
+				D26B0ED316F7C764008379E0 /* NKXMLNode.cpp in Sources */,
+				D26B0ED516F7C764008379E0 /* NKXMLAttribute.cpp in Sources */,
+				D26B0ED716F7C764008379E0 /* NKXMLDocument.cpp in Sources */,
+				D26B0ED916F7C764008379E0 /* NKXMLElement.cpp in Sources */,
+				D26B0EDA16F7C764008379E0 /* NKXMPP.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		D26F04EF15FA5B6A003F7389 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -831,7 +978,7 @@
 		};
 		D23DF5B215F6B10A0027A8F1 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = D23DF52515F698390027A8F1 /* NetKit */;
+			target = D23DF52515F698390027A8F1 /* NetKit Framework */;
 			targetProxy = D23DF5B115F6B10A0027A8F1 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -987,6 +1134,56 @@
 			};
 			name = Release;
 		};
+		D26B0EA516F7C652008379E0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				EXECUTABLE_PREFIX = lib;
+				HEADER_SEARCH_PATHS = (
+					"/usr/lib/c++/v1",
+					/usr/include/libxml2,
+					./include,
+					"./ThirdParty/http-parser",
+					./ThirdParty/uriparser/include,
+					./ThirdParty/jansson/src,
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.7;
+				PRODUCT_NAME = NetKit;
+				SDKROOT = macosx10.7;
+			};
+			name = Debug;
+		};
+		D26B0EA616F7C652008379E0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				EXECUTABLE_PREFIX = lib;
+				HEADER_SEARCH_PATHS = (
+					"/usr/lib/c++/v1",
+					/usr/include/libxml2,
+					./include,
+					"./ThirdParty/http-parser",
+					./ThirdParty/uriparser/include,
+					./ThirdParty/jansson/src,
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.7;
+				PRODUCT_NAME = NetKit;
+				SDKROOT = macosx10.7;
+			};
+			name = Release;
+		};
 		D26F04F515FA5B6B003F7389 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1043,7 +1240,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		D23DF53B15F698390027A8F1 /* Build configuration list for PBXNativeTarget "NetKit" */ = {
+		D23DF53B15F698390027A8F1 /* Build configuration list for PBXNativeTarget "NetKit Framework" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D23DF53C15F698390027A8F1 /* Debug */,
@@ -1057,6 +1254,15 @@
 			buildConfigurations = (
 				D23DF5A015F6AFCD0027A8F1 /* Debug */,
 				D23DF5A115F6AFCD0027A8F1 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D26B0EA416F7C652008379E0 /* Build configuration list for PBXNativeTarget "NetKit Static Library" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D26B0EA516F7C652008379E0 /* Debug */,
+				D26B0EA616F7C652008379E0 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
