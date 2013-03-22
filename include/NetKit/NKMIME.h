@@ -28,59 +28,39 @@
  *
  */
  
-#ifndef _netkit_source_h
-#define _netkit_source_h
+#ifndef _netkit_mime_h
+#define _netkit_mime_h
 
-#include <NetKit/NKSink.h>
-#include <initializer_list>
-#include <list>
+#include <string>
 
 namespace netkit {
 
-class source : public object
-{
-public:
+namespace mime {
 
-	typedef smart_ptr< source > ptr;
-	
-	source();
-	
-	virtual ~source();
+extern const std::string null;
 
-	sink::ptr&
-	sink();
-	
-	const sink::ptr&
-	sink() const;
-	
-	void
-	bind( sink::ptr sink );
-	
-	virtual ssize_t
-	peek( std::uint8_t *buf, size_t len ) = 0;
-	
-	virtual ssize_t
-	recv( std::uint8_t *buf, size_t len ) = 0;
-	
-	virtual ssize_t
-	send( const std::uint8_t *buf, size_t len ) = 0;
-	
-	virtual bool
-	is_secure() = 0;
-	
-	virtual bool
-	secure() = 0;
-	
-	virtual bool
-	is_open() const = 0;
-	
-	virtual void
-	close() = 0;
-	
-protected:
+namespace text {
 
-	sink::ptr m_sink;
-};
+extern const std::string plain;
+extern const std::string html;
+
+}
+
+namespace image {
+
+extern const std::string png;
+extern const std::string jpg;
+
+}
+
+namespace application {
+
+extern const std::string pdf;
+extern const std::string ipp;
+
+}
+
+}
 
 }
 

@@ -33,9 +33,9 @@
 
 namespace netkit {
 
-enum class error
+enum class status
 {
-	none				= 0,
+	ok					= 0,
 	invalid_license		= -32000,
 	license_expired		= -32001,
 	no_memory			= -32002,
@@ -50,7 +50,8 @@ enum class error
 	invalid_request		= -32600,
 	method_not_found	= -32601,
 	invalid_parms		= -32602,
-	internal			= -32603
+	uninitialized		= -32603,
+	internal			= -32604
 };
 
 }

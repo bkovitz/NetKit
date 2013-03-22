@@ -108,6 +108,14 @@ runloop_mac::schedule( source s )
 
 
 void
+runloop_mac::suspend( source s )
+{
+	auto source = reinterpret_cast< dispatch_source_t >( s );
+	dispatch_suspend( source );
+}
+
+
+void
 runloop_mac::cancel( source s )
 {
 	auto source = reinterpret_cast< dispatch_source_t >( s );

@@ -58,3 +58,10 @@ sink::send( const std::uint8_t *buf, size_t len )
 {
 	return m_source->send( buf, len );
 }
+
+
+bool
+sink::is_open() const
+{
+	return m_source->is_open();
+}

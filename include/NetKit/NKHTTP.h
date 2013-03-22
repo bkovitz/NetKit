@@ -54,7 +54,7 @@ typedef smart_ptr< connection > connection_ptr;
 struct method
 {
 	static std::string
-	as_string( std::uint8_t val );
+	to_string( std::uint8_t val );
 	
 	static const std::uint8_t delet;
 	static const std::uint8_t get;
@@ -84,57 +84,58 @@ struct method
 	static const std::uint8_t purge;
 };
 
-enum class status
+
+struct status
 {
-	error					= -1,
-	cont					= 100,
-	switching_protocols,
-	ok						= 200,
-	created,
-	accepted,
-	not_authoritative,
-	no_content,
-	reset_content,
-	partial_content,
-
-	multiple_choices		= 300,
-	moved_permanently,
-	moved_temporarily,
-	see_other,
-	not_modified,
-	use_proxy,
-
-	bad_request				= 400,
-	unauthorized,
-	payment_required,
-	forbidden,
-	not_found,
-	method_not_allowed,
-	not_acceptable,
-	proxy_authentication,
-	request_timeout,
-	conflict,
-	gone,
-	length_required,
-	precondition,
-	request_too_large,
-	uri_too_long,
-	unsupported_media_type,
-	requested_range,
-	expectation_failed,
-	upgrade_required		= 426,
-
-	server_error			= 500,
-	not_implemented,
-	bad_gateway,
-	service_unavailable,
-	gateway_timeout,
-	not_supported,
-
-	authorized_cancelled	= 1000,
-	pki_error,
-	webif_disabled
+	static std::string
+	to_string( std::uint16_t val );
+	
+	static const std::uint16_t error;
+	static const std::uint16_t cont;
+	static const std::uint16_t switching_protocols;
+	static const std::uint16_t ok;
+	static const std::uint16_t created;
+	static const std::uint16_t accepted;
+	static const std::uint16_t not_authoritative;
+	static const std::uint16_t no_content;
+	static const std::uint16_t reset_content;
+	static const std::uint16_t partial_content;
+	static const std::uint16_t multiple_choices;
+	static const std::uint16_t moved_permanently;
+	static const std::uint16_t moved_temporarily;
+	static const std::uint16_t see_other;
+	static const std::uint16_t not_modified;
+	static const std::uint16_t use_proxy;
+	static const std::uint16_t bad_request;
+	static const std::uint16_t unauthorized;
+	static const std::uint16_t payment_required;
+	static const std::uint16_t forbidden;
+	static const std::uint16_t not_found;
+	static const std::uint16_t method_not_allowed;
+	static const std::uint16_t not_acceptable;
+	static const std::uint16_t proxy_authentication;
+	static const std::uint16_t request_timeout;
+	static const std::uint16_t conflict;
+	static const std::uint16_t gone;
+	static const std::uint16_t length_required;
+	static const std::uint16_t precondition;
+	static const std::uint16_t request_too_large;
+	static const std::uint16_t uri_too_long;
+	static const std::uint16_t unsupported_media_type;
+	static const std::uint16_t requested_range;
+	static const std::uint16_t expectation_failed;
+	static const std::uint16_t upgrade_required;
+	static const std::uint16_t server_error;
+	static const std::uint16_t not_implemented;
+	static const std::uint16_t bad_gateway;
+	static const std::uint16_t service_unavailable;
+	static const std::uint16_t gateway_timeout;
+	static const std::uint16_t not_supported;
+	static const std::uint16_t authorized_cancelled;
+	static const std::uint16_t pki_error;
+	static const std::uint16_t webif_disabled;
 };
+
 
 class message : public object
 {
@@ -172,6 +173,12 @@ public:
 	content_type() const
 	{
 		return m_content_type;
+	}
+	
+	inline void
+	set_content_type( const std::string &val )
+	{
+		m_content_type = val;
 	}
 	
 	inline size_t
@@ -230,6 +237,33 @@ public:
 
 	virtual ~request();
 	
+	virtual void
+	add_to_header( const std::string &key, const std::string &val );
+	
+	inline const std::string&
+	peer_host() const
+	{
+		return m_peer_host;
+	}
+	
+	inline void
+	set_peer_host( const std::string &val )
+	{
+		m_peer_host = val;
+	}
+	
+	inline const std::string&
+	peer_ethernet_addr() const
+	{
+		return m_peer_ethernet_addr;
+	}
+	
+	inline void
+	set_peer_ethernet_addr( const std::string &val )
+	{
+		m_peer_ethernet_addr = val;
+	}
+	
 	inline int
 	method() const
 	{
@@ -253,6 +287,18 @@ public:
 	{
 		m_proxy = proxy;
 	}
+	
+	inline bool
+	secure() const
+	{
+		return m_secure;
+	}
+	
+	inline void
+	set_secure( bool secure )
+	{
+		m_secure = secure;
+	}
 		
 	virtual void
 	send_prologue( connection_ptr conn ) const;
@@ -269,14 +315,22 @@ public:
 		++m_tries;
 	}
 	
-private:
+protected:
 
 	void
 	init();
 
+	std::string		m_peer_host;
+	std::string		m_peer_ethernet_addr;
 	int				m_method;
 	uri::ptr		m_uri;
 	proxy::ptr		m_proxy;
+	bool			m_secure;
+	std::string		m_host;
+	std::string		m_expect;
+	std::string		m_authorization;
+	std::string		m_username;
+	std::string		m_password;
 	std::int32_t	m_tries;
 };
 
@@ -289,18 +343,18 @@ public:
 
 	response();
 	
-	response( int status );
+	response( uint16_t status );
 
 	virtual ~response();
 
-	inline int
+	inline uint16_t
 	status() const
 	{
 		return m_status;
 	}
 
 	inline void
-	set_status( int status )
+	set_status( uint16_t status )
 	{
 		m_status = status;
 	}
@@ -312,15 +366,15 @@ private:
 
 	void
 	init();
-
-	int	m_status;
+	
+	uint16_t m_status;
 };
 
 
-typedef std::function< void ( http::response::ptr response ) >										response_f;
-typedef std::function< http::request::ptr (void) >													request_will_begin_f;
-typedef std::function< void ( http::request::ptr request, const std::uint8_t *buf, size_t len ) >	request_body_was_received_f;
-typedef std::function< void ( http::request::ptr request, response_f func ) >						request_f;
+typedef std::function< void ( http::response::ptr response, bool upgrade, bool close ) >								response_f;
+typedef std::function< http::request::ptr ( int method, const uri::ptr &uri ) >											request_will_begin_f;
+typedef std::function< void ( http::request::ptr request, const std::uint8_t *buf, size_t len, response_f response ) >	request_body_was_received_f;
+typedef std::function< void ( http::request::ptr request, response_f func ) >											request_f;
 
 	
 class connection : public sink
@@ -475,6 +529,8 @@ protected:
 	http_parser					*m_parser;
 	int							m_parse_state;
 	
+	message::header				m_header;
+	std::string					m_content_type;
 	request::ptr				m_request;
 
 	std::string					m_expect;
@@ -517,12 +573,17 @@ protected:
 };
 
 
-
-
 inline connection&
 endl( connection &conn )
 {
 	conn << "\r\n";
+	return conn;
+}
+
+inline connection&
+flush( connection &conn )
+{
+	conn.flush();
 	return conn;
 }
 

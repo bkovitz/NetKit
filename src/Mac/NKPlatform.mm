@@ -1,5 +1,5 @@
-#include "CNPlatform.h"
-#include "CNLog.h"
+#include "NKPlatform.h"
+#include "NKLog.h"
 #include <Foundation/Foundation.h>
 #include <CoreFoundation/CoreFoundation.h>
 #include <SystemConfiguration/SystemConfiguration.h>

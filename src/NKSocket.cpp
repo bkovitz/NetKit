@@ -51,24 +51,26 @@ set_blocking( native fd, bool block )
 }
 
 
-server::server( int domain, int type )
+server::server( int domain, int type, bool async )
 {
 	m_fd = ::socket( domain, type, 0 );
-	set_blocking( false );
+	set_async( async );
 }
 
 
-server::server( native fd )
+server::server( native fd, bool async )
 :
 	m_fd( fd )
 {
+	set_async( async );
 }
 
 
 int
-server::set_blocking( bool block )
+server::set_async( bool async )
 {
-	return ::set_blocking( m_fd, block );
+	m_async = async;
+	return ::set_blocking( m_fd, !async );
 }
 
 
@@ -79,21 +81,21 @@ server::bind( std::initializer_list< adopt_f > l )
 }
 	
 	
-client::client( int domain, int type )
+client::client( int domain, int type, bool async )
 :
 	m_source( NULL )
 {
 	m_fd = ::socket( domain, type, 0 );
-	set_blocking( false );
+	set_async( async );
 }
 
 
-client::client( native fd )
+client::client( native fd, bool async )
 :
 	m_source( NULL ),
 	m_fd( fd )
 {
-	set_blocking( false );
+	set_async( async );
 }
 
 
@@ -125,7 +127,15 @@ client::close()
 
 
 int
-client::set_blocking( bool block )
+client::set_async( bool async )
 {
-	return ::set_blocking( m_fd, block );
+	m_async = async;
+	return ::set_blocking( m_fd, !async );
+}
+
+
+bool
+client::is_open() const
+{
+	return ( m_fd != null ) ? true : false;
 }

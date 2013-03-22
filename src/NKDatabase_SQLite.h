@@ -78,13 +78,9 @@ class manager_impl : public manager
 {
 public:
 
-	manager_impl( sqlite3 *db );
-	
-	inline static manager_impl*
-	instance()
-	{
-		return m_instance;
-	}
+	DECLARE_COMPONENT( manager_impl )
+
+	manager_impl();
 	
 	virtual
 	~manager_impl();
@@ -95,7 +91,7 @@ public:
 	virtual void
 	remove_observer( const std::string &tableName, observer *o );
 
-	virtual error
+	virtual netkit::status
 	exec( const std::string &str );
 
 	virtual statement::ptr
@@ -118,9 +114,8 @@ private:
 	static void
 	database_was_changed( void* impl, int, const char* db_name, const char* table_name, sqlite_int64 );
 	
-	static manager_impl	*m_instance;
-	map					m_omap;
-	sqlite3				*m_db;
+	map		m_omap;
+	sqlite3	*m_db;
 };
 
 }

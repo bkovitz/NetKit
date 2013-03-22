@@ -100,6 +100,20 @@ uri::~uri()
 
 
 std::string
+uri::escape( const std::string &in )
+{
+    char        out[ 1024 ];
+    const char  *term;
+    std::string ret;
+
+    term = uriEscapeA( in.c_str(), out, false, false );
+    ret = ( term != NULL ) ? out : in;
+
+    return ret;
+}
+
+
+std::string
 uri::recompose() const
 {
 	std::string	ret;

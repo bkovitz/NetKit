@@ -2,7 +2,7 @@
 #define _netkit_database_h
 
 #include <NetKit/NKSmartPtr.h>
-#include <NetKit/NKObject.h>
+#include <NetKit/NKComponent.h>
 #include <NetKit/NKURI.h>
 #include <NetKit/NKError.h>
 #include <memory>
@@ -168,17 +168,17 @@ private:
 };
 
 
-class manager : public netkit::object
+class manager : public netkit::component
 {
 public:
 
 	typedef smart_ptr< manager > ptr;
-
-	static bool
-	initialize( const uri::ptr &uri );
-
+	
 	static manager::ptr
 	instance();
+
+	static void
+	set_uri( const uri::ptr &uri );
 
 	virtual void
 	add_observer( const std::string &table_name, observer *o ) = 0;
@@ -186,7 +186,7 @@ public:
 	virtual void
 	remove_observer( const std::string &table_name, observer *o ) = 0;
 
-	virtual error
+	virtual netkit::status
 	exec( const std::string &str ) = 0;
 
 	virtual statement::ptr

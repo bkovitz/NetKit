@@ -94,6 +94,11 @@ address::address( struct sockaddr_storage addr )
 }
 
 
+address::address( addrinfo ai )
+{
+}
+
+
 address::~address()
 {
 }

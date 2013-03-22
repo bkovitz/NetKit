@@ -32,6 +32,7 @@
 #define _netkit_sink_h
 
 #include <NetKit/NKObject.h>
+#include <string>
 
 namespace netkit {
 
@@ -57,9 +58,25 @@ public:
 	ssize_t
 	send( const std::uint8_t *buf, size_t len );
 	
+	bool
+	is_open() const;
+	
+	inline const std::string&
+	token() const
+	{
+		return m_token;
+	}
+	
+	inline void
+	set_token( const std::string &val )
+	{
+		m_token = val;
+	}
+	
 protected:
 
-	source_ptr m_source;
+	source_ptr	m_source;
+	std::string	m_token;
 };
 
 }

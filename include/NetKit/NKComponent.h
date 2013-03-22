@@ -28,60 +28,105 @@
  *
  */
  
-#ifndef _netkit_source_h
-#define _netkit_source_h
+#ifndef _netkit_component_h
+#define _netkit_component_h
 
-#include <NetKit/NKSink.h>
-#include <initializer_list>
+#include <NetKit/NKObject.h>
+#include <NetKit/NKError.h>
 #include <list>
 
 namespace netkit {
 
-class source : public object
+class component : public object
 {
 public:
 
-	typedef smart_ptr< source > ptr;
-	
-	source();
-	
-	virtual ~source();
+	typedef smart_ptr< component >	ptr;
+	typedef std::list< ptr >		list;
 
-	sink::ptr&
-	sink();
+	inline static list::iterator
+	begin()
+	{
+		return m_instances.begin();
+	}
 	
-	const sink::ptr&
-	sink() const;
+	inline static list::iterator
+	end()
+	{
+		return m_instances.end();
+	}
+
+	virtual status
+	will_initialize() = 0;
 	
-	void
-	bind( sink::ptr sink );
-	
-	virtual ssize_t
-	peek( std::uint8_t *buf, size_t len ) = 0;
-	
-	virtual ssize_t
-	recv( std::uint8_t *buf, size_t len ) = 0;
-	
-	virtual ssize_t
-	send( const std::uint8_t *buf, size_t len ) = 0;
-	
-	virtual bool
-	is_secure() = 0;
-	
-	virtual bool
-	secure() = 0;
-	
-	virtual bool
-	is_open() const = 0;
+	virtual status
+	did_initialize() = 0;
 	
 	virtual void
-	close() = 0;
+	will_terminate() = 0;
+	
+	inline status
+	status() const
+	{
+		return m_status;
+	}
 	
 protected:
+	
+	component();
+	
+	virtual
+	~component();
+	
+	enum status m_status;
+	
+private:
 
-	sink::ptr m_sink;
+	static list m_instances;
 };
 
+}
+
+#define DECLARE_COMPONENT( NAME )				\
+public:											\
+static NAME::ptr								\
+instance();										\
+virtual netkit::status							\
+will_initialize();								\
+virtual netkit::status							\
+did_initialize();								\
+virtual void									\
+will_terminate();
+
+#define DEFINE_COMPONENT1( NAME )				\
+static NAME g_instance;							\
+NAME::ptr										\
+NAME::instance()								\
+{												\
+	if ( g_instance.status() != netkit::status::ok )				\
+	{											\
+		g_instance.will_initialize();			\
+	}											\
+												\
+	return &g_instance;							\
+}
+
+#define DEFINE_COMPONENT2( PARENT, NAME )		\
+static NAME g_instance;							\
+PARENT::ptr										\
+PARENT::instance()								\
+{												\
+	return NAME::instance();					\
+}												\
+NAME::ptr										\
+NAME::instance()								\
+{												\
+	if ( g_instance.status() != netkit::status::ok )	\
+	{											\
+		g_instance.will_initialize();			\
+	}											\
+												\
+	return &g_instance;							\
 }
 
 #endif

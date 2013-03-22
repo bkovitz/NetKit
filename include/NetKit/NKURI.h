@@ -49,6 +49,9 @@ public:
 	uri( const std::string& s );
 
 	~uri();
+	
+	static std::string
+    escape( const std::string &s );
 
 	inline const std::string&
 	scheme() const

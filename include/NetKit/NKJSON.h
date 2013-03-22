@@ -54,6 +54,7 @@
 
 #include <NetKit/NKObject.h>
 #include <NetKit/NKSmartPtr.h>
+#include <NetKit/NKError.h>
 #include <NetKit/NKExpected.h>
 #include <NetKit/NKSink.h>
 #include <NetKit/NKSource.h>
@@ -62,6 +63,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <vector>
 #include <map>
 
 class array_map;
@@ -75,7 +77,8 @@ class value : public netkit::object
 {
 public:
 
-	typedef smart_ptr< value > ptr;
+	typedef smart_ptr< value >			ptr;
+	typedef std::vector<std::string>	keys;
 
 	friend std::ostream &operator<<(std::ostream &output, const value &v);
 
@@ -222,6 +225,9 @@ public:
 	bool
 	is_member( const std::string &key ) const;
 	
+	keys
+	all_keys() const;
+	
 	void
 	set_object(const object_map &newobject);
 
@@ -333,9 +339,11 @@ class connection : public sink
 {
 public:
 
+	typedef std::function< void ( value::ptr params ) >					notification_f;
 	typedef std::function< void ( value::ptr response ) >				reply_f;
-	typedef std::function< void ( value::ptr request, reply_f func ) >	request_f;
+	typedef std::function< void ( value::ptr params, reply_f func ) >	request_f;
 	typedef smart_ptr< connection >										ptr;
+	typedef std::list< ptr >											list;
 	
 	connection( const source::ptr &source );
 	
@@ -343,6 +351,9 @@ public:
 
 	static sink::ptr
 	adopt( source::ptr source, const std::uint8_t *buf, size_t len );
+	
+	static void
+	bind( const std::string &method, notification_f func );
 	
 	static void
 	bind( const std::string &method, request_f func );
@@ -353,6 +364,24 @@ public:
 	static void
 	route_request( const value::ptr &request, reply_f func );
 	
+	inline static connection::ptr
+	active()
+	{
+		return m_active;
+	}
+	
+	inline static list::iterator
+	begin()
+	{
+		return m_instances.begin();
+	}
+	
+	inline static list::iterator
+	end()
+	{
+		return m_instances.end();
+	}
+	
 	bool
 	send_notification( value::ptr request );
 	
@@ -362,10 +391,27 @@ public:
 	virtual ssize_t
 	process();
 	
+	class find_by_token
+    {
+	public:
+
+		inline find_by_token( const std::string &token )
+        {
+            m_token = token;
+        }
+
+        bool operator ()( const ptr &connection );
+
+    private:
+
+		std::string m_token;
+    };
+	
 protected:
 
-	typedef std::map< std::string, request_f >	request_handlers;
-	typedef std::map< std::int32_t, reply_f >	reply_handlers;
+	typedef std::map< std::string, notification_f > notification_handlers;
+	typedef std::map< std::string, request_f >		request_handlers;
+	typedef std::map< std::int32_t, reply_f >		reply_handlers;
 	
 	virtual bool
 	send( value::ptr request );
@@ -428,6 +474,9 @@ protected:
 	void
 	shutdown();
 	
+	static connection::list				m_instances;
+	static connection::ptr				m_active;
+	static notification_handlers		m_notification_handlers;
 	static request_handlers				m_request_handlers;
 	reply_handlers						m_reply_handlers;
 	static std::atomic< std::int32_t >	m_id;
@@ -442,10 +491,18 @@ class client : public object
 {
 public:
 
-	typedef std::function< void ( int32_t error_code, const std::string &error_message, json::value::ptr result ) > reply_f;
+	typedef std::function< void ( netkit::status error_code, const std::string &error_message, json::value::ptr result ) > reply_f;
 	typedef smart_ptr< client >																						ptr;
 
 	client( const source::ptr &source );
+	
+	client( const connection::ptr &conn );
+	
+	ssize_t
+	process();
+	
+	bool
+	is_open() const;
 	
 protected:
 
@@ -628,7 +685,7 @@ public:
 	{
 		return ( *m_ref )[ index ];
 	}
-	
+
 	inline smart_ptr< json::value >
 	operator[]( const char *key )
 	{
@@ -706,6 +763,12 @@ inline bool
 operator!=( smart_ptr< json::value > const &a, json::value *b )
 {
 	return ( *a.get() != *b );
+}
+
+inline bool
+json::connection::find_by_token::operator ()( const json::connection::ptr &connection )
+{
+    return m_token == connection->token();
 }
 
 }

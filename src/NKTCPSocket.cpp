@@ -61,9 +61,9 @@ BIO_METHOD	client::m_tls_methods	=
 };
 
 
-client::client()
+client::client( bool async )
 :
-	socket::client( AF_INET, SOCK_STREAM ),
+	socket::client( AF_INET, SOCK_STREAM, async ),
 	m_connected( false ),
 	m_tls_context( NULL ),
 	m_tls( NULL )
@@ -71,9 +71,9 @@ client::client()
 }
 
 
-client::client( socket::native fd )
+client::client( socket::native fd, bool async )
 :
-	socket::client( fd ),
+	socket::client( fd, async ),
 	m_connected( true ),
 	m_tls_context( NULL ),
 	m_tls( NULL )
@@ -81,9 +81,9 @@ client::client( socket::native fd )
 }
 
 
-client::client( socket::native fd, const ip::address::ptr &addr )
+client::client( socket::native fd, const ip::address::ptr &addr, bool async )
 :
-	socket::client( fd ),
+	socket::client( fd, async ),
 	m_connected( true ),
 	m_tls_context( NULL ),
 	m_tls( NULL )
@@ -110,42 +110,110 @@ client::~client()
 void
 client::connect( ip::address::ptr address, connect_reply_f reply )
 {
-	std::thread t( [=]()
+	sockaddr_storage	saddr	= address->sockaddr();
+	socklen_t			slen	= saddr.ss_len;
+	
+	if ( m_async )
 	{
-		sockaddr_storage	saddr	= address->sockaddr();
-		socklen_t			slen	= saddr.ss_len;
-		int					ret;
+		std::thread t( [=]()
+		{
+			int ret;
 		
-		set_blocking( true );
+			set_async( false );
+		
+			ret = ::connect( m_fd, ( struct sockaddr* ) &saddr, slen );
+		
+			set_async( true );
+		
+			if ( ret == -1 )
+			{
+				nklog( log::error, "connect errno = %d", errno );
+			}
+		
+			runloop::instance()->dispatch_on_main_thread( [=]()
+			{
+				reply( ret );
+			
+				if ( m_sink )
+				{
+					auto source = runloop::instance()->create_source( m_fd, runloop::event::read, [=]( runloop::source s, runloop::event e )
+					{
+						m_sink->process();
+					} );
+				
+					runloop::instance()->schedule( source );
+					
+					set_source( source );
+				}
+			} );
+		} );
+	
+		t.detach();
+	}
+	else
+	{
+		int ret;
 		
 		ret = ::connect( m_fd, ( struct sockaddr* ) &saddr, slen );
-		
-		set_blocking( false );
 		
 		if ( ret == -1 )
 		{
 			nklog( log::error, "connect errno = %d", errno );
 		}
 		
-		runloop::instance()->dispatch_on_main_thread( [=]()
-		{
-			reply( ret );
-			
-			if ( m_sink )
-			{
-				auto source = runloop::instance()->create_source( m_fd, runloop::event::read, [=]( runloop::source s, runloop::event e )
-				{
-					m_sink->process();
-				} );
-				
-				runloop::instance()->schedule( source );
-				
-				set_source( source );
-			}
-		} );
-	} );
+		reply( ret );
+	}
+}
+
+
+bool
+client::is_secure()
+{
+}
+
 	
-	t.detach();
+bool
+client::secure()
+{
+	bool ok = true;
+
+    // Socket is in non-blocking mode.  Set it back to blocking before we setup TLS
+    // On Windows, we need to unregister the socket from the runloop first
+
+	if ( m_source )
+	{
+		runloop::instance()->suspend( m_source );
+	}
+
+    // Now set it to blocking
+
+    if ( set_async( false ) == -1 )
+    {
+        nklog( log::error, "unable to set socket to blocking" );
+        ok = false;
+        goto exit;
+    }
+
+    // Now start up tls
+
+    if ( tls_accept() != 0 )
+    {
+        nklog( log::error, "unable to start TLS" );
+        ok = false;
+        goto exit;
+    }
+
+    // And register it back with the runloop
+
+	if ( m_source )
+	{
+		runloop::instance()->schedule( m_source );
+	}
+
+exit:
+
+    return ok;
+
 }
 
 
@@ -246,7 +314,7 @@ client::tls_setup()
 {
     BIO *bio_err	= NULL;
 	bool ok;
-	int ret = ( int ) error::none;
+	int ret = ( int ) status::ok;
 
 	OpenSSL_add_all_algorithms();
 	SSL_load_error_strings();
@@ -291,13 +359,13 @@ client::tls_connect()
 {
 	BIO				*bio;           /* BIO data */
 	unsigned long	error;          /* Error code */
-	int				ret = ( int ) error::none;
+	int				ret = ( int ) status::ok;
 	
 	if ( !m_cert )
 	{
 		ret = tls_setup();
 		
-		if ( ret != ( int ) error::none )
+		if ( ret != ( int ) status::ok )
 		{
 			goto exit;
 		}
@@ -342,13 +410,13 @@ client::tls_accept()
 {
 	BIO				*bio;           /* BIO data */
 	unsigned long	error;          /* Error code */
-	int				ret = ( int ) error::none;
+	int				ret = ( int ) status::ok;
 	
 	if ( !m_cert )
 	{
 		ret = tls_setup();
 		
-		if ( ret != ( int ) error::none )
+		if ( ret != ( int ) status::ok )
 		{
 			goto exit;
 		}
@@ -661,9 +729,9 @@ client::callback(int p, int n, void *arg)
 #	pragma mark server implementation
 #endif
 
-server::server( const ip::address::ptr &addr )
+server::server( const ip::address::ptr &addr, bool async )
 :
-	socket::server( AF_INET, SOCK_STREAM ),
+	socket::server( AF_INET, SOCK_STREAM, async ),
 	m_addr( addr )
 {
 	listen();

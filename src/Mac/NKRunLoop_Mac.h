@@ -53,6 +53,9 @@ public:
 	schedule( source s );
 	
 	virtual void
+	suspend( source s );
+	
+	virtual void
 	cancel( source s );
 
 	virtual void

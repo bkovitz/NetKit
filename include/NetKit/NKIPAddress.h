@@ -37,6 +37,7 @@
 #include <net/if.h>
 #include <net/if_dl.h>
 #include <netinet/in.h>
+#include <netdb.h>
 #include <deque>
 
 
@@ -61,6 +62,8 @@ public:
 	address( struct in6_addr addr, uint16_t port );
 	
 	address( sockaddr_storage sockaddr );
+	
+	address( addrinfo ai );
 
 	virtual ~address();
 	

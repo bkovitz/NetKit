@@ -81,20 +81,21 @@ public:
 	typedef std::list< adopt_f >																	adopters;
 
 	int
-	set_blocking( bool block );
+	set_async( bool async );
 	
 	void
 	bind( std::initializer_list< adopt_f > l );
 	
 protected:
 
-	server( int domain, int type );
+	server( int domain, int type, bool async = true );
 
-	server( native fd );
+	server( native fd, bool async = true );
 	
 	server( const server &that );	// Not implemented
 	
 	adopters	m_adopters;
+	bool		m_async;
 	native		m_fd;
 };
 
@@ -118,13 +119,7 @@ public:
 	}
 	
 	int
-	set_blocking( bool block );
-	
-	inline bool
-	is_open() const
-	{
-		return ( m_fd != null ) ? true : false;
-	}
+	set_async( bool async );
 	
 	virtual ssize_t
 	peek( std::uint8_t *buf, size_t len ) = 0;
@@ -134,6 +129,9 @@ public:
 	
 	virtual ssize_t
 	send( const std::uint8_t *buf, size_t len ) = 0;
+	
+	virtual bool
+	is_open() const;
 	
 	virtual void
 	close();
@@ -146,15 +144,16 @@ public:
 	
 protected:
 
-	client( int domain, int type );
+	client( int domain, int type, bool async = true );
 
-	client( native fd );
+	client( native fd, bool async = true );
 	
 	client( const client &that );	// Not implemented
 	
 	virtual ~client();
 
 	runloop::source	m_source;
+	bool			m_async;
 	native			m_fd;
 };
 

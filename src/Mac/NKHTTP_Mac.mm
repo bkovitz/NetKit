@@ -170,7 +170,7 @@ void
 client_mac::send_request( CFHTTPAuthenticationRef auth )
 {
 	CFStreamClientContext	context	= { 0, this, nil, nil, nil };
-	CFHTTPMessageRef		handle	= CFHTTPMessageCreateRequest( kCFAllocatorDefault, ( CFStringRef ) [ NSString stringWithUTF8String:http::method::as_string( m_request->method() ).c_str() ], ( CFURLRef ) [ NSURL URLWithString:[ NSString stringWithUTF8String:m_request->uri()->recompose().c_str() ] ], kCFHTTPVersion1_1 );
+	CFHTTPMessageRef		handle	= CFHTTPMessageCreateRequest( kCFAllocatorDefault, ( CFStringRef ) [ NSString stringWithUTF8String:http::method::to_string( m_request->method() ).c_str() ], ( CFURLRef ) [ NSURL URLWithString:[ NSString stringWithUTF8String:m_request->uri()->recompose().c_str() ] ], kCFHTTPVersion1_1 );
 	
 	if ( !handle )
 	{

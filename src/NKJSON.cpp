@@ -1827,6 +1827,23 @@ value::is_member( const std::string &key ) const
 }
 
 
+value::keys
+value::all_keys() const
+{
+	value::keys ret;
+	
+	if ( is_object() )
+	{
+		for ( auto it = m_data.m_object->begin(); it != m_data.m_object->end(); it++ )
+		{
+			ret.push_back( it->first );
+		}
+	}
+	
+	return ret;
+}
+
+
 bool
 value::is_object() const
 {
@@ -2780,8 +2797,11 @@ netkit::json::operator<<(std::ostream &output, const value &v)
 #	pragma mark connection implementation
 #endif
 
-connection::request_handlers	connection::m_request_handlers;
-std::atomic< std::int32_t >		connection::m_id( 1 );
+connection::list					connection::m_instances;
+connection::ptr						connection::m_active;
+connection::notification_handlers	connection::m_notification_handlers;
+connection::request_handlers		connection::m_request_handlers;
+std::atomic< std::int32_t >			connection::m_id( 1 );
 
 connection::connection( const source::ptr &source )
 :
@@ -2790,6 +2810,7 @@ connection::connection( const source::ptr &source )
 	m_eptr( NULL ),
 	m_end( NULL )
 {
+	m_instances.push_back( this );
 	add( 4192 );
 }
 
@@ -2847,6 +2868,13 @@ exit:
 
 
 void
+connection::bind( const std::string &method, notification_f func )
+{
+	m_notification_handlers[ method ] = func;
+}
+
+
+void
 connection::bind( const std::string &method, request_f func )
 {
 	m_request_handlers[ method ] = func;
@@ -2867,7 +2895,6 @@ connection::process()
 		
 		num = recv( m_eptr, num_bytes_unused() );
 	
-	fprintf( stderr, "read %d bytes\n", num );
 		if ( num > 0 )
 		{
 			m_eptr += num;
@@ -3058,35 +3085,48 @@ fprintf( stderr, "read: %s\n", msg.c_str() );
 			if ( validate( root, error ) )
 			{
 				auto id = root[ "id" ];
-				auto it = m_request_handlers.find( root[ "method" ]->as_string() );
 				
-				if ( it != m_request_handlers.end() )
+				if ( id->is_null() )
 				{
-					it->second( root[ "params" ], [=]( value::ptr response )
+					auto it = m_notification_handlers.find( root[ "method" ]->as_string() );
+				
+					if ( it != m_notification_handlers.end() )
 					{
-						if ( !id->is_null() && !response->is_null() )
-						{
-							response[ "jsonrpc" ]	= "2.0";
-							response[ "id" ]		= id;
-							
-							connection::ptr nckeep( this );
-							nckeep->send( response );
-						}
-					} );
+						it->second( root[ "params" ] );
+					}
 				}
-				else if ( !root[ "id" ]->is_null() )
+				else
 				{
-					value::ptr response;
-					value::ptr error;
+					auto it = m_request_handlers.find( root[ "method" ]->as_string() );
+				
+					if ( it != m_request_handlers.end() )
+					{
+						it->second( root[ "params" ], [=]( value::ptr response )
+						{
+							if ( !id->is_null() && !response->is_null() )
+							{
+								response[ "jsonrpc" ]	= "2.0";
+								response[ "id" ]		= id;
+							
+								connection::ptr nckeep( this );
+								nckeep->send( response );
+							}
+						} );
+					}
+					else
+					{
+						value::ptr response;
+						value::ptr error;
 					
-					error[ "code" ]			= ( int ) error::method_not_found;
-					error[ "message" ]		= "Method not found.";
+						error[ "code" ]			= ( int ) error::method_not_found;
+						error[ "message" ]		= "Method not found.";
 				
-					response[ "id" ]		= root[ "id" ];
-					response[ "jsonrpc" ]	= "2.0";
-					response[ "error" ]		= error;
+						response[ "id" ]		= root[ "id" ];
+						response[ "jsonrpc" ]	= "2.0";
+						response[ "error" ]		= error;
 				
-					send( response );
+						send( response );
+					}
 				}
 			}
 			else
@@ -3192,6 +3232,27 @@ client::client( const source::ptr &source )
 }
 
 
+client::client( const connection::ptr &conn )
+:
+	m_connection( conn )
+{
+}
+
+
+ssize_t
+client::process()
+{
+	return m_connection->process();
+}
+
+
+bool
+client::is_open() const
+{
+	return m_connection->is_open();
+}
+
+
 bool
 client::send_notification( const std::string &method, value::ptr params )
 {
@@ -3214,9 +3275,9 @@ client::send_request( const std::string &method, value::ptr params, reply_f repl
 	
 	return m_connection->send_request( request, [=]( value::ptr response )
 	{
-		int32_t		error_code = 0;
-		std::string	error_message;
-		value::ptr	result;
+		netkit::status	error_code = netkit::status::ok;
+		std::string		error_message;
+		value::ptr		result;
 	
 		if ( response[ "error" ]->is_null() )
 		{
@@ -3224,7 +3285,7 @@ client::send_request( const std::string &method, value::ptr params, reply_f repl
 		}
 		else
 		{
-			error_code		= response[ "error" ][ "code" ]->as_integer();
+			error_code		= ( netkit::status ) response[ "error" ][ "code" ]->as_integer();
 			error_message	= response[ "error" ][ "message" ]->as_string();
 		}
 			

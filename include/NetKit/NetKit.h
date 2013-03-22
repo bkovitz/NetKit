@@ -34,8 +34,11 @@
 #include <NetKit/NKObject.h>
 #include <NetKit/NKURI.h>
 #include <NetKit/NKIPAddress.h>
+#include <NetKit/NKConcurrent.h>
 #include <NetKit/NKSocket.h>
 #include <NetKit/NKTCPSocket.h>
+#include <NetKit/NKComponent.h>
+#include <NetKit/NKMIME.h>
 #include <NetKit/NKHTTP.h>
 #include <NetKit/NKBase64.h>
 #include <NetKit/cstring.h>

@@ -28,59 +28,97 @@
  *
  */
  
-#ifndef _netkit_source_h
-#define _netkit_source_h
+#ifndef _netkit_concurrent_h
+#define _netkit_concurrent_h
 
-#include <NetKit/NKSink.h>
-#include <initializer_list>
+#include <mutex>
 #include <list>
 
 namespace netkit {
 
-class source : public object
+namespace concurrent {
+
+template < class Data >
+class queue
 {
 public:
 
-	typedef smart_ptr< source > ptr;
-	
-	source();
-	
-	virtual ~source();
+	typedef std::function< bool ( Data& ) > func;
 
-	sink::ptr&
-	sink();
-	
-	const sink::ptr&
-	sink() const;
-	
-	void
-	bind( sink::ptr sink );
-	
-	virtual ssize_t
-	peek( std::uint8_t *buf, size_t len ) = 0;
-	
-	virtual ssize_t
-	recv( std::uint8_t *buf, size_t len ) = 0;
-	
-	virtual ssize_t
-	send( const std::uint8_t *buf, size_t len ) = 0;
-	
-	virtual bool
-	is_secure() = 0;
-	
-	virtual bool
-	secure() = 0;
-	
-	virtual bool
-	is_open() const = 0;
-	
-	virtual void
-	close() = 0;
-	
-protected:
+	inline queue()
+	{
+	}
 
-	sink::ptr m_sink;
+	inline ~queue()
+	{
+	}
+
+	inline void
+	push( Data const& data )
+	{
+		std::lock_guard< std::mutex > guard( m_mutex );
+		m_queue.push_back( data );
+	}
+
+	inline bool
+	empty() const
+	{
+		std::lock_guard< std::mutex > guard( m_mutex );
+		return m_queue.empty();
+	}
+
+	inline bool
+	try_pop( Data &value )
+	{
+		bool ok = false;
+
+		std::lock_guard< std::mutex > guard( m_mutex );
+
+		if ( !m_queue.empty() )
+		{
+			value = m_queue.front();
+			m_queue.pop_front();
+			ok = true;
+		}
+
+		return ok;
+	}
+
+	inline void
+	prune( func f )
+	{
+		std::lock_guard< std::mutex > guard( m_mutex );
+
+		auto it = m_queue.begin();
+
+		while ( it != m_queue.end() )
+		{
+			if ( f( *it ) )
+			{
+				it = m_queue.erase( it );
+			}
+			else
+			{
+				++it;
+			}
+		}
+	}
+
+	inline size_t
+	size() const
+	{
+		std::lock_guard< std::mutex > guard( m_mutex );
+
+		return m_queue.size();
+	}
+
+private:
+
+	std::list< Data >	m_queue;
+	std::mutex			m_mutex;
 };
+
+}
 
 }
 

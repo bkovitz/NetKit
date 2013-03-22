@@ -32,7 +32,10 @@
 #define _netkit_object_h
 
 #include <NetKit/NKSmartPtr.h>
+#include <NetKit/NKExpected.h>
 #include <atomic>
+#include <string>
+#include <map>
 
 namespace netkit {
 
@@ -41,6 +44,12 @@ class object
 public:
 
 	typedef smart_ptr< object > ptr;
+
+	virtual expected< std::string >
+	value_for_key( const std::string &key ) const;
+
+	virtual void
+	set_value_for_key( const std::string &key, const std::string &value );
 
 	inline void
 	retain()
@@ -77,8 +86,9 @@ protected:
 
 	virtual ~object() = 0;
 
-	typedef std::atomic< int >	atomic_int_t;
-	mutable atomic_int_t		m_refs;
+	typedef std::atomic< int >				atomic_int_t;
+	std::map< std::string, std::string >	m_map;
+	mutable atomic_int_t					m_refs;
 };
 
 }

@@ -14,51 +14,21 @@ using namespace netkit::database;
 #	pragma mark database::manager_impl implementation
 #endif
 
-manager_impl *manager_impl::m_instance;
+DEFINE_COMPONENT2( manager, manager_impl )
 
-bool
-manager::initialize( const uri::ptr &uri )
+static uri::ptr g_uri;
+
+void
+manager::set_uri( const uri::ptr &uri )
 {
-	sqlite3	*db;
-	int		ret;
-	bool	ok;
-	
-	ret = sqlite3_open( uri->path().c_str(), &db );
-
-	if ( ret != SQLITE_OK )
-	{
-		ok = false;
-		goto exit;
-	}
-		
-#if defined( __APPLE__ )
-
-	chmod( ( const char* ) uri->path().c_str(), 0666 );
-	
-#endif
-
-	new manager_impl( db );
-
-	ok = true;
-	
-exit:
-
-	return ok;
+	g_uri = uri;
 }
 
 
-manager::ptr
-manager::instance()
-{
-	return manager_impl::instance();
-}
-
-
-manager_impl::manager_impl( sqlite3 *db )
+manager_impl::manager_impl()
 :
-	m_db( db )
+	m_db( NULL )
 {
-	m_instance = this;
 }
 
 
@@ -67,11 +37,40 @@ manager_impl::~manager_impl()
 }
 
 
-#if 0
-status
-manager_impl::applicationDidInitialize()
+enum status
+manager_impl::will_initialize()
 {
-	if ( state() == okay )
+	if ( status() != status::ok )
+	{
+		int ret;
+	
+		ret = sqlite3_open( g_uri->path().c_str(), &m_db );
+
+		if ( ret != SQLITE_OK )
+		{
+			m_status = status::internal;
+			goto exit;
+		}
+		
+#if defined( __APPLE__ )
+
+		chmod( ( const char* ) g_uri->path().c_str(), 0666 );
+	
+#endif
+
+		m_status = status::ok;
+	}
+
+exit:
+
+	return status();
+}
+
+
+enum status
+manager_impl::did_initialize()
+{
+	if ( status() == status::ok )
 	{
 		for ( map::iterator it = m_omap.begin(); it != m_omap.end(); it++ )
 		{
@@ -79,19 +78,24 @@ manager_impl::applicationDidInitialize()
 		
 			while ( stmt->step() )
 			{				
-				databaseWasChanged( this, SQLITE_INSERT, NULL, it->first.c_str(), stmt->int64AtColumn( 0 ) );
+				database_was_changed( this, SQLITE_INSERT, NULL, it->first.c_str(), stmt->int64_at_column( 0 ) );
 			}
 		}
 		
-		sqlite3_update_hook( m_db, databaseWasChanged, this );
+		sqlite3_update_hook( m_db, database_was_changed, this );
 	}
 
-	return state();
+	return status();
 }
-#endif
 
 
-error
+void
+manager_impl::will_terminate()
+{
+}
+
+
+enum status
 manager_impl::exec( const std::string &str )
 {
 	char *error = NULL;
@@ -110,7 +114,7 @@ manager_impl::exec( const std::string &str )
 		sqlite3_free( error );
 	}
 
-	return error::none;
+	return status::ok;
 }
 
 

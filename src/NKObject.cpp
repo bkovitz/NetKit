@@ -29,6 +29,7 @@
  */
  
 #include <NetKit/NKObject.h>
+#include <exception>
 #include <assert.h>
 
 using namespace netkit;
@@ -36,4 +37,27 @@ using namespace netkit;
 object::~object()
 {
 	//assert( m_refs == 0 );
+}
+
+
+expected< std::string >
+object::value_for_key( const std::string &key ) const
+{
+	auto it = m_map.find( key );
+
+	if ( it != m_map.end() )
+	{
+		return it->second;
+	}
+	else
+	{
+		return std::runtime_error( "key not found" );
+	}
+}
+
+
+void
+object::set_value_for_key( const std::string &key, const std::string &value )
+{
+	m_map[ key ] = value;
 }
