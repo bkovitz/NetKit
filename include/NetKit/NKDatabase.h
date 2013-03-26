@@ -168,17 +168,19 @@ private:
 };
 
 
-class manager : public netkit::component
-{
+class manager : public object {
 public:
 
 	typedef smart_ptr< manager > ptr;
 	
 	static manager::ptr
+	create( const uri::ptr &uri );
+	
+	static manager::ptr
 	instance();
-
-	static void
-	set_uri( const uri::ptr &uri );
+	
+	virtual bool
+	is_connected() const = 0;
 
 	virtual void
 	add_observer( const std::string &table_name, observer *o ) = 0;
@@ -242,7 +244,7 @@ public:
 		
 		os << "SELECT COUNT(*) FROM " << Type::table_name() << ";";
 		
-		stmt = database::manager::instance()->select( os.str() );
+		stmt = manager::instance()->select( os.str() );
 		
 		if ( stmt->step() )
 		{
@@ -260,7 +262,7 @@ public:
 
 		os << "SELECT * FROM " << Type::table_name() << ";";
 
-		statement::ptr s = database::manager::instance()->select( os.str() );
+		statement::ptr s = manager::instance()->select( os.str() );
 
 		return iterator<Type, Ptr>( s );
 	}
@@ -275,7 +277,7 @@ public:
 		
 		os << "SELECT * FROM " << Type::table_name() << " WHERE oid = " << oid << ";";
 		
-		stmt = database::manager::instance()->select( os.str() );
+		stmt = manager::instance()->select( os.str() );
 		
 		if ( stmt->step() )
 		{
@@ -299,7 +301,7 @@ public:
 		
 		os << "SELECT * FROM " << Type::table_name() << " WHERE uuid LIKE '" << sanitize( uuid ) << "';";
 		
-		stmt = database::manager::instance()->select( os.str() );
+		stmt = manager::instance()->select( os.str() );
 		
 		if ( stmt->step() )
 		{
@@ -321,7 +323,7 @@ public:
 
 		os << "SELECT * FROM " << Type::table_name() << " WHERE " << key << "=" << val << ";";
 
-		statement::ptr s = database::manager::instance()->select( os.str() );
+		statement::ptr s = manager::instance()->select( os.str() );
 
 		return iterator<Type, Ptr>( s );
 	}
@@ -334,7 +336,7 @@ public:
 
 		os << "SELECT * FROM " << Type::table_name() << " WHERE " << key << "=" << val << ";";
 
-		statement::ptr s = database::manager::instance()->select( os.str() );
+		statement::ptr s = manager::instance()->select( os.str() );
 
 		return iterator<Type, Ptr>( s );
 	}
@@ -347,7 +349,7 @@ public:
 
 		os << "SELECT * FROM " << Type::table_name() << " WHERE " << key << " LIKE '" << sanitize( val ) << "';";
 
-		statement::ptr s = database::manager::instance()->select( os.str() );
+		statement::ptr s = manager::instance()->select( os.str() );
 
 		return iterator<Type, Ptr>( s );
 	}
@@ -360,7 +362,7 @@ public:
 
 		os << "SELECT * FROM " << Type::table_name() << " WHERE " << key << " LIKE '" << sanitize( val ) << "';";
 
-		statement::ptr s = database::manager::instance()->select( os.str() );
+		statement::ptr s = manager::instance()->select( os.str() );
 
 		return iterator<Type, Ptr>( s );
 	}
@@ -379,7 +381,7 @@ public:
 		
 			os << "DELETE FROM " << table_name_v() << " WHERE oid = " << m_oid << ";";
 		
-			database::manager::instance()->exec( os.str() );
+			manager::instance()->exec( os.str() );
 		}
 	}
 

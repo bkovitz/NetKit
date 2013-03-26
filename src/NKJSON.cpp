@@ -1426,6 +1426,15 @@ value::value(int newInt)
 }
 
 
+value::value( status v )
+:
+	m_type( type::integer ),
+	m_data( new int( ( int ) v ) )
+{
+}
+
+
+
 value::value(double newDouble)
 :
 	m_type( type::real ),
@@ -1806,6 +1815,13 @@ value::is_integer() const
 
 
 bool
+value::is_status() const
+{
+	return m_type == type::integer;
+}
+
+
+bool
 value::is_real() const
 {
 	return m_type == type::real;
@@ -1899,6 +1915,13 @@ int
 value::as_integer( int default_value ) const
 {
 	return ( m_type == type::integer ) ? *m_data.m_integer : default_value;
+}
+
+
+status
+value::as_status( status default_value ) const
+{
+	return ( m_type == type::integer ) ? ( status ) *m_data.m_integer : default_value;
 }
 
 
@@ -2799,8 +2822,6 @@ netkit::json::operator<<(std::ostream &output, const value &v)
 
 connection::list					connection::m_instances;
 connection::ptr						connection::m_active;
-connection::notification_handlers	connection::m_notification_handlers;
-connection::request_handlers		connection::m_request_handlers;
 std::atomic< std::int32_t >			connection::m_id( 1 );
 
 connection::connection( const source::ptr &source )
@@ -2867,18 +2888,7 @@ exit:
 }
 
 
-void
-connection::bind( const std::string &method, notification_f func )
-{
-	m_notification_handlers[ method ] = func;
-}
 
-
-void
-connection::bind( const std::string &method, request_f func )
-{
-	m_request_handlers[ method ] = func;
-}
 
 
 ssize_t
@@ -3064,7 +3074,6 @@ connection::really_process()
 			goto exit;
 		}
 
-fprintf( stderr, "read: %s\n", msg.c_str() );
 		msg.assign( ( const char* ) m_base, index + 1, len );
 	    
 		shift( index + len + 2 );
@@ -3082,62 +3091,44 @@ fprintf( stderr, "read: %s\n", msg.c_str() );
 		
 		if ( !root[ "method" ]->is_null() )
 		{
+			auto id = root[ "id" ];
+				
 			if ( validate( root, error ) )
 			{
-				auto id = root[ "id" ];
-				
 				if ( id->is_null() )
 				{
-					auto it = m_notification_handlers.find( root[ "method" ]->as_string() );
-				
-					if ( it != m_notification_handlers.end() )
-					{
-						it->second( root[ "params" ] );
-					}
+					m_active = this;
+					
+					server::route_notification( root );
+					
+					m_active = NULL;
 				}
 				else
 				{
-					auto it = m_request_handlers.find( root[ "method" ]->as_string() );
-				
-					if ( it != m_request_handlers.end() )
-					{
-						it->second( root[ "params" ], [=]( value::ptr response )
-						{
-							if ( !id->is_null() && !response->is_null() )
-							{
-								response[ "jsonrpc" ]	= "2.0";
-								response[ "id" ]		= id;
-							
-								connection::ptr nckeep( this );
-								nckeep->send( response );
-							}
-						} );
-					}
-					else
-					{
-						value::ptr response;
-						value::ptr error;
+					m_active = this;
 					
-						error[ "code" ]			= ( int ) error::method_not_found;
-						error[ "message" ]		= "Method not found.";
-				
-						response[ "id" ]		= root[ "id" ];
-						response[ "jsonrpc" ]	= "2.0";
-						response[ "error" ]		= error;
-				
-						send( response );
-					}
+					server::route_request( root, [=]( value::ptr reply, bool upgrade, bool close )
+					{
+						m_active = NULL;
+	
+						reply[ "jsonrpc" ]	= "2.0";
+						reply[ "id" ]		= id;
+							
+						connection::ptr nckeep( this );
+						nckeep->send( reply );
+								
+						if ( close )
+						{
+							nckeep->shutdown();
+						}
+					} );
 				}
 			}
-			else
+			else if ( !id->is_null() )
 			{
-				value::ptr response;
-					
-				response[ "id" ]		= root[ "id" ];
-				response[ "jsonrpc" ]	= "2.0";
-				response[ "error" ]		= error;
+				error[ "id" ] = id;
 				
-				send( response );
+				send( error );
 			}
 		}
 		else
@@ -3167,7 +3158,7 @@ connection::validate( const value::ptr &root, value::ptr error)
       
 	if ( !root->is_object() || !root->is_member( "jsonrpc" ) || ( root[ "jsonrpc" ] != value::ptr( "2.0" ) ) )
 	{
-        err[ "code" ]		= ( int ) error::invalid_request;
+        err[ "code" ]		= status::invalid_request;
         err[ "message" ]	= "Invalid JSON-RPC request.";
 		
 		error[ "id" ]		= value::null();
@@ -3178,7 +3169,7 @@ connection::validate( const value::ptr &root, value::ptr error)
 	}
 	else if ( root->is_member( "id" ) && ( root[ "id" ]->is_array() || root[ "id" ]->is_object() ) )
 	{
-        err[ "code" ]		= ( int ) error::invalid_request;
+        err[ "code" ]		= status::invalid_request;
         err[ "message" ]	= "Invalid JSON-RPC request.";
 		
 		error[ "id" ]		= value::null();
@@ -3189,7 +3180,7 @@ connection::validate( const value::ptr &root, value::ptr error)
 	}
 	else if ( !root->is_member( "method" ) || !root["method"]->is_string() )
 	{
-        err[ "code" ]		= ( int ) error::invalid_request;
+        err[ "code" ]		= status::invalid_request;
         err[ "message" ]	= "Invalid JSON-RPC request.";
 		
 		error[ "id" ]		= value::null();
@@ -3206,20 +3197,111 @@ connection::validate( const value::ptr &root, value::ptr error)
 void
 connection::shutdown()
 {
-	value::ptr result;
+	value::ptr reply;
 	value::ptr error;
 	
 	m_source->close();
 	
-	error[ "code" ]		= ( int ) error::internal_error;
+	error[ "code" ]		= status::internal_error;
 	error[ "message" ]	= "Lost connection";
-	result[ "error" ]	= error;
+	reply[ "error" ]	= error;
 
 	for ( auto it = m_reply_handlers.begin(); it != m_reply_handlers.end(); it++ )
 	{
-		it->second( result );
+		it->second( reply );
 	}
 }
+
+#if defined( __APPLE__ )
+#	pragma mark server implementation
+#endif
+
+server::notification_handlers	server::m_notification_handlers;
+server::request_handlers		server::m_request_handlers;
+
+void
+server::bind( const std::string &method, size_t num_params, notification_f func )
+{
+	m_notification_handlers[ method ] = std::make_pair( num_params, func );
+}
+
+
+void
+server::bind( const std::string &method, size_t num_params, request_f func )
+{
+	m_request_handlers[ method ] = std::make_pair( num_params, func );
+}
+
+
+void
+server::route_notification( const value::ptr &notification )
+{
+	auto it = m_notification_handlers.find( notification[ "method" ]->as_string() );
+				
+	if ( it != m_notification_handlers.end() )
+	{
+		auto params = notification[ "params" ];
+						
+		if ( it->second.first == params->size() )
+		{
+			it->second.second( params );
+		}
+	}
+}
+
+
+void
+server::route_request( const value::ptr &request, reply_f r )
+{
+	auto it = m_request_handlers.find( request[ "method" ]->as_string() );
+				
+	if ( it != m_request_handlers.end() )
+	{
+		auto params = request[ "params" ];
+						
+		if ( it->second.first == params->size() )
+		{
+			it->second.second( params, r );
+		}
+		else
+		{
+			value::ptr reply;
+			value::ptr error;
+					
+			error[ "code" ]			= status::invalid_params;
+			error[ "message" ]		= "Invalid Paramaters.";
+			reply[ "error" ]		= error;
+			
+			r( reply, false, false );
+		}
+	}
+	else
+	{
+		value::ptr reply;
+		value::ptr error;
+					
+		error[ "code" ]		= status::method_not_found;
+		error[ "message" ]	= "Method not found.";
+		reply[ "error" ]	= error;
+		
+		r( reply, false, false );
+	}
+}
+
+
+void
+server::reply_with_error( reply_f r, netkit::status status, bool upgrade, bool close )
+{
+	value::ptr reply;
+	value::ptr error;
+					
+	error[ "code" ]		= status;
+	error[ "message" ]	= status_to_string( status );
+	reply[ "error" ]	= error;
+			
+	r( reply, upgrade, close );
+}
+	
 
 #if defined( __APPLE__ )
 #	pragma mark client implementation

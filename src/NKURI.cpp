@@ -195,11 +195,12 @@ exit:
 }
 
 
-void
+bool
 uri::assign( const std::string& s )
 {
 	UriParserStateA state;
 	UriUriA			uri;
+	bool			ok = false;
 
 	state.uri = &uri;
 	
@@ -241,9 +242,13 @@ uri::assign( const std::string& s )
 	
 	m_query.assign( uri.query.first, uri.query.afterLast - uri.query.first );
 	
+	ok = true;
+	
 exit:
 
 	uriFreeUriMembersA( &uri );
+	
+	return ok;
 }
 
 

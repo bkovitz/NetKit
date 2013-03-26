@@ -108,6 +108,11 @@ client::~client()
 void
 client::close()
 {
+	for ( auto it = m_close_handlers.begin(); it != m_close_handlers.end(); it++ )
+	{
+		it->second();
+	}
+	
 	if ( m_source )
 	{
 		runloop::instance()->cancel( m_source );

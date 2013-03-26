@@ -14,59 +14,52 @@ using namespace netkit::database;
 #	pragma mark database::manager_impl implementation
 #endif
 
-DEFINE_COMPONENT2( manager, manager_impl )
+static manager::ptr g_manager;
 
-static uri::ptr g_uri;
-
-void
-manager::set_uri( const uri::ptr &uri )
+manager::ptr
+manager::create( const uri::ptr &uri )
 {
-	g_uri = uri;
+	sqlite3	*db;
+	int		err;
+	
+	err = sqlite3_open( uri->path().c_str(), &db );
+
+	if ( err == SQLITE_OK )
+	{
+#if defined( __APPLE__ )
+
+		chmod( ( const char* ) uri->path().c_str(), 0666 );
+	
+#endif
+
+		g_manager = new manager_impl( db );
+	}
+	
+	return g_manager;
 }
 
 
-manager_impl::manager_impl()
+manager::ptr
+manager::instance()
+{
+	return g_manager;
+}
+
+
+manager_impl::manager_impl( sqlite3 * db )
 :
-	m_db( NULL )
+	m_db( db )
 {
 }
 
 
 manager_impl::~manager_impl()
 {
+	sqlite3_close( m_db );
 }
 
 
-enum status
-manager_impl::will_initialize()
-{
-	if ( status() != status::ok )
-	{
-		int ret;
-	
-		ret = sqlite3_open( g_uri->path().c_str(), &m_db );
-
-		if ( ret != SQLITE_OK )
-		{
-			m_status = status::internal;
-			goto exit;
-		}
-		
-#if defined( __APPLE__ )
-
-		chmod( ( const char* ) g_uri->path().c_str(), 0666 );
-	
-#endif
-
-		m_status = status::ok;
-	}
-
-exit:
-
-	return status();
-}
-
-
+#if 0
 enum status
 manager_impl::did_initialize()
 {
@@ -87,11 +80,13 @@ manager_impl::did_initialize()
 
 	return status();
 }
+#endif
 
 
-void
-manager_impl::will_terminate()
+bool
+manager_impl::is_connected() const
 {
+	return ( m_db != NULL ) ? true : false;
 }
 
 

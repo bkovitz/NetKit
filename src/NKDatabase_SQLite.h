@@ -78,12 +78,13 @@ class manager_impl : public manager
 {
 public:
 
-	DECLARE_COMPONENT( manager_impl )
-
-	manager_impl();
+	manager_impl( sqlite3 *db );
 	
 	virtual
 	~manager_impl();
+	
+	virtual bool
+	is_connected() const;
 	
 	virtual void
 	add_observer( const std::string &tableName, observer *o );

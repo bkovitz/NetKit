@@ -43,7 +43,9 @@ class sink : public object
 {
 public:
 
-	typedef smart_ptr< sink > ptr;
+	typedef void							*tag;
+	typedef std::function< void ( void ) >	close_f;
+	typedef smart_ptr< sink >				ptr;
 	
 	sink( const source_ptr &source );
 	
@@ -72,6 +74,12 @@ public:
 	{
 		m_token = val;
 	}
+	
+	tag
+	register_close_handler( close_f );
+	
+	void
+	unregister_close_handler( tag t );
 	
 protected:
 

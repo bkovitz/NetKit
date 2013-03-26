@@ -61,3 +61,29 @@ source::bind( sink::ptr sink )
 {
 	m_sink = sink;
 }
+
+
+source::tag
+source::register_close_handler( close_f c )
+{
+	static int	tags = 0;
+	source::tag t = reinterpret_cast< source::tag >( tags++ );
+	
+	m_close_handlers.push_back( std::make_pair( t, c ) );
+	
+	return t;
+}
+
+
+void
+source::unregister_close_handler( tag t )
+{
+	for ( auto it = m_close_handlers.begin(); it != m_close_handlers.end(); it++ )
+	{
+		if ( it->first == t )
+		{
+			m_close_handlers.erase( it );
+			break;
+		}
+	}
+}

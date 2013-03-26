@@ -31,6 +31,8 @@
 #ifndef _netkit_error_h
 #define _netkit_error_h
 
+#include <string>
+
 namespace netkit {
 
 enum class status
@@ -49,10 +51,13 @@ enum class status
 	parse				= -32700,
 	invalid_request		= -32600,
 	method_not_found	= -32601,
-	invalid_parms		= -32602,
+	invalid_params		= -32602,
 	uninitialized		= -32603,
-	internal			= -32604
+	internal_error		= -32604
 };
+
+std::string
+status_to_string( status v );
 
 }
 

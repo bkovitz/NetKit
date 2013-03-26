@@ -65,3 +65,17 @@ sink::is_open() const
 {
 	return m_source->is_open();
 }
+
+
+sink::tag
+sink::register_close_handler( close_f c )
+{
+	return m_source->register_close_handler( c );
+}
+
+	
+void
+sink::unregister_close_handler( tag t )
+{
+	m_source->unregister_close_handler( t );
+}

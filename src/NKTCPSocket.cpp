@@ -169,6 +169,7 @@ client::connect( ip::address::ptr address, connect_reply_f reply )
 bool
 client::is_secure()
 {
+	return ( m_tls != NULL ) ? true : false;
 }
 
 	

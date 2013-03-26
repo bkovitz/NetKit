@@ -96,6 +96,15 @@ address::address( struct sockaddr_storage addr )
 
 address::address( addrinfo ai )
 {
+	memset( &m_native, 0, sizeof( m_native ) );
+	memcpy( &m_native, ai.ai_addr, ai.ai_addrlen );
+	
+	if ( m_native.ss_family == AF_INET6 )
+	{
+		sockaddr_in6 *saddr = ( struct sockaddr_in6* ) &m_native;
+		
+		fprintf( stderr, "port = %d\n", ntohs( saddr->sin6_port ) );
+	}
 }
 
 

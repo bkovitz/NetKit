@@ -130,6 +130,8 @@ public:
 	value( const char *v );
 
 	value( int v);
+	
+	value( status v );
 
 	value( double v );
 
@@ -182,6 +184,9 @@ public:
 
 	bool
 	is_integer() const;
+	
+	bool
+	is_status() const;
 
 	bool
 	is_real() const;
@@ -206,6 +211,9 @@ public:
 
 	int
 	as_integer( int default_value = 0 ) const;
+	
+	status
+	as_status( status = status::ok ) const;
 
 	void
 	set_integer( int v );
@@ -335,15 +343,14 @@ private:
 	bool m_in_string;
 };
 
+
 class connection : public sink
 {
 public:
 
-	typedef std::function< void ( value::ptr params ) >					notification_f;
-	typedef std::function< void ( value::ptr response ) >				reply_f;
-	typedef std::function< void ( value::ptr params, reply_f func ) >	request_f;
-	typedef smart_ptr< connection >										ptr;
-	typedef std::list< ptr >											list;
+	typedef std::function< void ( json::value::ptr result ) >	reply_f;
+	typedef smart_ptr< connection >								ptr;
+	typedef std::list< ptr >									list;
 	
 	connection( const source::ptr &source );
 	
@@ -351,18 +358,6 @@ public:
 
 	static sink::ptr
 	adopt( source::ptr source, const std::uint8_t *buf, size_t len );
-	
-	static void
-	bind( const std::string &method, notification_f func );
-	
-	static void
-	bind( const std::string &method, request_f func );
-	
-	static void
-	route_notification( const value::ptr &request );
-	
-	static void
-	route_request( const value::ptr &request, reply_f func );
 	
 	inline static connection::ptr
 	active()
@@ -409,9 +404,7 @@ public:
 	
 protected:
 
-	typedef std::map< std::string, notification_f > notification_handlers;
-	typedef std::map< std::string, request_f >		request_handlers;
-	typedef std::map< std::int32_t, reply_f >		reply_handlers;
+	typedef std::map< std::int32_t, reply_f > reply_handlers;
 	
 	virtual bool
 	send( value::ptr request );
@@ -476,8 +469,6 @@ protected:
 	
 	static connection::list				m_instances;
 	static connection::ptr				m_active;
-	static notification_handlers		m_notification_handlers;
-	static request_handlers				m_request_handlers;
 	reply_handlers						m_reply_handlers;
 	static std::atomic< std::int32_t >	m_id;
 	
@@ -487,12 +478,48 @@ protected:
 	std::uint8_t						*m_end;
 };
 
+
+class server
+{
+public:
+
+	typedef std::function< void ( value::ptr result, bool upgrade, bool close ) >	reply_f;
+	typedef std::function< void ( value::ptr params ) >								notification_f;
+	typedef std::function< void ( value::ptr params, reply_f func ) >				request_f;
+	
+	static void
+	bind( const std::string &method, size_t num_params, notification_f func );
+	
+	static void
+	bind( const std::string &method, size_t num_params, request_f func );
+	
+	static void
+	route_notification( const value::ptr &request );
+	
+	static void
+	route_request( const value::ptr &request, reply_f func );
+	
+	static void
+	reply_with_error( reply_f reply, netkit::status status, bool upgrade, bool close );
+	
+private:
+
+	typedef std::pair< size_t, notification_f >				notification_target;
+	typedef std::map< std::string, notification_target >	notification_handlers;
+	typedef std::pair< size_t, request_f >					request_target;
+	typedef std::map< std::string, request_target >			request_handlers;
+	
+	static notification_handlers							m_notification_handlers;
+	static request_handlers									m_request_handlers;
+};
+
+
 class client : public object
 {
 public:
 
-	typedef std::function< void ( netkit::status error_code, const std::string &error_message, json::value::ptr result ) > reply_f;
-	typedef smart_ptr< client >																						ptr;
+	typedef std::function< void ( netkit::status error_code, const std::string &error_message, json::value::ptr result ) >	reply_f;
+	typedef smart_ptr< client >																								ptr;
 
 	client( const source::ptr &source );
 	
@@ -529,17 +556,6 @@ operator<<( std::ostream &os, const std::vector< json::value::ptr > &a );
 std::ostream&
 operator<<( std::ostream &os, const std::map< std::string, json::value::ptr > &m );
 
-enum class error
-{
-	parse				= -32700,
-	invalid_request		= -32600,
-	method_not_found	= -32601,
-	invalid_params		= -32602,
-	internal_error		= -32603,
-	disconnected		= -32000,
-	unknown				= -32099
-};
-
 }
 
 template <>
@@ -567,6 +583,13 @@ public:
 	}
 	
 	inline smart_ptr( int32_t v )
+	:
+		m_ref( new json::value( v ) )
+	{
+		m_ref->retain();
+	}
+	
+	inline smart_ptr( netkit::status v )
 	:
 		m_ref( new json::value( v ) )
 	{

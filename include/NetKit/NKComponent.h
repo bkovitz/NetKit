@@ -47,13 +47,13 @@ public:
 	inline static list::iterator
 	begin()
 	{
-		return m_instances.begin();
+		return m_instances->begin();
 	}
 	
 	inline static list::iterator
 	end()
 	{
-		return m_instances.end();
+		return m_instances->end();
 	}
 
 	virtual status
@@ -82,7 +82,7 @@ protected:
 	
 private:
 
-	static list m_instances;
+	static list *m_instances;
 };
 
 }

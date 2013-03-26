@@ -11,13 +11,18 @@ using namespace netkit;
 // component implementation
 // -----------------------------
 
-component::list component::m_instances;
+component::list *component::m_instances;
 
 component::component()
 :
 	m_status( status::uninitialized )
 {
-	m_instances.push_back( this );
+	if ( !m_instances )
+	{
+		m_instances = new component::list;
+	}
+	
+	m_instances->push_back( this );
 }
 
 

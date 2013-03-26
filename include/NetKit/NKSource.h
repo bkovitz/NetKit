@@ -41,7 +41,9 @@ class source : public object
 {
 public:
 
-	typedef smart_ptr< source > ptr;
+	typedef void							*tag;
+	typedef std::function< void ( void ) >	close_f;
+	typedef smart_ptr< source >				ptr;
 	
 	source();
 	
@@ -77,9 +79,18 @@ public:
 	virtual void
 	close() = 0;
 	
+	tag
+	register_close_handler( close_f c );
+	
+	void
+	unregister_close_handler( tag t );
+	
 protected:
 
-	sink::ptr m_sink;
+	typedef std::list< std::pair< tag, close_f > > close_handlers;
+	
+	sink::ptr		m_sink;
+	close_handlers	m_close_handlers;
 };
 
 }

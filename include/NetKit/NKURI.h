@@ -116,7 +116,7 @@ public:
 	std::string
 	recompose() const;
 
-	void
+	bool
 	assign( const std::string &s );
 	
 	void
