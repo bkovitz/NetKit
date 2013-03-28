@@ -39,6 +39,8 @@
 
 namespace netkit {
 
+extern void initialize();
+
 class object
 {
 public:
@@ -78,11 +80,7 @@ public:
 	
 protected:
 
-	object()
-	:
-		m_refs( 0 )
-	{
-	}
+	object();
 
 	virtual ~object() = 0;
 

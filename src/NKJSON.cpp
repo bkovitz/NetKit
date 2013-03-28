@@ -2820,7 +2820,7 @@ netkit::json::operator<<(std::ostream &output, const value &v)
 #	pragma mark connection implementation
 #endif
 
-connection::list					connection::m_instances;
+connection::list					*connection::m_instances;
 connection::ptr						connection::m_active;
 std::atomic< std::int32_t >			connection::m_id( 1 );
 
@@ -2831,7 +2831,7 @@ connection::connection( const source::ptr &source )
 	m_eptr( NULL ),
 	m_end( NULL )
 {
-	m_instances.push_back( this );
+	m_instances->push_back( this );
 	add( 4192 );
 }
 
@@ -3107,19 +3107,18 @@ connection::really_process()
 				{
 					m_active = this;
 					
-					server::route_request( root, [=]( value::ptr reply, bool upgrade, bool close )
+					server::route_request( root, [=]( value::ptr reply, bool upgrade, bool close ) mutable
 					{
 						m_active = NULL;
 	
 						reply[ "jsonrpc" ]	= "2.0";
 						reply[ "id" ]		= id;
 							
-						connection::ptr nckeep( this );
-						nckeep->send( reply );
+						send( reply );
 								
 						if ( close )
 						{
-							nckeep->shutdown();
+							shutdown();
 						}
 					} );
 				}
@@ -3216,29 +3215,37 @@ connection::shutdown()
 #	pragma mark server implementation
 #endif
 
-server::notification_handlers	server::m_notification_handlers;
-server::request_handlers		server::m_request_handlers;
+server::preflight_f				server::m_preflight_handler = []( json::value::ptr request ){ return netkit::status::ok; };
+server::notification_handlers	*server::m_notification_handlers;
+server::request_handlers		*server::m_request_handlers;
+
+void
+server::preflight( preflight_f func )
+{
+	m_preflight_handler = func;
+}
+
 
 void
 server::bind( const std::string &method, size_t num_params, notification_f func )
 {
-	m_notification_handlers[ method ] = std::make_pair( num_params, func );
+	( *m_notification_handlers )[ method ] = std::make_pair( num_params, func );
 }
 
 
 void
 server::bind( const std::string &method, size_t num_params, request_f func )
 {
-	m_request_handlers[ method ] = std::make_pair( num_params, func );
+	( *m_request_handlers )[ method ] = std::make_pair( num_params, func );
 }
 
 
 void
 server::route_notification( const value::ptr &notification )
 {
-	auto it = m_notification_handlers.find( notification[ "method" ]->as_string() );
+	auto it = m_notification_handlers->find( notification[ "method" ]->as_string() );
 				
-	if ( it != m_notification_handlers.end() )
+	if ( it != m_notification_handlers->end() )
 	{
 		auto params = notification[ "params" ];
 						
@@ -3253,25 +3260,41 @@ server::route_notification( const value::ptr &notification )
 void
 server::route_request( const value::ptr &request, reply_f r )
 {
-	auto it = m_request_handlers.find( request[ "method" ]->as_string() );
-				
-	if ( it != m_request_handlers.end() )
+	netkit::status status = m_preflight_handler( request );
+	
+	if ( status == netkit::status::ok )
 	{
-		auto params = request[ "params" ];
-						
-		if ( it->second.first == params->size() )
+		auto it = m_request_handlers->find( request[ "method" ]->as_string() );
+				
+		if ( it != m_request_handlers->end() )
 		{
-			it->second.second( params, r );
+			auto params = request[ "params" ];
+							
+			if ( it->second.first == params->size() )
+			{
+				it->second.second( params, r );
+			}
+			else
+			{
+				value::ptr reply;
+				value::ptr error;
+							
+				error[ "code" ]			= status::invalid_params;
+				error[ "message" ]		= "Invalid Paramaters.";
+				reply[ "error" ]		= error;
+					
+				r( reply, false, false );
+			}
 		}
 		else
 		{
 			value::ptr reply;
 			value::ptr error;
-					
-			error[ "code" ]			= status::invalid_params;
-			error[ "message" ]		= "Invalid Paramaters.";
-			reply[ "error" ]		= error;
-			
+							
+			error[ "code" ]		= status::method_not_found;
+			error[ "message" ]	= "Method not found.";
+			reply[ "error" ]	= error;
+				
 			r( reply, false, false );
 		}
 	}
@@ -3279,11 +3302,11 @@ server::route_request( const value::ptr &request, reply_f r )
 	{
 		value::ptr reply;
 		value::ptr error;
-					
-		error[ "code" ]		= status::method_not_found;
-		error[ "message" ]	= "Method not found.";
+							
+		error[ "code" ]		= status;
+		error[ "message" ]	= status_to_string( status );
 		reply[ "error" ]	= error;
-		
+				
 		r( reply, false, false );
 	}
 }
@@ -3301,7 +3324,7 @@ server::reply_with_error( reply_f r, netkit::status status, bool upgrade, bool c
 			
 	r( reply, upgrade, close );
 }
-	
+
 
 #if defined( __APPLE__ )
 #	pragma mark client implementation

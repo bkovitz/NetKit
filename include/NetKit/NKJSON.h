@@ -348,7 +348,7 @@ class connection : public sink
 {
 public:
 
-	typedef std::function< void ( json::value::ptr result ) >	reply_f;
+	typedef std::function< void ( json::value::ptr reply ) >	reply_f;
 	typedef smart_ptr< connection >								ptr;
 	typedef std::list< ptr >									list;
 	
@@ -368,13 +368,13 @@ public:
 	inline static list::iterator
 	begin()
 	{
-		return m_instances.begin();
+		return m_instances->begin();
 	}
 	
 	inline static list::iterator
 	end()
 	{
-		return m_instances.end();
+		return m_instances->end();
 	}
 	
 	bool
@@ -467,7 +467,9 @@ protected:
 	void
 	shutdown();
 	
-	static connection::list				m_instances;
+	friend void							netkit::initialize();
+		
+	static connection::list				*m_instances;
 	static connection::ptr				m_active;
 	reply_handlers						m_reply_handlers;
 	static std::atomic< std::int32_t >	m_id;
@@ -483,9 +485,13 @@ class server
 {
 public:
 
+	typedef std::function< netkit::status ( value::ptr params ) >					preflight_f;
 	typedef std::function< void ( value::ptr result, bool upgrade, bool close ) >	reply_f;
 	typedef std::function< void ( value::ptr params ) >								notification_f;
 	typedef std::function< void ( value::ptr params, reply_f func ) >				request_f;
+	
+	static void
+	preflight( preflight_f func );
 	
 	static void
 	bind( const std::string &method, size_t num_params, notification_f func );
@@ -504,13 +510,16 @@ public:
 	
 private:
 
+	friend void												netkit::initialize();
+	
 	typedef std::pair< size_t, notification_f >				notification_target;
 	typedef std::map< std::string, notification_target >	notification_handlers;
 	typedef std::pair< size_t, request_f >					request_target;
 	typedef std::map< std::string, request_target >			request_handlers;
 	
-	static notification_handlers							m_notification_handlers;
-	static request_handlers									m_request_handlers;
+	static preflight_f										m_preflight_handler;
+	static notification_handlers							*m_notification_handlers;
+	static request_handlers									*m_request_handlers;
 };
 
 

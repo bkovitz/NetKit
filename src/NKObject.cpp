@@ -34,6 +34,20 @@
 
 using namespace netkit;
 
+object::object()
+:
+	m_refs( 0 )
+{
+	static bool first = true;
+	
+	if ( first )
+	{
+		netkit::initialize();
+		first = false;
+	}
+}
+
+
 object::~object()
 {
 	//assert( m_refs == 0 );

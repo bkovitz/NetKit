@@ -54,7 +54,7 @@
 		D23DF59C15F6AFCD0027A8F1 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D23DF59B15F6AFCD0027A8F1 /* main.cpp */; };
 		D23DF5B315F6B1190027A8F1 /* NetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D23DF52615F698390027A8F1 /* NetKit.framework */; };
 		D23DF5BC15F6B9310027A8F1 /* test_tcp_socket.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D23DF5BA15F6B6F90027A8F1 /* test_tcp_socket.cpp */; };
-		D23DF5C015F6D5490027A8F1 /* NKTCPSocket.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D23DF5BD15F6D5490027A8F1 /* NKTCPSocket.cpp */; };
+		D23DF5C015F6D5490027A8F1 /* NKTCPSocket.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D23DF5BD15F6D5490027A8F1 /* NKTCPSocket.cpp */; settings = {COMPILER_FLAGS = "-Wno-deprecated"; }; };
 		D23DF5C215F6D5490027A8F1 /* NKSocket.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D23DF5BF15F6D5490027A8F1 /* NKSocket.cpp */; };
 		D23DF5CC15F7C8D80027A8F1 /* libssl.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D23DF5CB15F7C8D70027A8F1 /* libssl.dylib */; };
 		D23DF5CE15F7C8DF0027A8F1 /* libcrypto.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D23DF5CD15F7C8DF0027A8F1 /* libcrypto.dylib */; };
@@ -96,7 +96,7 @@
 		D26B0EC016F7C744008379E0 /* NKSocket.h in Headers */ = {isa = PBXBuildFile; fileRef = D23DF55815F698F90027A8F1 /* NKSocket.h */; };
 		D26B0EC116F7C744008379E0 /* NKSource.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D239D38316D6A8B2007FB101 /* NKSource.cpp */; };
 		D26B0EC216F7C744008379E0 /* NKSource.h in Headers */ = {isa = PBXBuildFile; fileRef = D239D37F16D69451007FB101 /* NKSource.h */; };
-		D26B0EC316F7C744008379E0 /* NKTCPSocket.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D23DF5BD15F6D5490027A8F1 /* NKTCPSocket.cpp */; };
+		D26B0EC316F7C744008379E0 /* NKTCPSocket.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D23DF5BD15F6D5490027A8F1 /* NKTCPSocket.cpp */; settings = {COMPILER_FLAGS = "-Wno-deprecated"; }; };
 		D26B0EC416F7C744008379E0 /* NKTCPSocket.h in Headers */ = {isa = PBXBuildFile; fileRef = D23DF55615F698F90027A8F1 /* NKTCPSocket.h */; };
 		D26B0EC516F7C744008379E0 /* NKUnicode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D2033DC516E1813C00DBE69B /* NKUnicode.cpp */; };
 		D26B0EC616F7C744008379E0 /* NKUnicode.h in Headers */ = {isa = PBXBuildFile; fileRef = D2033DC216E1811000DBE69B /* NKUnicode.h */; };

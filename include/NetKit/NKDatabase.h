@@ -173,7 +173,7 @@ public:
 
 	typedef smart_ptr< manager > ptr;
 	
-	static manager::ptr
+	static bool
 	create( const uri::ptr &uri );
 	
 	static manager::ptr

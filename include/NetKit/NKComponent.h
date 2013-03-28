@@ -43,6 +43,12 @@ public:
 
 	typedef smart_ptr< component >	ptr;
 	typedef std::list< ptr >		list;
+	
+	static bool
+	initialize();
+	
+	static void
+	finalize();
 
 	inline static list::iterator
 	begin()
@@ -81,6 +87,8 @@ protected:
 	enum status m_status;
 	
 private:
+
+	friend void netkit::initialize();
 
 	static list *m_instances;
 };

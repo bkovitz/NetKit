@@ -16,7 +16,7 @@ using namespace netkit::database;
 
 static manager::ptr g_manager;
 
-manager::ptr
+bool
 manager::create( const uri::ptr &uri )
 {
 	sqlite3	*db;
@@ -35,7 +35,7 @@ manager::create( const uri::ptr &uri )
 		g_manager = new manager_impl( db );
 	}
 	
-	return g_manager;
+	return ( err == 0 ) ? true : false;
 }
 
 
@@ -151,7 +151,7 @@ exit:
 void
 database::manager_impl::add_observer( const std::string &tableName, observer *o )
 {
-	map::iterator it = m_omap.find( tableName );
+	auto it = m_omap.find( tableName );
 	
 	if ( it != m_omap.end() )
 	{
@@ -159,14 +159,19 @@ database::manager_impl::add_observer( const std::string &tableName, observer *o 
 	}
 	else
 	{
-		list l;
-		
-		l.push_back( o );
+		list l = { o };
 		
 		m_omap[ tableName ] = l;
 	}
+	
+	auto stmt = select( "SELECT oid from " + tableName );
+		
+	while ( stmt->step() )
+	{
+		o->object_was_updated( tableName, stmt->int64_at_column( 0 ) );
+	}
 }
-
+		
 
 void
 database::manager_impl::remove_observer( const std::string &tableName, observer * o )

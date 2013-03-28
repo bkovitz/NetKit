@@ -238,15 +238,21 @@ client::recv( uint8_t *buf, size_t len )
 	{
 		num = ::recv( m_fd, buf, len, 0 );
 		
-		fprintf( stderr, "read %d bytes\n", num );
 		if ( num == 0 )
 		{
-			fprintf( stderr, "errno = %d\n", errno );
+			nklog( log::verbose, "recv() returned EOF" );
 			num = -1;
 		}
-		else if ( ( num == -1 ) && ( errno == EWOULDBLOCK ) )
+		else if ( num == -1 )
 		{
-			num = 0;
+			if ( platform::error() == ( int ) socket::error::would_block )
+			{
+				num = 0;
+			}
+			else
+			{
+				nklog( log::error, "recv() returned %d", platform::error() );
+			}
 		}
 	}
 	
@@ -305,7 +311,6 @@ client::send( const uint8_t *buf, size_t len )
 		}
 	}
 
-fprintf( stderr, "sent %d bytes\n", total );
 	return total;
 }
 
@@ -808,20 +813,18 @@ server::listen()
 		
 		if ( sock )
 		{
-			auto source = runloop::instance()->create_source( sock->fd(), netkit::runloop::event::read, [=]( runloop::source s, runloop::event event )
+			auto source = runloop::instance()->create_source( sock->fd(), netkit::runloop::event::read, [=] ( runloop::source s, runloop::event event ) mutable
 			{
-				client::ptr dummy( sock );
-				
-				if ( dummy->sink() )
+				if ( sock->sink() )
 				{
-					dummy->sink()->process();
+					sock->sink()->process();
 				}
 				else
 				{
 					uint8_t buf[ 64 ];
 					ssize_t	num;
 				
-					num = dummy->peek( buf, sizeof( buf ) );
+					num = sock->peek( buf, sizeof( buf ) );
 				
 					if ( num > 0 )
 					{
