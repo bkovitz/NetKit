@@ -55,6 +55,7 @@ extern const std::string jpg;
 
 namespace application {
 
+extern const std::string postscript;
 extern const std::string pdf;
 extern const std::string ipp;
 

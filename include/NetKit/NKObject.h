@@ -45,6 +45,7 @@ class object
 {
 public:
 
+	typedef std::map< std::string, std::string > keyvals;
 	typedef smart_ptr< object > ptr;
 
 	virtual expected< std::string >
@@ -52,7 +53,31 @@ public:
 
 	virtual void
 	set_value_for_key( const std::string &key, const std::string &value );
-
+	
+	inline keyvals::iterator
+	keyvals_begin()
+	{
+		return m_map.begin();
+	}
+	
+	inline keyvals::iterator
+	keyvals_end()
+	{
+		return m_map.end();
+	}
+	
+	inline keyvals::const_iterator
+	keyvals_begin() const
+	{
+		return m_map.begin();
+	}
+	
+	inline keyvals::const_iterator
+	keyvals_end() const
+	{
+		return m_map.end();
+	}
+	
 	inline void
 	retain()
 	{
@@ -73,7 +98,7 @@ public:
 	}
 	
 	inline int
-	refs()
+	refs() const
 	{
 		return m_refs.fetch_add( 0 );
 	}
@@ -84,9 +109,9 @@ protected:
 
 	virtual ~object() = 0;
 
-	typedef std::atomic< int >				atomic_int_t;
-	std::map< std::string, std::string >	m_map;
-	mutable atomic_int_t					m_refs;
+	typedef std::atomic< int >	atomic_int_t;
+	keyvals						m_map;
+	mutable atomic_int_t		m_refs;
 };
 
 }

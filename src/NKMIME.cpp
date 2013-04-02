@@ -9,3 +9,4 @@ const std::string mime::image::jpg( "image/jpg" );
 const std::string mime::image::png( "image/png" );
 const std::string mime::application::pdf( "application/pdf" );
 const std::string mime::application::ipp( "application/ipp" );
+const std::string mime::application::postscript( "application/postscript" );

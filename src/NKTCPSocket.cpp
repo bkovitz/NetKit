@@ -113,56 +113,58 @@ client::connect( ip::address::ptr address, connect_reply_f reply )
 	sockaddr_storage	saddr	= address->sockaddr();
 	socklen_t			slen	= saddr.ss_len;
 	
-	if ( m_async )
-	{
-		std::thread t( [=]()
-		{
-			int ret;
-		
-			set_async( false );
-		
-			ret = ::connect( m_fd, ( struct sockaddr* ) &saddr, slen );
-		
-			set_async( true );
-		
-			if ( ret == -1 )
-			{
-				nklog( log::error, "connect errno = %d", errno );
-			}
-		
-			runloop::instance()->dispatch_on_main_thread( [=]()
-			{
-				reply( ret );
-			
-				if ( m_sink )
-				{
-					auto source = runloop::instance()->create_source( m_fd, runloop::event::read, [=]( runloop::source s, runloop::event e )
-					{
-						m_sink->process();
-					} );
-				
-					runloop::instance()->schedule( source );
-					
-					set_source( source );
-				}
-			} );
-		} );
-	
-		t.detach();
-	}
-	else
+	std::thread t( [=]()
 	{
 		int ret;
 		
+		set_async( false );
+		
 		ret = ::connect( m_fd, ( struct sockaddr* ) &saddr, slen );
+		
+		set_async( true );
 		
 		if ( ret == -1 )
 		{
 			nklog( log::error, "connect errno = %d", errno );
 		}
 		
-		reply( ret );
+		runloop::instance()->dispatch_on_main_thread( [=]()
+		{
+			reply( ret );
+			
+			if ( m_sink )
+			{
+				auto source = runloop::instance()->create_source( m_fd, runloop::event::read, [=]( runloop::source s, runloop::event e )
+				{
+					m_sink->process();
+				} );
+				
+				runloop::instance()->schedule( source );
+					
+				set_source( source );
+			}
+		} );
+	} );
+	
+	t.detach();
+}
+
+
+int
+client::connect_sync( ip::address::ptr address )
+{
+	sockaddr_storage	saddr	= address->sockaddr();
+	socklen_t			slen	= saddr.ss_len;
+	int					ret;
+		
+	ret = ::connect( m_fd, ( struct sockaddr* ) &saddr, slen );
+		
+	if ( ret == -1 )
+	{
+		nklog( log::error, "connect errno = %d", errno );
 	}
+	
+	return ret;
 }
 
 

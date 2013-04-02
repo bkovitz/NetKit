@@ -50,6 +50,7 @@ manager_impl::manager_impl( sqlite3 * db )
 :
 	m_db( db )
 {
+	sqlite3_update_hook( m_db, database_was_changed, this );
 }
 
 
@@ -57,30 +58,6 @@ manager_impl::~manager_impl()
 {
 	sqlite3_close( m_db );
 }
-
-
-#if 0
-enum status
-manager_impl::did_initialize()
-{
-	if ( status() == status::ok )
-	{
-		for ( map::iterator it = m_omap.begin(); it != m_omap.end(); it++ )
-		{
-			statement::ptr stmt = select( "SELECT oid from " + it->first );
-		
-			while ( stmt->step() )
-			{				
-				database_was_changed( this, SQLITE_INSERT, NULL, it->first.c_str(), stmt->int64_at_column( 0 ) );
-			}
-		}
-		
-		sqlite3_update_hook( m_db, database_was_changed, this );
-	}
-
-	return status();
-}
-#endif
 
 
 bool

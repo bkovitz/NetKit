@@ -101,6 +101,9 @@ public:
 	void
 	connect( ip::address::ptr addr, connect_reply_f reply );
 	
+	int
+	connect_sync( ip::address::ptr addr );
+	
 	virtual bool
 	is_secure();
 	

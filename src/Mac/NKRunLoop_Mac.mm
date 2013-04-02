@@ -68,14 +68,12 @@ runloop_mac::create_source( int fd, event e, event_f f )
 {
 	auto source = dispatch_source_create( DISPATCH_SOURCE_TYPE_READ, fd, 0, dispatch_get_main_queue() );
 	
-	dispatch_source_set_event_handler( source,
-	^()
+	dispatch_source_set_event_handler( source, ^()
 	{
 		f( source, runloop::event::read );
 	} );
 	
-	dispatch_source_set_cancel_handler( source,
-	^()
+	dispatch_source_set_cancel_handler( source, ^()
 	{
 	} );
 	
@@ -144,5 +142,5 @@ runloop_mac::run()
 void
 runloop_mac::stop()
 {
-	CFRunLoopStop( CFRunLoopGetMain() );
+	CFRunLoopStop( CFRunLoopGetCurrent() );
 }
