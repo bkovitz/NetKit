@@ -157,8 +157,12 @@ client::connect_sync( ip::address::ptr address )
 	socklen_t			slen	= saddr.ss_len;
 	int					ret;
 		
+	set_async( false );
+	
 	ret = ::connect( m_fd, ( struct sockaddr* ) &saddr, slen );
 		
+	set_async( true );
+	
 	if ( ret == -1 )
 	{
 		nklog( log::error, "connect errno = %d", errno );
@@ -742,7 +746,6 @@ server::server( const ip::address::ptr &addr, bool async )
 	socket::server( AF_INET, SOCK_STREAM, async ),
 	m_addr( addr )
 {
-	listen();
 }
 
 

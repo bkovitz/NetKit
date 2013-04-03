@@ -10,12 +10,12 @@
 #include <sstream>
 
 
-#define DECLARE_PERSISTENT_OBJECT( NAME )			\
+#define DECLARE_PERSISTENT_OBJECT( NAME, TABLENAME )		\
 typedef netkit::database::iterator< NAME, ptr > iterator;	\
 static const std::string&							\
 table_name()										\
 {													\
-	static std::string name( #NAME );				\
+	static std::string name( #TABLENAME );			\
 	return name;									\
 }													\
 virtual const std::string&							\

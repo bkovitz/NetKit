@@ -30,6 +30,7 @@
  
 #include <NetKit/NKObject.h>
 #include <exception>
+#include <sstream>
 #include <assert.h>
 
 using namespace netkit;
@@ -54,8 +55,24 @@ object::~object()
 }
 
 
+expected< std::int32_t >
+object::int_for_key( const std::string &key ) const
+{
+	auto it = m_map.find( key );
+
+	if ( it != m_map.end() )
+	{
+		return ( it->second.length() > 0 ) ? atoi( it->second.c_str() ) : 0;
+	}
+	else
+	{
+		return std::runtime_error( "key not found" );
+	}
+}
+
+
 expected< std::string >
-object::value_for_key( const std::string &key ) const
+object::string_for_key( const std::string &key ) const
 {
 	auto it = m_map.find( key );
 
@@ -67,6 +84,17 @@ object::value_for_key( const std::string &key ) const
 	{
 		return std::runtime_error( "key not found" );
 	}
+}
+
+
+void
+object::set_value_for_key( const std::string &key, std::int32_t val )
+{
+	std::ostringstream os;
+	
+	os << val;
+	
+	m_map[ key ] = os.str();
 }
 
 

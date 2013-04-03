@@ -33,6 +33,7 @@
 
 #include <NetKit/NKSmartPtr.h>
 #include <NetKit/NKExpected.h>
+#include <cstdint>
 #include <atomic>
 #include <string>
 #include <map>
@@ -48,11 +49,17 @@ public:
 	typedef std::map< std::string, std::string > keyvals;
 	typedef smart_ptr< object > ptr;
 
+	virtual expected< std::int32_t >
+	int_for_key( const std::string &key ) const;
+
 	virtual expected< std::string >
-	value_for_key( const std::string &key ) const;
+	string_for_key( const std::string &key ) const;
 
 	virtual void
-	set_value_for_key( const std::string &key, const std::string &value );
+	set_value_for_key( const std::string &key, std::int32_t val );
+	
+	virtual void
+	set_value_for_key( const std::string &key, const std::string &val );
 	
 	inline keyvals::iterator
 	keyvals_begin()

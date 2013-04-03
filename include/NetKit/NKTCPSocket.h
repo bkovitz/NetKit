@@ -58,6 +58,9 @@ public:
 	virtual int
 	open();
 	
+	virtual int
+	listen();
+	
 	inline uint16_t
 	port() const
 	{
@@ -69,9 +72,6 @@ public:
 	
 protected:
 
-	int
-	listen();
-	
 	ip::address::ptr m_addr;
 };
 
