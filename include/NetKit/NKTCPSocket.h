@@ -51,7 +51,7 @@ public:
 	typedef smart_ptr< server > ptr;
 	typedef std::deque< ptr > list;
 
-	server( const ip::address::ptr &addr, bool async = true );
+	server( const ip::address::ptr &addr );
 
 	virtual ~server();
 	
@@ -84,11 +84,11 @@ public:
 
 	typedef smart_ptr< client > ptr;
 	
-	client( bool async = true );
+	client();
 	
-	client( socket::native fd, bool async = true );
+	client( socket::native fd );
 	
-	client( socket::native fd, const ip::address::ptr &addr, bool async = true );
+	client( socket::native fd, const ip::address::ptr &addr );
 	
 	virtual ~client();
 	

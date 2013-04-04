@@ -36,7 +36,7 @@
 
 using namespace netkit::socket;
 
-static int
+static bool
 set_blocking( native fd, bool block )
 {
 #if defined( WIN32 )
@@ -46,31 +46,23 @@ set_blocking( native fd, bool block )
 #else
 	int flags = block ? fcntl( fd, F_GETFL, 0 ) & ~O_NONBLOCK : fcntl( fd, F_GETFL, 0 ) | O_NONBLOCK;
 
-	return fcntl( fd, F_SETFL, flags );
+	return fcntl( fd, F_SETFL, flags ) == 0 ? true : false;
 #endif
 }
 
 
-server::server( int domain, int type, bool async )
+server::server( int domain, int type )
 {
 	m_fd = ::socket( domain, type, 0 );
-	set_async( async );
+	set_blocking( m_fd, false );
 }
 
 
-server::server( native fd, bool async )
+server::server( native fd )
 :
 	m_fd( fd )
 {
-	set_async( async );
-}
-
-
-int
-server::set_async( bool async )
-{
-	m_async = async;
-	return ::set_blocking( m_fd, !async );
+	set_blocking( m_fd, false );
 }
 
 
@@ -81,27 +73,34 @@ server::bind( std::initializer_list< adopt_f > l )
 }
 	
 	
-client::client( int domain, int type, bool async )
+client::client( int domain, int type )
 :
 	m_source( NULL )
 {
 	m_fd = ::socket( domain, type, 0 );
-	set_async( async );
+	::set_blocking( m_fd, false );
 }
 
 
-client::client( native fd, bool async )
+client::client( native fd )
 :
 	m_source( NULL ),
 	m_fd( fd )
 {
-	set_async( async );
+	::set_blocking( fd, false );
 }
 
 
 client::~client()
 {
 	close();
+}
+
+
+bool
+client::set_blocking( bool val )
+{
+	return ::set_blocking( m_fd, val );
 }
 
 
@@ -128,14 +127,6 @@ client::close()
 #endif
 		m_fd = null;
 	}
-}
-
-
-int
-client::set_async( bool async )
-{
-	m_async = async;
-	return ::set_blocking( m_fd, !async );
 }
 
 

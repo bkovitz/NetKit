@@ -80,22 +80,18 @@ public:
 	typedef std::function< sink::ptr ( source::ptr source, const std::uint8_t *buf, size_t len ) >	adopt_f;
 	typedef std::list< adopt_f >																	adopters;
 
-	int
-	set_async( bool async );
-	
 	void
 	bind( std::initializer_list< adopt_f > l );
 	
 protected:
 
-	server( int domain, int type, bool async = true );
+	server( int domain, int type );
 
-	server( native fd, bool async = true );
+	server( native fd );
 	
 	server( const server &that );	// Not implemented
 	
 	adopters	m_adopters;
-	bool		m_async;
 	native		m_fd;
 };
 
@@ -117,9 +113,6 @@ public:
 	{
 		m_source = s;
 	}
-	
-	int
-	set_async( bool async );
 	
 	virtual ssize_t
 	peek( std::uint8_t *buf, size_t len ) = 0;
@@ -144,16 +137,18 @@ public:
 	
 protected:
 
-	client( int domain, int type, bool async = true );
+	client( int domain, int type );
 
-	client( native fd, bool async = true );
+	client( native fd );
 	
 	client( const client &that );	// Not implemented
 	
 	virtual ~client();
+	
+	bool
+	set_blocking( bool val );
 
 	runloop::source	m_source;
-	bool			m_async;
 	native			m_fd;
 };
 

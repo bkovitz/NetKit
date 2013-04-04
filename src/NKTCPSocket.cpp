@@ -61,9 +61,9 @@ BIO_METHOD	client::m_tls_methods	=
 };
 
 
-client::client( bool async )
+client::client()
 :
-	socket::client( AF_INET, SOCK_STREAM, async ),
+	socket::client( AF_INET, SOCK_STREAM ),
 	m_connected( false ),
 	m_tls_context( NULL ),
 	m_tls( NULL )
@@ -71,9 +71,9 @@ client::client( bool async )
 }
 
 
-client::client( socket::native fd, bool async )
+client::client( socket::native fd )
 :
-	socket::client( fd, async ),
+	socket::client( fd ),
 	m_connected( true ),
 	m_tls_context( NULL ),
 	m_tls( NULL )
@@ -81,9 +81,9 @@ client::client( socket::native fd, bool async )
 }
 
 
-client::client( socket::native fd, const ip::address::ptr &addr, bool async )
+client::client( socket::native fd, const ip::address::ptr &addr )
 :
-	socket::client( fd, async ),
+	socket::client( fd ),
 	m_connected( true ),
 	m_tls_context( NULL ),
 	m_tls( NULL )
@@ -117,11 +117,11 @@ client::connect( ip::address::ptr address, connect_reply_f reply )
 	{
 		int ret;
 		
-		set_async( false );
+		set_blocking( true );
 		
 		ret = ::connect( m_fd, ( struct sockaddr* ) &saddr, slen );
 		
-		set_async( true );
+		set_blocking( false );
 		
 		if ( ret == -1 )
 		{
@@ -157,11 +157,11 @@ client::connect_sync( ip::address::ptr address )
 	socklen_t			slen	= saddr.ss_len;
 	int					ret;
 		
-	set_async( false );
+	set_blocking( true );
 	
 	ret = ::connect( m_fd, ( struct sockaddr* ) &saddr, slen );
 		
-	set_async( true );
+	set_blocking( false );
 	
 	if ( ret == -1 )
 	{
@@ -194,8 +194,8 @@ client::secure()
 
     // Now set it to blocking
 
-    if ( set_async( false ) == -1 )
-    {
+	if ( !set_blocking( true ) )
+	{
         nklog( log::error, "unable to set socket to blocking" );
         ok = false;
         goto exit;
@@ -209,6 +209,8 @@ client::secure()
         ok = false;
         goto exit;
     }
+	
+	set_blocking( false );
 
     // And register it back with the runloop
 
@@ -243,6 +245,8 @@ client::recv( uint8_t *buf, size_t len )
 	else
 	{
 		num = ::recv( m_fd, buf, len, 0 );
+		
+		fprintf( stderr, "::recv() returned %d, %d\n", num, errno );
 		
 		if ( num == 0 )
 		{
@@ -486,6 +490,7 @@ client::open()
 void
 client::close()
 {
+	fprintf( stderr, "in tcp::client::close()\n" );
 	if ( m_connected )
 	{
 		::shutdown( m_fd, SHUT_RDWR );
@@ -741,9 +746,9 @@ client::callback(int p, int n, void *arg)
 #	pragma mark server implementation
 #endif
 
-server::server( const ip::address::ptr &addr, bool async )
+server::server( const ip::address::ptr &addr )
 :
-	socket::server( AF_INET, SOCK_STREAM, async ),
+	socket::server( AF_INET, SOCK_STREAM ),
 	m_addr( addr )
 {
 }
@@ -872,6 +877,7 @@ server::accept( ip::address::ptr &addr )
 	
 	newFd = ::accept( m_fd, ( struct sockaddr* ) &peer, &peerLen );
 	
+	fprintf( stderr, "accept'd new sock %d\n", newFd );
 	if ( newFd != socket::null )
 	{
 		try

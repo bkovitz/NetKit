@@ -981,10 +981,12 @@ connection::process()
 		memset( buf, 0, sizeof( buf ) );
 		num = recv( ( std::uint8_t* ) buf, sizeof( buf ) );
 
+fprintf( stderr, "received %d bytes\n", num );
 		if ( num > 0 )
 		{
 			size_t processed;
 
+fprintf( stderr, "processing %d byets\n", num );
 			processed = http_parser_execute( m_parser, m_settings, ( const char* ) buf, num );
 
 			if ( processed != num )
@@ -1001,17 +1003,14 @@ connection::process()
 		}
 		else if ( num < 0 )
 		{
-			if ( platform::error() != ( int ) socket::error::would_block )
-			{
-				close();
-			}
-
+			nklog( log::error, "recv() returned %d", platform::error() );
+			close();
 			break;
 		}
 		else
 		{
-			close();
-			http_parser_execute( m_parser, m_settings, NULL, 0 );
+			//close();
+			//http_parser_execute( m_parser, m_settings, NULL, 0 );
 			break;
 		}
 	}
@@ -1206,9 +1205,7 @@ connection::body_was_received( http_parser *parser, const char *buf, size_t len 
 {
 	connection *self = reinterpret_cast< connection* >( parser->data );
 	
-	fprintf( stderr, "body_was_received\n" );
-	
-	return self->m_handler->m_rbwr( self->m_request, ( const uint8_t* ) buf, len, [=]( response::ptr response, bool upgrade, bool close )
+	int i = self->m_handler->m_rbwr( self->m_request, ( const uint8_t* ) buf, len, [=]( response::ptr response, bool upgrade, bool close )
 	{
 		self->put( response );
 		
@@ -1225,6 +1222,9 @@ connection::body_was_received( http_parser *parser, const char *buf, size_t len 
 			self->close();
 		}
 	} );
+	
+	fprintf( stderr, "body_was_received returns %d\n", i );
+	return i;
 }
 
 	
@@ -1235,17 +1235,6 @@ connection::message_was_received( http_parser *parser )
 	
 	return self->m_handler->m_r( self->m_request, [=]( response::ptr response, bool upgrade, bool close )
 	{
-	/*
-		if ( response->status() == http::status::switching_protocols )
-		{
-			response->add_to_header( "Connection", "Upgrade" );
-			response->add_to_header( "Upgrade", "TLS/1.0, HTTP/1.1" );
-			response->add_to_header( "Connection", "Keep-Alive" );
-			response->add_to_header( "Keep-Alive", "timeout=10" );
-			response->add_to_header( "Content-Length", 0 );
-		}
-		*/
-			
 		self->put( response );
 		
 		if ( upgrade )
