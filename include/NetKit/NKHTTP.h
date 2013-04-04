@@ -238,6 +238,9 @@ public:
 	virtual ~request();
 	
 	virtual void
+	add_to_header( const header& header );
+
+	virtual void
 	add_to_header( const std::string &key, const std::string &val );
 	
 	inline const std::string&
@@ -371,20 +374,18 @@ private:
 };
 
 
-typedef std::function< void ( http::response::ptr response, bool upgrade, bool close ) >								response_f;
-typedef std::function< http::request::ptr ( int method, const uri::ptr &uri ) >											request_will_begin_f;
-typedef std::function< void ( http::request::ptr request, const std::uint8_t *buf, size_t len, response_f response ) >	request_body_was_received_f;
-typedef std::function< void ( http::request::ptr request, response_f func ) >											request_f;
-
 	
 class connection : public sink
 {
 public:
 
+	typedef std::function< void ( http::response::ptr response, bool upgrade, bool close ) >								response_f;
+	typedef std::function< http::request::ptr ( int method, const uri::ptr &uri ) >											request_will_begin_f;
+	typedef std::function< int ( http::request::ptr request, const std::uint8_t *buf, size_t len, response_f response ) >	request_body_was_received_f;
+	typedef std::function< int ( http::request::ptr request, response_f func ) >											request_f;
+
 	typedef smart_ptr< connection > ptr;
 	
-public:
-
 	static sink::ptr
 	adopt( source::ptr source, const std::uint8_t *buf, size_t len );
 	

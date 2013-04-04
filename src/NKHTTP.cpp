@@ -522,6 +522,8 @@ message::add_to_header( const std::string &key, const std::string &val )
 {
 	m_header.push_back( make_pair( key, val ) );
 	
+	fprintf( stderr, "add_to_header: %s -> %s\n", key.c_str(), val.c_str() );
+	
 	if ( key == "Content-Length" )
 	{
 		m_content_length = atoi( val.c_str() );
@@ -594,14 +596,21 @@ request::~request()
 void
 request::init()
 {
-	add_to_header( "Host", m_uri->host() );
-	add_to_header( "Connection", "keep-alive" );
+}
+
+
+void
+request::add_to_header( const header& header )
+{
+	message::add_to_header( header );
 }
 
 
 void
 request::add_to_header( const std::string &key, const std::string &val )
 {
+	message::add_to_header( key, val );
+	
 	if ( key == "Host" )
     {
 		m_host = val;
@@ -627,10 +636,6 @@ request::add_to_header( const std::string &key, const std::string &val )
 			m_username  = decoded.substr( 0, pos );
 			m_password  = decoded.substr( pos + 1 );
         }
-	}
-	else
-	{
-		message::add_to_header( key, val );
 	}
 }
 
@@ -961,6 +966,7 @@ connection::flush()
 void
 connection::close()
 {
+	m_source->close();
 }
 
 
@@ -1047,12 +1053,13 @@ connection::message_will_begin( http_parser *parser )
 	self->m_parse_state	= NONE;
 	
 	self->m_uri_value.clear();
+	self->m_content_type.clear();
 	self->m_header_field.clear();
 	self->m_header_value.clear();
 	self->m_header.clear();
 	
-	self->m_handler	= NULL;
-	self->m_request = NULL;
+	self->m_handler	= nullptr;
+	self->m_request = nullptr;
 	
 	return 0;
 }
@@ -1072,8 +1079,6 @@ connection::uri_was_received( http_parser *parser, const char *buf, size_t len )
 }
 
 
-
-
 int
 connection::header_field_was_received( http_parser *parser, const char *buf, size_t len )
 {
@@ -1085,7 +1090,13 @@ connection::header_field_was_received( http_parser *parser, const char *buf, siz
 	{
 		if ( ( self->m_header_field.size() > 0 ) && ( self->m_header_value.size() > 0 ) )
 		{
+		fprintf( stderr, "pushing back %s -> %s\n", self->m_header_field.c_str(), self->m_header_value.c_str() );
 			self->m_header.push_back( make_pair( self->m_header_field, self->m_header_value ) );
+			
+			if ( self->m_header_field == "Content-Type" )
+			{
+				self->m_content_type = self->m_header_value;
+			}
 		}
 		
 		self->m_header_field.assign( str );
@@ -1142,7 +1153,6 @@ connection::headers_were_received( http_parser *parser )
 		goto exit;
 	}
 	
-	//self->m_request->add_to_header( self->m_header );
 			
 	/*
 	for ( message::header::const_iterator it = self->m_request->heade().begin(); it != self->m_request->heade().end(); it++ )
@@ -1198,7 +1208,7 @@ connection::body_was_received( http_parser *parser, const char *buf, size_t len 
 	
 	fprintf( stderr, "body_was_received\n" );
 	
-	self->m_handler->m_rbwr( self->m_request, ( const uint8_t* ) buf, len, [=]( response::ptr response, bool upgrade, bool close )
+	return self->m_handler->m_rbwr( self->m_request, ( const uint8_t* ) buf, len, [=]( response::ptr response, bool upgrade, bool close )
 	{
 		self->put( response );
 		
@@ -1215,8 +1225,6 @@ connection::body_was_received( http_parser *parser, const char *buf, size_t len 
 			self->close();
 		}
 	} );
-	
-	return 0;
 }
 
 	
@@ -1225,7 +1233,7 @@ connection::message_was_received( http_parser *parser )
 {
 	connection *self = reinterpret_cast< connection* >( parser->data );
 	
-	self->m_handler->m_r( self->m_request, [=]( response::ptr response, bool upgrade, bool close )
+	return self->m_handler->m_r( self->m_request, [=]( response::ptr response, bool upgrade, bool close )
 	{
 	/*
 		if ( response->status() == http::status::switching_protocols )
@@ -1253,8 +1261,6 @@ connection::message_was_received( http_parser *parser )
 			self->close();
 		}
 	} );
-	
-	return 0;
 }
 
 
@@ -1271,6 +1277,7 @@ connection::resolve( http_parser *parser )
 	{
 		for ( handler::list::iterator it2 = it->second.begin(); it2 != it->second.end(); it2++ )
 		{
+		fprintf( stderr, "path = %s, type = %s\n", ( *it2 )->m_path.c_str(), ( *it2 )->m_type.c_str() );
 			std::regex regex1( ( *it2 )->m_path );
 			std::regex regex2( ( *it2 )->m_type );
 			
@@ -1284,7 +1291,7 @@ connection::resolve( http_parser *parser )
 	
 	if ( !m_handler )
 	{
-		nklog( log::error, "unable to find handler for method %d -> %s", m_method, m_uri_value.c_str() );
+		nklog( log::error, "unable to find binding for method %d -> %s", m_method, m_uri_value.c_str() );
 		goto exit;
 	}
 	
@@ -1302,6 +1309,8 @@ connection::resolve( http_parser *parser )
 		nklog( log::error, "unable to create request for method %d -> %s", m_method, m_uri_value.c_str() );
 		goto exit;
 	}
+	
+	m_request->add_to_header( m_header );
 	
 	resolved = true;
 
