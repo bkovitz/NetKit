@@ -98,6 +98,21 @@ error()
 #endif
 }
 
+
+inline void
+set_error( int error )
+{
+#if defined( WIN32 )
+
+	SetLastError( error );
+	
+#else
+
+	errno = error;
+
+#endif
+}
+
 }
 
 }

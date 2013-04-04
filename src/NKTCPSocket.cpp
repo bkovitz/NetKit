@@ -246,11 +246,10 @@ client::recv( uint8_t *buf, size_t len )
 	{
 		num = ::recv( m_fd, buf, len, 0 );
 		
-		fprintf( stderr, "::recv() returned %d, %d\n", num, errno );
-		
 		if ( num == 0 )
 		{
 			nklog( log::verbose, "recv() returned EOF" );
+			platform::set_error( ( int ) socket::error::reset );
 			num = -1;
 		}
 		else if ( num == -1 )
@@ -490,7 +489,6 @@ client::open()
 void
 client::close()
 {
-	fprintf( stderr, "in tcp::client::close()\n" );
 	if ( m_connected )
 	{
 		::shutdown( m_fd, SHUT_RDWR );
@@ -877,7 +875,6 @@ server::accept( ip::address::ptr &addr )
 	
 	newFd = ::accept( m_fd, ( struct sockaddr* ) &peer, &peerLen );
 	
-	fprintf( stderr, "accept'd new sock %d\n", newFd );
 	if ( newFd != socket::null )
 	{
 		try

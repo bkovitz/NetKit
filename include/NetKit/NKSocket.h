@@ -64,9 +64,13 @@ static const native null = -1;
 enum class error
 {
 #if defined( WIN32 )
+	reset		=	WSAECONNRESET,
+	aborted		=	WSAECONNABORTED,
 	in_progress	=	WSAEINPROGRESS,
 	would_block	=	WSAEWOULDBLOCK
 #else
+	reset		=	ECONNRESET,
+	aborted		=	ECONNABORTED,
 	in_progress	=	EINPROGRESS,
 	would_block	=	EAGAIN
 #endif

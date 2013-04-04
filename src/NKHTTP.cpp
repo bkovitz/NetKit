@@ -29,7 +29,6 @@
  */
  
 #include "NKHTTP.h"
-#include "NKSocket.h"
 #include "NKBase64.h"
 #include "cstring.h"
 #include "NKPlatform.h"
@@ -522,8 +521,6 @@ message::add_to_header( const std::string &key, const std::string &val )
 {
 	m_header.push_back( make_pair( key, val ) );
 	
-	fprintf( stderr, "add_to_header: %s -> %s\n", key.c_str(), val.c_str() );
-	
 	if ( key == "Content-Length" )
 	{
 		m_content_length = atoi( val.c_str() );
@@ -981,12 +978,10 @@ connection::process()
 		memset( buf, 0, sizeof( buf ) );
 		num = recv( ( std::uint8_t* ) buf, sizeof( buf ) );
 
-fprintf( stderr, "received %d bytes\n", num );
 		if ( num > 0 )
 		{
 			size_t processed;
 
-fprintf( stderr, "processing %d byets\n", num );
 			processed = http_parser_execute( m_parser, m_settings, ( const char* ) buf, num );
 
 			if ( processed != num )
@@ -1009,8 +1004,6 @@ fprintf( stderr, "processing %d byets\n", num );
 		}
 		else
 		{
-			//close();
-			//http_parser_execute( m_parser, m_settings, NULL, 0 );
 			break;
 		}
 	}
@@ -1089,7 +1082,6 @@ connection::header_field_was_received( http_parser *parser, const char *buf, siz
 	{
 		if ( ( self->m_header_field.size() > 0 ) && ( self->m_header_value.size() > 0 ) )
 		{
-		fprintf( stderr, "pushing back %s -> %s\n", self->m_header_field.c_str(), self->m_header_value.c_str() );
 			self->m_header.push_back( make_pair( self->m_header_field, self->m_header_value ) );
 			
 			if ( self->m_header_field == "Content-Type" )
@@ -1138,8 +1130,6 @@ connection::headers_were_received( http_parser *parser )
 	connection			*self	= reinterpret_cast< connection* >( parser->data );
 	handlers::iterator	it;
 	int					ret		= 0;
-	
-	fprintf( stderr, "headers were received\n" );
 	
 	if ( !self->resolve( parser ) )
 	{
@@ -1205,7 +1195,7 @@ connection::body_was_received( http_parser *parser, const char *buf, size_t len 
 {
 	connection *self = reinterpret_cast< connection* >( parser->data );
 	
-	int i = self->m_handler->m_rbwr( self->m_request, ( const uint8_t* ) buf, len, [=]( response::ptr response, bool upgrade, bool close )
+	return self->m_handler->m_rbwr( self->m_request, ( const uint8_t* ) buf, len, [=]( response::ptr response, bool upgrade, bool close )
 	{
 		self->put( response );
 		
@@ -1222,9 +1212,6 @@ connection::body_was_received( http_parser *parser, const char *buf, size_t len 
 			self->close();
 		}
 	} );
-	
-	fprintf( stderr, "body_was_received returns %d\n", i );
-	return i;
 }
 
 	
@@ -1266,7 +1253,6 @@ connection::resolve( http_parser *parser )
 	{
 		for ( handler::list::iterator it2 = it->second.begin(); it2 != it->second.end(); it2++ )
 		{
-		fprintf( stderr, "path = %s, type = %s\n", ( *it2 )->m_path.c_str(), ( *it2 )->m_type.c_str() );
 			std::regex regex1( ( *it2 )->m_path );
 			std::regex regex2( ( *it2 )->m_type );
 			
