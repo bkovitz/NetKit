@@ -65,7 +65,10 @@ public:
 	create_source( int fd, event e, event_f f ) = 0;
 	
 	virtual source
-	create_source( std::time_t time, event_f f ) = 0;
+	create_source( std::time_t msec, event_f f ) = 0;
+	
+	virtual void
+	modify( source s, std::time_t msec ) = 0;
 	
 	virtual void
 	schedule( source s ) = 0;

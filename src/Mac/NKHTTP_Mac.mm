@@ -42,7 +42,7 @@ client_mac::client_mac( const request::ptr &request, auth_f auth_func, response_
 	client( request, auth_func, response_func ),
 	m_stream( NULL )
 {
-	m_response = new http::response;
+	m_response = new http::response( request->major(), request->minor(), http::status::ok, request->keep_alive() );
 }
 
 

@@ -63,6 +63,9 @@ public:
 	bool
 	is_open() const;
 	
+	void
+	close();
+	
 	inline const std::string&
 	token() const
 	{

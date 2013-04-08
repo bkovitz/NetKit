@@ -54,13 +54,13 @@ namespace netkit {
 namespace platform {
 
 std::string
-computer_name();
-
-std::string
-machine_id();
+machine_name();
 
 std::string
 machine_description();
+
+std::string
+machine_id();
 
 std::string
 uuid();

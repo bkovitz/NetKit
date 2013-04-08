@@ -147,9 +147,23 @@ public:
 	
 public:
 
-	message();
+	message( std::uint16_t major, std::uint16_t minor );
+	
+	message( const message &that );
 	
 	virtual ~message();
+	
+	inline std::uint16_t
+	major() const
+	{
+		return m_major;
+	}
+	
+	inline std::uint16_t
+	minor() const
+	{
+		return m_minor;
+	}
 	
 	inline const header&
 	heder() const
@@ -187,6 +201,12 @@ public:
 		return m_content_length;
 	}
 	
+	inline bool
+	keep_alive() const
+	{
+		return m_keep_alive;
+	}
+	
 	virtual void
 	write( const uint8_t *buf, size_t len );
 	
@@ -218,9 +238,12 @@ public:
 	
 protected:
 
+	std::uint16_t		m_major;
+	std::uint16_t		m_minor;
 	header				m_header;
 	std::string			m_content_type;
 	size_t				m_content_length;
+	bool				m_keep_alive;
 	std::ostringstream	m_ostream;
 };
 
@@ -231,9 +254,9 @@ public:
 
 	typedef smart_ptr< request > ptr;
 
-	request( int method, const uri::ptr &uri );
+	request( std::uint16_t major, std::uint16_t minor, int method, const uri::ptr &uri );
 	
-	request( const request &r );
+	request( const request &that );
 
 	virtual ~request();
 	
@@ -277,6 +300,12 @@ public:
 	uri() const
 	{
 		return m_uri;
+	}
+	
+	inline const std::string&
+	expect() const
+	{
+		return m_expect;
 	}
 	
 	inline const proxy::ptr&
@@ -344,9 +373,9 @@ public:
 
 	typedef smart_ptr< response > ptr;
 
-	response();
+	response( std::uint16_t major, std::uint16_t minor, std::uint16_t status, bool keep_alive );
 	
-	response( uint16_t status );
+	response( const response &that );
 
 	virtual ~response();
 
@@ -370,7 +399,7 @@ private:
 	void
 	init();
 	
-	uint16_t m_status;
+	std::uint16_t m_status;
 };
 
 
@@ -380,7 +409,7 @@ class connection : public sink
 public:
 
 	typedef std::function< void ( http::response::ptr response, bool upgrade, bool close ) >								response_f;
-	typedef std::function< http::request::ptr ( int method, const uri::ptr &uri ) >											request_will_begin_f;
+	typedef std::function< http::request::ptr ( int method, std::uint16_t major, std::uint16_t minor, const uri::ptr &uri ) >					request_will_begin_f;
 	typedef std::function< int ( http::request::ptr request, const std::uint8_t *buf, size_t len, response_f response ) >	request_body_was_received_f;
 	typedef std::function< int ( http::request::ptr request, response_f func ) >											request_f;
 

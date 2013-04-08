@@ -3355,6 +3355,13 @@ client::is_open() const
 }
 
 
+void
+client::close()
+{
+	m_connection->close();
+}
+
+
 bool
 client::send_notification( const std::string &method, value::ptr params )
 {

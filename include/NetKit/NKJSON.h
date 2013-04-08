@@ -386,22 +386,6 @@ public:
 	virtual ssize_t
 	process();
 	
-	class find_by_token
-    {
-	public:
-
-		inline find_by_token( const std::string &token )
-        {
-            m_token = token;
-        }
-
-        bool operator ()( const ptr &connection );
-
-    private:
-
-		std::string m_token;
-    };
-	
 protected:
 
 	typedef std::map< std::int32_t, reply_f > reply_handlers;
@@ -539,6 +523,9 @@ public:
 	
 	bool
 	is_open() const;
+	
+	void
+	close();
 	
 protected:
 
@@ -795,12 +782,6 @@ inline bool
 operator!=( smart_ptr< json::value > const &a, json::value *b )
 {
 	return ( *a.get() != *b );
-}
-
-inline bool
-json::connection::find_by_token::operator ()( const json::connection::ptr &connection )
-{
-    return m_token == connection->token();
 }
 
 }

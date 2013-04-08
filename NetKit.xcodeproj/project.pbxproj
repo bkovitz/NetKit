@@ -23,8 +23,8 @@
 		D20ED14016DC0EF300177887 /* CoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D20ED13F16DC0EF200177887 /* CoreServices.framework */; };
 		D2171B85170E4387002E1119 /* NKIPAddress.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D23DF54B15F698F90027A8F1 /* NKIPAddress.cpp */; };
 		D2171B86170E4388002E1119 /* NKIPAddress.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D23DF54B15F698F90027A8F1 /* NKIPAddress.cpp */; };
-		D2171B87170E4398002E1119 /* NKTCPSocket.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D23DF5BD15F6D5490027A8F1 /* NKTCPSocket.cpp */; };
-		D2171B88170E4399002E1119 /* NKTCPSocket.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D23DF5BD15F6D5490027A8F1 /* NKTCPSocket.cpp */; };
+		D2171B87170E4398002E1119 /* NKTCPSocket.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D23DF5BD15F6D5490027A8F1 /* NKTCPSocket.cpp */; settings = {COMPILER_FLAGS = "-Wno-deprecated"; }; };
+		D2171B88170E4399002E1119 /* NKTCPSocket.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D23DF5BD15F6D5490027A8F1 /* NKTCPSocket.cpp */; settings = {COMPILER_FLAGS = "-Wno-deprecated"; }; };
 		D219FD351600328E00877C70 /* test_http_client.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D219FD341600328E00877C70 /* test_http_client.cpp */; };
 		D219FD37160124FF00877C70 /* test_http_server.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D219FD36160124FF00877C70 /* test_http_server.cpp */; };
 		D2365E3F15FD9515000B6EE3 /* Uri.h in Headers */ = {isa = PBXBuildFile; fileRef = D2365E3915FD9515000B6EE3 /* Uri.h */; };

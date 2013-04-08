@@ -82,11 +82,11 @@ runloop_mac::create_source( int fd, event e, event_f f )
 
 
 runloop::source
-runloop_mac::create_source( std::time_t time, event_f f )
+runloop_mac::create_source( std::time_t msec, event_f f )
 {
 	auto source = dispatch_source_create( DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue() );
 
-	dispatch_source_set_timer( source, 0, ( ::time( NULL ) + time ) * NSEC_PER_SEC, 0 );
+	dispatch_source_set_timer( source, dispatch_time( DISPATCH_TIME_NOW, msec * NSEC_PER_SEC ), msec * NSEC_PER_MSEC, 0 );
 
 	dispatch_source_set_event_handler( source, ^()
 	{
@@ -96,7 +96,15 @@ runloop_mac::create_source( std::time_t time, event_f f )
 	return source;
 }
 
-	
+
+void
+runloop_mac::modify( source s, std::time_t msec )
+{
+	auto source = reinterpret_cast< dispatch_source_t >( s );
+	dispatch_source_set_timer( source, dispatch_time( DISPATCH_TIME_NOW, msec * NSEC_PER_SEC ), msec * NSEC_PER_MSEC, 0 );
+}
+
+
 void
 runloop_mac::schedule( source s )
 {

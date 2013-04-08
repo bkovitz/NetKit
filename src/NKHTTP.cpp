@@ -478,10 +478,24 @@ status::to_string( std::uint16_t val )
 #	pragma mark message implementation
 #endif
 
-message::message()
+message::message( std::uint16_t major, std::uint16_t minor )
 :
+	m_major( major ),
+	m_minor( minor ),
 	m_content_type( "text/plain" ),
-	m_content_length( 0 )
+	m_content_length( 0 ),
+	m_keep_alive( false )
+{
+}
+
+
+message::message( const message &that )
+:
+	m_major( that.m_major ),
+	m_minor( that.m_minor ),
+	m_content_type( that.m_content_type ),
+	m_content_length( that.m_content_length ),
+	m_keep_alive( that.m_keep_alive )
 {
 }
 	
@@ -558,7 +572,10 @@ message::send_body( connection_ptr conn ) const
 {
 	std::string body = m_ostream.str();
 	
-	conn->send( reinterpret_cast< const uint8_t* >( body.c_str() ), body.size() );
+	if ( body.size() > 0 )
+	{
+		conn->send( reinterpret_cast< const uint8_t* >( body.c_str() ), body.size() );
+	}
 	
 	return true;
 }
@@ -567,19 +584,26 @@ message::send_body( connection_ptr conn ) const
 #	pragma mark request implementation
 #endif
 
-request::request( int method, const uri::ptr &uri )
+request::request( std::uint16_t major, std::uint16_t minor, int method, const uri::ptr &uri )
 :
+	message( major, minor ),
 	m_method( method ),
 	m_uri( uri )
 {
 	init();
+	
+	if ( ( major == 1 ) && ( minor == 1 ) )
+	{
+		m_keep_alive = true;
+	}
 }
 
 	
-request::request( const request &r )
+request::request( const request &that )
 :
-	m_method( r.m_method ),
-	m_uri( r.m_uri )
+	message( that ),
+	m_method( that.m_method ),
+	m_uri( that.m_uri )
 {
 	init();
 }
@@ -647,19 +671,21 @@ request::send_prologue( connection_ptr conn ) const
 #	pragma mark response implementation
 #endif
 
-response::response()
+response::response( std::uint16_t major, std::uint16_t minor, uint16_t status, bool keep_alive )
 :
-	m_status( http::status::ok )
+	message( major, minor ),
+	m_status( status )
 {
+	m_keep_alive = keep_alive;
 	init();
 }
 
 
-response::response( uint16_t status )
+response::response( const response &that )
 :
-	m_status( status )
+	message( that ),
+	m_status( that.m_status )
 {
-	init();
 }
 
 
@@ -678,13 +704,19 @@ response::init()
     strftime(buf, sizeof(buf), "%a, %d %b %Y %I:%M:%S %Z", &tstruct);
 	
 	add_to_header( "Date", buf );
+	
+	if ( m_keep_alive )
+	{
+		add_to_header( "Connection", "Keep-Alive" );
+		add_to_header( "Keep-Alive", "timeout=10" );
+	}
 }
 
 
 void
 response::send_prologue( connection::ptr conn ) const
 {
-	*conn << "HTTP/" << conn->http_major() << "." << conn->http_minor() << " " << m_status << " " << status::to_string( m_status ) << endl;
+	*conn << "HTTP/" << m_major << "." << m_minor << " " << m_status << " " << status::to_string( m_status ) << endl;
 }
 
 
@@ -810,94 +842,6 @@ connection::adopt( source::ptr source, const std::uint8_t *buf, size_t len )
 	return conn;
 }
 
-#if 0
-	
-		if ( conn )
-		{
-				conn->set_request_will_begin_handler( [ this, conn ]( const netkit::uri::ptr &uri ) -> request::ptr
-				{
-					connection::ptr temp( conn );
-					
-					for ( handlers::iterator it = m_handlers.begin(); it != m_handlers.end(); it++ )
-					{
-						if ( uri->path().find( it->first ) == 0 )
-						{
-							return it->second->message_will_begin( uri );
-						}
-					}
-					
-					response::ptr response = new http::response( 404 );
-					response->add_to_header( "Connection", "Close" );
-					response->add_to_header( "Content-Type", "text/html" );
-					*response << "<html>Error 404: Content Not Found</html>";
-					temp->send( response );
-					
-					return request::ptr();
-				} );
-				
-				conn->set_headers_were_received_handler( [ this, conn ]( message::ptr message ) -> int
-				{
-					request::ptr	request = dynamic_pointer_cast< http::request >( message );
-					handler			*hdlr	= reinterpret_cast< handler* >( request->context() );
-					int				ret;
-					
-					if ( hdlr )
-				 	{
-						ret = hdlr->headers_were_received( conn, request );
-					}
-					else
-					{
-						connection::ptr temp( conn );
-						response::ptr response = new http::response( 500 );
-						response->add_to_header( "Connection", "Close" );
-						response->add_to_header( "Content-Type", "text/html" );
-						*response << "<html>Error 500: Internal Server Error</html>";
-						temp->send( response );
-						ret = -1;
-					}
-					
-					return ret;
-				} );
-				
-				conn->set_message_was_received_handler( [ this, conn ]( message::ptr message ) -> int
-				{
-					request::ptr	request = dynamic_pointer_cast< http::request >( message );
-					handler			*hdlr	= reinterpret_cast< handler* >( request->context() );
-					int				ret;
-					
-					if ( hdlr )
-				 	{
-						ret = hdlr->message_was_received( conn, request );
-					}
-					else
-					{
-						connection::ptr temp( conn );
-						response::ptr response = new http::response( 500 );
-						response->add_to_header( "Connection", "Close" );
-						response->add_to_header( "Content-Type", "text/html" );
-						*response << "<html>Error 500: Internal Server Error</html>";
-						temp->send( response );
-						ret = -1;
-					}
-					
-					return ret;
-				} );
-				
-				conn->set_disconnect_handler( [&]()
-				{
-					m_connections.remove( conn );
-				} );
-				
-				m_connections.push_back( conn );
-			}
-		}
-	}
-	
-	return ( conn ) ? true : false;
-}
-
-#endif
-
 
 bool
 connection::put( message::ptr message )
@@ -914,31 +858,6 @@ connection::put( message::ptr message )
 	message->send_body( this );
 	
 	return true;
-			
-	//write( &request->body()[ 0 ], request->body().size() );
-	
-//	*this << http::endl;
-	
-//	return flush();
-			
-	//*this << flush;
-	/*
-	msg = m_ostream.str();
-			
-	nklog( log::verbose, "%s", msg.c_str() );
-			
-	ret = ( int ) m_socket->send( ( buf_t ) msg.c_str(), msg.size() );
-	
-			
-	if ( ret != msg.size() )
-	{
-		response::ptr response = new http::response( -1 );
-		
-		nklog( log::error, "send failed: %d(%d)", platform::error() );
-		m_reply( response );
-		m_reply = NULL;
-	}
-	*/
 }
 
 
@@ -1010,28 +929,6 @@ connection::process()
 	
 	return num;
 }
-
-
-
-
-
-/*
-void
-connection::shutdown()
-{
-	runloop::instance()->unregisterSocket( this );
-
-#undef close
-	close();
-	
-	if ( m_closure )
-	{
-		socket::ptr temp( this );
-
-		m_closure( temp );
-	}
-}
-*/
 
 
 int
@@ -1133,7 +1030,7 @@ connection::headers_were_received( http_parser *parser )
 	
 	if ( !self->resolve( parser ) )
 	{
-		response::ptr response = new http::response( http::status::not_found );
+		response::ptr response = new http::response( self->http_major(), self->http_minor(), http::status::not_found, false );
 		response->add_to_header( "Connection", "Close" );
 		response->add_to_header( "Content-Type", "text/html" );
 		*response << "<html>Error 404: Content Not Found</html>";
@@ -1142,7 +1039,8 @@ connection::headers_were_received( http_parser *parser )
 		goto exit;
 	}
 	
-			
+
+
 	/*
 	for ( message::header::const_iterator it = self->m_request->heade().begin(); it != self->m_request->heade().end(); it++ )
 	{
@@ -1272,11 +1170,11 @@ connection::resolve( http_parser *parser )
 	
 	if ( m_handler->m_rwb )
 	{
-		m_request = m_handler->m_rwb( parser->method, new uri( m_uri_value ) );
+		m_request = m_handler->m_rwb( http_major(), http_minor(), parser->method, new uri( m_uri_value ) );
 	}
 	else
 	{
-		m_request = new http::request( parser->method, new uri( m_uri_value ) );
+		m_request = new http::request( http_major(), http_minor(), parser->method, new uri( m_uri_value ) );
 	}
 
 	if ( !m_request )
@@ -1286,6 +1184,13 @@ connection::resolve( http_parser *parser )
 	}
 	
 	m_request->add_to_header( m_header );
+	
+	if ( m_request->expect() == "100-continue" )
+	{
+		fprintf( stderr, "sending 100-continue\n" );
+		response::ptr response = new http::response( http_major(), http_minor(), http::status::cont, false );
+		put( response );
+	}
 	
 	resolved = true;
 

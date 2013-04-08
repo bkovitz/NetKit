@@ -27,7 +27,7 @@
  * either expressed or implied, of the FreeBSD Project.
  *
  */
- 
+
 #include <NetKit/NKTCPSocket.h>
 #include <NetKit/NKRunLoop.h>
 #include <NetKit/NKLog.h>
@@ -248,7 +248,6 @@ client::recv( uint8_t *buf, size_t len )
 		
 		if ( num == 0 )
 		{
-			nklog( log::verbose, "recv() returned EOF" );
 			platform::set_error( ( int ) socket::error::reset );
 			num = -1;
 		}
@@ -746,7 +745,7 @@ client::callback(int p, int n, void *arg)
 
 server::server( const ip::address::ptr &addr )
 :
-	socket::server( AF_INET, SOCK_STREAM ),
+	socket::server( addr->sockaddr().ss_family, SOCK_STREAM ),
 	m_addr( addr )
 {
 }
@@ -772,11 +771,13 @@ server::open()
 int
 server::listen()
 {
-	sockaddr_storage	saddr	= m_addr->sockaddr();
+	sockaddr_storage	saddr;
 	sockaddr_storage	saddr2;
 	socklen_t			slen;
 	runloop::source		listen_source;
 	int					ret;
+	
+	memcpy( &saddr, &m_addr->sockaddr(), sizeof( saddr ) );
 	
 	ret = ::bind( m_fd, ( struct sockaddr* ) &saddr, saddr.ss_len );
 	

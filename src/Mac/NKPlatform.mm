@@ -1,3 +1,33 @@
+/*
+ * Copyright (c) 2013, Porchdog Software Inc.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * The views and conclusions contained in the software and documentation are those
+ * of the authors and should not be interpreted as representing official policies,
+ * either expressed or implied, of the FreeBSD Project.
+ *
+ */
+
 #include <NetKit/NetKit.h>
 #include <Foundation/Foundation.h>
 #include <CoreFoundation/CoreFoundation.h>
@@ -32,6 +62,18 @@
 #include <stdio.h>
 
 
+static kern_return_t
+find_ethernet_interfaces( io_iterator_t *matchingServices );
+
+
+static kern_return_t
+get_mac_address( io_iterator_t intfIterator, UInt8 *MACAddress, UInt8 bufferSize );
+
+
+static std::string
+serial_number();
+
+
 using namespace netkit;
 
 
@@ -52,9 +94,8 @@ netkit::initialize()
 }
 
 
-
 std::string
-platform::computer_name()
+platform::machine_name()
 {
 	static std::string name;
 	
@@ -81,6 +122,64 @@ platform::computer_name()
 }
 
 
+std::string
+platform::machine_description()
+{
+	static std::string description;
+	
+	if ( description.size() == 0 )
+	{
+		NSString		*systemVersionFile	= @"/System/Library/CoreServices/SystemVersion.plist";
+		NSData			*data				= [ NSData dataWithContentsOfFile:systemVersionFile ];
+		NSDictionary	*dict				= [ NSPropertyListSerialization propertyListFromData:data mutabilityOption:NSPropertyListImmutable format:NULL errorDescription:nil ];
+		NSString		*temp				= [ NSString stringWithFormat:@"%@ %@ (%@)", [ dict objectForKey:@"ProductName" ], [ dict objectForKey:@"ProductVersion" ], [ dict objectForKey:@"ProductBuildVersion" ] ];
+	
+		description = [ temp UTF8String ];
+	}
+	
+	return description;
+}
+
+
+std::string
+platform::machine_id()
+{
+	std::string id;
+	
+	if ( id.size() == 0 )
+	{
+		kern_return_t	kernResult = KERN_SUCCESS;
+		io_iterator_t	intfIterator;
+		UInt8			MACAddress[kIOEthernetAddressSize];
+ 
+		kernResult = find_ethernet_interfaces(&intfIterator);
+    
+		if ( KERN_SUCCESS != kernResult)
+		{
+			printf("find_ethernet_interfaces returned 0x%08x\n", kernResult);
+		}
+		else
+		{
+			kernResult = get_mac_address(intfIterator, MACAddress, sizeof(MACAddress));
+        
+			if ( KERN_SUCCESS != kernResult )
+			{
+				id = serial_number();
+			}
+			else
+			{
+				NSString *serial = [ NSString stringWithFormat:@"%02x:%02x:%02x:%02x:%02x:%02x", MACAddress[ 0 ], MACAddress[ 1 ], MACAddress[ 2 ], MACAddress[ 3 ], MACAddress[ 4 ], MACAddress[ 5 ] ];
+				id = [ serial UTF8String ];
+			}
+		}
+    
+		( void ) IOObjectRelease(intfIterator);   // Release the iterator.
+	}
+
+	return id;
+}
+
+
 bool
 platform::create_folder( const std::string &folder )
 {
@@ -104,13 +203,10 @@ platform::uuid()
 }
 
  
-static kern_return_t FindEthernetInterfaces(io_iterator_t *matchingServices);
-static kern_return_t GetMACAddress(io_iterator_t intfIterator, UInt8 *MACAddress, UInt8 bufferSize);
- 
 // Returns an iterator containing the primary (built-in) Ethernet interface. The caller is responsible for
 // releasing the iterator after the caller is done with it.
 static kern_return_t
-FindEthernetInterfaces(io_iterator_t *matchingServices)
+find_ethernet_interfaces(io_iterator_t *matchingServices)
 {
     kern_return_t           kernResult; 
     CFMutableDictionaryRef  matchingDict;
@@ -191,7 +287,7 @@ FindEthernetInterfaces(io_iterator_t *matchingServices)
 // If no interfaces are found the MAC address is set to an empty string.
 // In this sample the iterator should contain just the primary interface.
 static kern_return_t
-GetMACAddress(io_iterator_t intfIterator, UInt8 *MACAddress, UInt8 bufferSize)
+get_mac_address(io_iterator_t intfIterator, UInt8 *MACAddress, UInt8 bufferSize)
 {
     io_object_t     intfService;
     io_object_t     controllerService;
@@ -250,7 +346,7 @@ GetMACAddress(io_iterator_t intfIterator, UInt8 *MACAddress, UInt8 bufferSize)
  
 
 static std::string
-serialNumber()
+serial_number()
 {
 	std::string serialNumber;
 
@@ -262,7 +358,7 @@ serialNumber()
 
 		if ( serialNumberAsCFString)
 		{
-			//serialNumber = [ ( NSString* ) serialNumberAsCFString UTF8String ];
+			serialNumber = [ ( NSString* ) serialNumberAsCFString UTF8String ];
 		}
 
 		IOObjectRelease(platformExpert);
@@ -272,55 +368,3 @@ serialNumber()
 	return serialNumber;
 }
 
-
-std::string
-platform::machine_id()
-{
-	kern_return_t	kernResult = KERN_SUCCESS;
-	io_iterator_t	intfIterator;
-	UInt8			MACAddress[kIOEthernetAddressSize];
-	std::string	machineID;
- 
-	kernResult = FindEthernetInterfaces(&intfIterator);
-    
-	if ( KERN_SUCCESS != kernResult)
-	{
-		printf("FindEthernetInterfaces returned 0x%08x\n", kernResult);
-	}
-	else
-	{
-		kernResult = GetMACAddress(intfIterator, MACAddress, sizeof(MACAddress));
-        
-		if (KERN_SUCCESS != kernResult)
-		{
-			machineID = serialNumber();
-		}
-		else
-		{
-			NSString *serial = [ NSString stringWithFormat:@"%02x:%02x:%02x:%02x:%02x:%02x", MACAddress[ 0 ], MACAddress[ 1 ], MACAddress[ 2 ], MACAddress[ 3 ], MACAddress[ 4 ], MACAddress[ 5 ] ];
-			//machineID = [ serial UTF8String ];
-		}
-	}
-    
-	( void ) IOObjectRelease(intfIterator);   // Release the iterator.
-
-	return machineID;
-}
-
-
-std::string
-platform::machine_description()
-{
-	NSString * systemVersionFile = @"/System/Library/CoreServices/SystemVersion.plist";
-	NSData * data = [NSData dataWithContentsOfFile:systemVersionFile];
-	NSString *temp;
-	std::string machineDescription;
-  
-	NSDictionary * dict = [NSPropertyListSerialization propertyListFromData:data mutabilityOption:NSPropertyListImmutable format:NULL errorDescription:nil ];
-
-	temp = [ NSString stringWithFormat:@"%@ %@ (%@)", [ dict objectForKey:@"ProductName" ], [ dict objectForKey:@"ProductVersion" ], [ dict objectForKey:@"ProductBuildVersion" ] ];
-	
-	//machineDescription = [ temp UTF8String ];
-	
-	return machineDescription;
-}

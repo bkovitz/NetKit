@@ -63,14 +63,14 @@ public:
 	
 	address( sockaddr_storage sockaddr );
 	
-	address( addrinfo ai );
+	address( addrinfo &ai );
 
 	virtual ~address();
 	
 	static void
 	resolve( std::string host, uint16_t port, resolve_reply_f reply );
 	
-	inline sockaddr_storage
+	inline const sockaddr_storage&
 	sockaddr() const
 	{
 		return m_native;

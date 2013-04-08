@@ -94,16 +94,27 @@ address::address( struct sockaddr_storage addr )
 }
 
 
-address::address( addrinfo ai )
+address::address( addrinfo &ai )
 {
 	memset( &m_native, 0, sizeof( m_native ) );
 	memcpy( &m_native, ai.ai_addr, ai.ai_addrlen );
 	
-	if ( m_native.ss_family == AF_INET6 )
+	std::uint16_t port;
+	char host[ 256 ];
+	
+	if ( m_native.ss_family == AF_INET )
+	{
+		sockaddr_in *saddr = ( struct sockaddr_in* ) &m_native;
+		
+		port = ntohs( saddr->sin_port );
+		inet_ntop( AF_INET, &saddr->sin_addr, host, saddr->sin_len );
+	}
+	else if ( m_native.ss_family == AF_INET6 )
 	{
 		sockaddr_in6 *saddr = ( struct sockaddr_in6* ) &m_native;
 		
-		fprintf( stderr, "port = %d\n", ntohs( saddr->sin6_port ) );
+		port = ntohs( saddr->sin6_port );
+		inet_ntop( AF_INET6, &saddr->sin6_addr, host, saddr->sin6_len );
 	}
 }
 
