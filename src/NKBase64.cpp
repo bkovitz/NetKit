@@ -29,6 +29,7 @@
  */
  
 #include <NetKit/NKBase64.h>
+#include <stdlib.h>
 
 //
 //  Created by Matt Gallagher on 2009/06/03.

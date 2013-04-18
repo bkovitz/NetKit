@@ -2,10 +2,10 @@
  * Copyright (c) 2013, Porchdog Software Inc.
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without
+ * Redistribution and use in event and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- * 1. Redistributions of source code must retain the above copyright notice, this
+ * 1. Redistributions of event code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
@@ -50,11 +50,11 @@ runloop_mac::runloop_mac()
 	
 	int fd = ::socket( AF_INET, SOCK_STREAM, 0 );
 	
-	auto source = create_source( fd, runloop::event::read, [=]( runloop::source s, runloop::event e )
+	auto event = create( fd, runloop::event_mask::read );
+	
+	schedule( event, [=]( runloop::event e )
 	{
 	} );
-	
-	schedule( source );
 }
 
 
@@ -63,70 +63,66 @@ runloop_mac::~runloop_mac()
 }
 
 
-runloop::source
-runloop_mac::create_source( int fd, event e, event_f f )
+runloop::event
+runloop_mac::create( int fd, event_mask m )
 {
-	auto source = dispatch_source_create( DISPATCH_SOURCE_TYPE_READ, fd, 0, dispatch_get_main_queue() );
+	auto event = dispatch_source_create( DISPATCH_SOURCE_TYPE_READ, fd, 0, dispatch_get_main_queue() );
 	
-	dispatch_source_set_event_handler( source, ^()
-	{
-		f( source, runloop::event::read );
-	} );
-	
-	dispatch_source_set_cancel_handler( source, ^()
+	dispatch_source_set_cancel_handler( event, ^()
 	{
 	} );
 	
-	return source;
+	return event;
 }
 
 
-runloop::source
-runloop_mac::create_source( std::time_t msec, event_f f )
+runloop::event
+runloop_mac::create( std::time_t msec )
 {
-	auto source = dispatch_source_create( DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue() );
+	auto event = dispatch_source_create( DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue() );
 
-	dispatch_source_set_timer( source, dispatch_time( DISPATCH_TIME_NOW, msec * NSEC_PER_SEC ), msec * NSEC_PER_MSEC, 0 );
+	dispatch_source_set_timer( event, dispatch_time( DISPATCH_TIME_NOW, msec * NSEC_PER_SEC ), msec * NSEC_PER_MSEC, 0 );
 
-	dispatch_source_set_event_handler( source, ^()
+	return event;
+}
+
+
+void
+runloop_mac::modify( event e, std::time_t msec )
+{
+	auto event = reinterpret_cast< dispatch_source_t >( e );
+	dispatch_source_set_timer( event, dispatch_time( DISPATCH_TIME_NOW, msec * NSEC_PER_SEC ), msec * NSEC_PER_MSEC, 0 );
+}
+
+
+void
+runloop_mac::schedule( event e, event_f f )
+{
+	auto event = reinterpret_cast< dispatch_source_t >( e );
+	
+	dispatch_source_set_event_handler( event, ^()
 	{
-		f( source, runloop::event::timer );
+		f( event );
 	} );
 	
-	return source;
+	dispatch_resume( event );
 }
 
 
 void
-runloop_mac::modify( source s, std::time_t msec )
+runloop_mac::suspend( event e )
 {
-	auto source = reinterpret_cast< dispatch_source_t >( s );
-	dispatch_source_set_timer( source, dispatch_time( DISPATCH_TIME_NOW, msec * NSEC_PER_SEC ), msec * NSEC_PER_MSEC, 0 );
+	auto event = reinterpret_cast< dispatch_source_t >( e );
+	dispatch_suspend( event );
 }
 
 
 void
-runloop_mac::schedule( source s )
+runloop_mac::cancel( event e )
 {
-	auto source = reinterpret_cast< dispatch_source_t >( s );
-	dispatch_resume( source );
-}
-
-
-void
-runloop_mac::suspend( source s )
-{
-	auto source = reinterpret_cast< dispatch_source_t >( s );
-	dispatch_suspend( source );
-}
-
-
-void
-runloop_mac::cancel( source s )
-{
-	auto source = reinterpret_cast< dispatch_source_t >( s );
-	dispatch_source_cancel( source );
-	dispatch_release( source );
+	auto event = reinterpret_cast< dispatch_source_t >( e );
+	dispatch_source_cancel( event );
+	dispatch_release( event );
 }
 
 

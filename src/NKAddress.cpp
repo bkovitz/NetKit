@@ -28,7 +28,7 @@
  *
  */
  
-#include <NetKit/NKIPAddress.h>
+#include <NetKit/NKAddress.h>
 #include <NetKit/NKRunLoop.h>
 #include <NetKit/NKPlatform.h>
 #include <NetKit/NKLog.h>
@@ -38,7 +38,7 @@
 #include <sstream>
 #include <thread>
 
-using namespace netkit::ip;
+using namespace netkit;
 
 
 inline bool
@@ -47,53 +47,62 @@ operator==( sockaddr_storage s1, sockaddr_storage s2 )
     return ( s1.ss_len == s2.ss_len ) && ( memcmp( &s1, &s2, s1.ss_len ) == 0 );
 }
 
+#if defined( __APPLE__ )
+#	pragma mark address implementation
+#endif
 
-address::address( uint32_t addr, uint16_t port )
+address::ptr
+address::from_sockaddr( const sockaddr_storage &addr )
 {
-	sockaddr_in *saddr = ( struct sockaddr_in* ) &m_native;
+	address::ptr ret;
 	
-	memset( &m_native, 0, sizeof( m_native ) );
+	switch ( addr.ss_family )
+	{
+		case AF_INET:
+		{
+			ret = new ip::address( ( ( struct sockaddr_in* ) &addr )->sin_addr );
+		}
+		break;
+		
+		case AF_INET6:
+		{
+			ret = new ip::address( ( ( struct sockaddr_in6* ) &addr )->sin6_addr );
+		}
+		break;
+	}
 	
-	saddr->sin_family = AF_INET;
-	saddr->sin_len = sizeof( sockaddr_in );
-	saddr->sin_addr.s_addr = addr;
-	saddr->sin_port = htons( port );
+	return ret;
+}
+
+#if defined( __APPLE__ )
+#	pragma mark ip::address implementation
+#endif
+
+ip::address::address( uint32_t addr )
+{
+	memset( &m_addr, 0, sizeof( m_addr ) );
+	m_type				= v4;
+	m_addr.m_v4.s_addr	= addr;
 }
 
 
-address::address( struct in_addr addr, uint16_t port )
+ip::address::address( struct in_addr addr )
 {
-	sockaddr_in *saddr = ( struct sockaddr_in* ) &m_native;
-	
-	memset( &m_native, 0, sizeof( m_native ) );
-	
-	saddr->sin_family = AF_INET;
-	saddr->sin_len = sizeof( sockaddr_in );
-	saddr->sin_addr = addr;
-	saddr->sin_port = htons( port );
+	memset( &m_addr, 0, sizeof( m_addr ) );
+	m_type		= v4;
+	m_addr.m_v4	= addr;
 }
 
 	
-address::address( struct in6_addr addr, uint16_t port )
+ip::address::address( struct in6_addr addr )
 {
-	sockaddr_in6 *saddr = ( struct sockaddr_in6* ) &m_native;
-	
-	memset( &m_native, 0, sizeof( m_native ) );
-	
-	saddr->sin6_family = AF_INET6;
-	saddr->sin6_len = sizeof( sockaddr_in6 );
-	saddr->sin6_addr = addr;
-	saddr->sin6_port = htons( port );
+	memset( &m_addr, 0, sizeof( m_addr ) );
+	m_type		= v6;
+	m_addr.m_v6	= addr;
 }
 
 
-address::address( struct sockaddr_storage addr )
-:
-	m_native( addr )
-{
-}
-
-
+/*
 address::address( addrinfo &ai )
 {
 	memset( &m_native, 0, sizeof( m_native ) );
@@ -117,33 +126,26 @@ address::address( addrinfo &ai )
 		inet_ntop( AF_INET6, &saddr->sin6_addr, host, saddr->sin6_len );
 	}
 }
+*/
 
 
-address::~address()
+ip::address::~address()
 {
 }
 
 
 void
-address::resolve( std::string host, uint16_t port, resolve_reply_f reply )
+ip::address::resolve( std::string host, resolve_reply_f reply )
 {
 	std::thread t( [=]()
 	{
 		address::list			addrs;
 		struct addrinfo			*result;
 		struct addrinfo			*res;
-		struct addrinfo			hints;
 		std::ostringstream		os;
 		int						err;
 		
-		memset( &hints, 0, sizeof( hints ) );
-
-		hints.ai_socktype	= SOCK_STREAM;
-		hints.ai_family		= AF_INET;
- 
-		os << port;
-		
-		err = getaddrinfo( host.c_str(), os.str().c_str(), NULL, &result );
+		err = getaddrinfo( host.c_str(), "0", NULL, &result );
     
 		if ( err == 0 )
 		{
@@ -161,7 +163,15 @@ address::resolve( std::string host, uint16_t port, resolve_reply_f reply )
 				
 				if ( it == natives.end() )
 				{
-					addrs.push_back( new address( storage ) );
+					if ( res->ai_family == AF_INET )
+					{
+						addrs.push_back( new address( ( ( struct sockaddr_in* ) res->ai_addr )->sin_addr ) );
+					}
+					else if ( res->ai_family == AF_INET6 )
+					{
+						addrs.push_back( new address( ( ( struct sockaddr_in6* ) res->ai_addr )->sin6_addr ) );
+					}
+					
 					natives.push_back( storage );
 				}
 			}
@@ -183,12 +193,40 @@ address::resolve( std::string host, uint16_t port, resolve_reply_f reply )
 }
 
 
+expected< in_addr >
+ip::address::to_v4() const
+{
+	if ( is_v4() )
+	{
+		return m_addr.m_v4;
+	}
+	else
+	{
+		return std::runtime_error( "not an IPv4 address" );
+	}
+}
+
+
+expected< in6_addr >
+ip::address::to_v6() const
+{
+	if ( is_v6() )
+	{
+		return m_addr.m_v6;
+	}
+	else
+	{
+		return std::runtime_error( "not an IPv6 address" );
+	}
+}
+
+
 std::string
-address::host() const
+ip::address::to_string() const
 {
 	char buf[ 1024 ];
 
-	if ( m_native.ss_family == AF_INET )
+	if ( is_v4() )
 	{
 #if defined( WIN32 )
 
@@ -196,14 +234,14 @@ address::host() const
 		
 #else
 	
-		if ( inet_ntop( m_native.ss_family, &( ( ( struct sockaddr_in *) &m_native )->sin_addr ), buf, sizeof( buf ) ) == NULL )
+		if ( inet_ntop( AF_INET, &m_addr.m_v4, buf, sizeof( buf ) ) == NULL )
 
 #endif
 		{
 			nklog( log::error, "error converting addr to string: %d", platform::error() );
 		}
 	}
-	else if ( m_native.ss_family == AF_INET6 )
+	else if ( is_v6() )
 	{
 #if defined( WIN32 )
 
@@ -211,7 +249,7 @@ address::host() const
 
 #else
 
-		if ( inet_ntop( m_native.ss_family, &( ( ( struct sockaddr_in6* ) &m_native )->sin6_addr ), buf, sizeof( buf ) ) == NULL )
+		if ( inet_ntop( AF_INET6, &m_addr.m_v6, buf, sizeof( buf ) ) == NULL )
 #endif
 		{
 		}
@@ -220,20 +258,32 @@ address::host() const
 	return buf;
 }
 
-	
-uint16_t
-address::port() const
+
+bool
+ip::address::equals( const object &that ) const
 {
-	uint16_t port = 0;
-
-	if ( m_native.ss_family == AF_INET )
+	bool ret = false;
+	
+	if ( this == &that )
 	{
-		port = ntohs( ( ( sockaddr_in* ) &m_native )->sin_port );
+		ret = true;
 	}
-	else if ( m_native.ss_family == AF_INET6 )
+	else
 	{
-		port = ntohs( ( ( sockaddr_in6* ) &m_native )->sin6_port );
+		const ip::address *actual = dynamic_cast< const ip::address* >( &that );
+		
+		if ( m_type == actual->m_type )
+		{
+			if ( m_type == v4 )
+			{
+				ret = memcmp( &m_addr.m_v4, &actual->m_addr.m_v4, sizeof( in_addr ) ) == 0 ? true : false;
+			}
+			else
+			{
+				ret = memcmp( &m_addr.m_v6, &actual->m_addr.m_v6, sizeof( in6_addr ) ) == 0 ? true : false;
+			}
+		}
 	}
-
-	return port;
+	
+	return ret;
 }

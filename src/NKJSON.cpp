@@ -1418,10 +1418,66 @@ value::value(const char *newCString)
 }
 
 
-value::value(int newInt)
+value::value( std::int8_t val )
 :
 	m_type( type::integer ),
-	m_data( new int(newInt))
+	m_data( new std::uint64_t( val ) )
+{
+}
+
+
+value::value( std::uint8_t val )
+:
+	m_type( type::integer ),
+	m_data( new std::uint64_t( val ) )
+{
+}
+
+
+value::value( std::int16_t val )
+:
+	m_type( type::integer ),
+	m_data( new std::uint64_t( val ) )
+{
+}
+
+
+value::value( std::uint16_t val )
+:
+	m_type( type::integer ),
+	m_data( new std::uint64_t( val ) )
+{
+}
+
+
+value::value( std::int32_t val )
+:
+	m_type( type::integer ),
+	m_data( new std::uint64_t( val ) )
+{
+}
+
+
+value::value( std::uint32_t val )
+:
+	m_type( type::integer ),
+	m_data( new std::uint64_t( val ) )
+{
+}
+
+
+value::value( std::int64_t val )
+:
+	m_type( type::integer ),
+	m_data( new std::uint64_t( val ) )
+{
+}
+
+
+value::value( std::uint64_t val )
+:
+	m_type( type::integer ),
+	m_data( new std::uint64_t( val ) )
 {
 }
 
@@ -1429,10 +1485,9 @@ value::value(int newInt)
 value::value( status v )
 :
 	m_type( type::integer ),
-	m_data( new int( ( int ) v ) )
+	m_data( new std::uint64_t( ( std::uint64_t ) v ) )
 {
 }
-
 
 
 value::value(double newDouble)
@@ -1465,7 +1520,7 @@ value::value( enum type t )
 		
 		case type::integer:
 		{
-			m_data.m_integer = new int;
+			m_data.m_integer = new std::uint64_t;
 		}
 		break;
 		
@@ -1601,7 +1656,7 @@ value::assign( const value &v )
 			break;
 
 		case type::integer:
-			m_data.m_integer = new int( *v.m_data.m_integer);
+			m_data.m_integer = new std::uint64_t( *v.m_data.m_integer);
 			break;
 
 		case type::real:
@@ -1911,8 +1966,57 @@ value::set_string(std::string const &newString)
 }
 
 
-int
-value::as_integer( int default_value ) const
+std::int8_t
+value::as_int8( std::int8_t default_value ) const
+{
+	return ( m_type == type::integer ) ? *m_data.m_integer : default_value;
+}
+
+
+std::uint8_t
+value::as_uint8( std::uint8_t default_value ) const
+{
+	return ( m_type == type::integer ) ? *m_data.m_integer : default_value;
+}
+
+
+std::int16_t
+value::as_int16( std::int16_t default_value ) const
+{
+	return ( m_type == type::integer ) ? *m_data.m_integer : default_value;
+}
+
+
+std::uint16_t
+value::as_uint16( std::uint16_t default_value ) const
+{
+	return ( m_type == type::integer ) ? *m_data.m_integer : default_value;
+}
+
+
+std::int32_t
+value::as_int32( std::int32_t default_value ) const
+{
+	return ( m_type == type::integer ) ? ( std::int32_t ) *m_data.m_integer : default_value;
+}
+
+
+std::uint32_t
+value::as_uint32( std::uint32_t default_value ) const
+{
+	return ( m_type == type::integer ) ? ( std::uint32_t ) *m_data.m_integer : default_value;
+}
+
+
+std::int64_t
+value::as_int64( std::int64_t default_value ) const
+{
+	return ( m_type == type::integer ) ? *m_data.m_integer : default_value;
+}
+
+
+std::uint64_t
+value::as_uint64( std::uint64_t default_value ) const
 {
 	return ( m_type == type::integer ) ? *m_data.m_integer : default_value;
 }
@@ -1926,7 +2030,7 @@ value::as_status( status default_value ) const
 
 
 void
-value::set_integer(int newInt)
+value::set_integer( std::int64_t newInt)
 {
 	if (m_type == type::integer)
 	{
@@ -1936,7 +2040,7 @@ value::set_integer(int newInt)
 	{
 		clear();
 		m_type = type::integer;
-		m_data.m_integer = new int(newInt);
+		m_data.m_integer = new std::uint64_t( newInt );
 	}
 }
 
@@ -2315,7 +2419,7 @@ value::data::data(std::string *newStringvalue)
 }
 
 
-value::data::data(int *newIntvalue)
+value::data::data( std::uint64_t *newIntvalue)
 :
 	m_integer(newIntvalue)
 {
@@ -2785,7 +2889,7 @@ netkit::json::operator<<(std::ostream &output, const value &v)
 			break;
 
 		case value::type::integer:
-			output << v.as_integer();
+			output << v.as_uint64();
 			break;
 
 		case value::type::real:
@@ -2820,13 +2924,12 @@ netkit::json::operator<<(std::ostream &output, const value &v)
 #	pragma mark connection implementation
 #endif
 
-connection::list					*connection::m_instances;
-connection::ptr						connection::m_active;
-std::atomic< std::int32_t >			connection::m_id( 1 );
+connection::list			*connection::m_instances;
+connection::ptr				connection::m_active;
+std::atomic< std::int32_t >	connection::m_id( 1 );
 
-connection::connection( const source::ptr &source )
+connection::connection()
 :
-	sink( source ),
 	m_base( NULL ),
 	m_eptr( NULL ),
 	m_end( NULL )
@@ -2842,11 +2945,11 @@ connection::~connection()
 }
 
 
-sink::ptr
+bool
 connection::adopt( source::ptr source, const std::uint8_t *buf, size_t len )
 {
-	sink::ptr	conn;
 	unsigned	index = 0;
+	bool		ok = false;
 
 	while ( isdigit( buf[ index ] ) && ( index < len ) )
 	{
@@ -2875,7 +2978,9 @@ connection::adopt( source::ptr source, const std::uint8_t *buf, size_t len )
 
 	try
 	{
-		conn = new connection( source );
+		sink::ptr conn = new connection;
+		conn->bind( source );
+		ok = true;
 	}
 	catch ( ... )
 	{
@@ -2884,46 +2989,26 @@ connection::adopt( source::ptr source, const std::uint8_t *buf, size_t len )
 	
 exit:
 
-	return conn;
+	return ok;
 }
 
 
-ssize_t
-connection::process()
+void
+connection::process( const std::uint8_t *buf, std::size_t len )
 {
-	ssize_t num = 0;
-	
-	while ( 1 )
+	if ( num_bytes_unused() < len )
 	{
-		if ( num_bytes_unused() == 0 )
-		{
-			add( size() );
-		}
-		
-		num = recv( m_eptr, num_bytes_unused() );
-	
-		if ( num > 0 )
-		{
-			m_eptr += num;
-
-			if ( !really_process() )
-			{
-				shutdown();
-				break;
-			}
-		}
-		else if ( num < 0 )
-		{
-			shutdown();
-			break;
-		}
-		else
-		{
-			break;
-		}
+		add( len - num_bytes_unused() );
 	}
-	
-	return num;
+		
+	memcpy( m_eptr, buf, len );
+		
+	m_eptr += len;
+
+	if ( !really_process() )
+	{
+		shutdown();
+	}
 }
 
 
@@ -2939,7 +3024,7 @@ connection::send_notification( value::ptr request )
 bool
 connection::send_request( value::ptr request, reply_f reply )
 {
-	int32_t id = ++m_id;
+	int64_t id = ++m_id;
 	bool	ok = false;
 	
 	request[ "jsonrpc" ]	= "2.0";
@@ -3129,7 +3214,7 @@ connection::really_process()
 		}
 		else
 		{
-			auto it = m_reply_handlers.find( root[ "id" ]->as_integer() );
+			auto it = m_reply_handlers.find( root[ "id" ]->as_uint64() );
 				
 			if ( it != m_reply_handlers.end() )
 			{
@@ -3327,10 +3412,11 @@ server::reply_with_error( reply_f r, netkit::status status, bool upgrade, bool c
 #	pragma mark client implementation
 #endif
 
-client::client( const source::ptr &source )
+client::client( source::ptr source )
 :
-	m_connection( new connection( source ) )
+	m_connection( new connection )
 {
+	m_connection->bind( source );
 }
 
 
@@ -3341,10 +3427,10 @@ client::client( const connection::ptr &conn )
 }
 
 
-ssize_t
-client::process()
+void
+client::process( const std::uint8_t *buf, std::size_t len )
 {
-	return m_connection->process();
+	m_connection->process( buf, len );
 }
 
 
@@ -3394,7 +3480,7 @@ client::send_request( const std::string &method, value::ptr params, reply_f repl
 		}
 		else
 		{
-			error_code		= ( netkit::status ) response[ "error" ][ "code" ]->as_integer();
+			error_code		= ( netkit::status ) response[ "error" ][ "code" ]->as_int64();
 			error_message	= response[ "error" ][ "message" ]->as_string();
 		}
 			

@@ -31,9 +31,10 @@
 #ifndef _netkit_source_h
 #define _netkit_source_h
 
-#include <NetKit/NKSink.h>
-#include <initializer_list>
+#include <NetKit/NKRunLoop.h>
+#include <NetKit/NKEndpoint.h>
 #include <list>
+#include <ios>
 
 namespace netkit {
 
@@ -41,37 +42,73 @@ class source : public object
 {
 public:
 
-	typedef void							*tag;
-	typedef std::function< void ( void ) >	close_f;
-	typedef smart_ptr< source >				ptr;
+	typedef std::function< void ( int status ) >											connect_reply_f;
+	typedef std::function< void ( int status ) >											accept_reply_f;
+	typedef std::function< bool ( int status, const std::uint8_t *buf, std::size_t len ) >	peek_reply_f;
+	typedef std::function< bool ( int status, const std::uint8_t *buf, std::size_t len ) >	recv_reply_f;
+	typedef std::function< void ( void ) >													close_f;
+	typedef smart_ptr< source >																ptr;
+	
+	class adapter
+	{
+	public:
+	
+		typedef adapter *ptr;
+		
+		adapter();
+		
+		virtual ~adapter();
+		
+		virtual void
+		connect( const endpoint::ptr &endpoint, connect_reply_f reply ) = 0;
+		
+		virtual void
+		accept( accept_reply_f reply ) = 0;
+		
+		virtual void
+		peek( peek_reply_f reply ) = 0;
+	
+		virtual void
+		recv( recv_reply_f reply ) = 0;
+	
+		virtual std::streamsize
+		send( const std::uint8_t *buf, std::size_t len ) = 0;
+		
+	protected:
+	
+		friend class source;
+		
+		source::ptr		m_source;
+		adapter::ptr	m_next;
+	};
 	
 	source();
 	
 	virtual ~source();
 
-	sink::ptr&
-	sink();
+	virtual void
+	add( adapter::ptr adapter );
 	
-	const sink::ptr&
-	sink() const;
+	virtual tag
+	bind( close_f func );
+	
+	virtual void
+	unbind( tag t );
 	
 	void
-	bind( sink::ptr sink );
+	connect( const endpoint::ptr &endpoint, connect_reply_f reply );
+		
+	void
+	accept( accept_reply_f reply );
 	
-	virtual ssize_t
-	peek( std::uint8_t *buf, size_t len ) = 0;
+	void
+	peek( peek_reply_f reply );
 	
-	virtual ssize_t
-	recv( std::uint8_t *buf, size_t len ) = 0;
+	void
+	recv( recv_reply_f reply );
 	
-	virtual ssize_t
-	send( const std::uint8_t *buf, size_t len ) = 0;
-	
-	virtual bool
-	is_secure() = 0;
-	
-	virtual bool
-	secure() = 0;
+	std::streamsize
+	send( const std::uint8_t *buf, std::size_t len );
 	
 	virtual bool
 	is_open() const = 0;
@@ -79,18 +116,26 @@ public:
 	virtual void
 	close() = 0;
 	
-	tag
-	register_close_handler( close_f c );
+	inline runloop::event
+	write_event() const
+	{
+		return m_write_event;
+	}
 	
-	void
-	unregister_close_handler( tag t );
+	inline runloop::event
+	read_event() const
+	{
+		return m_read_event;
+	}
 	
 protected:
 
 	typedef std::list< std::pair< tag, close_f > > close_handlers;
 	
-	sink::ptr		m_sink;
 	close_handlers	m_close_handlers;
+	adapter::ptr	m_adapters;
+	runloop::event	m_write_event;
+	runloop::event	m_read_event;
 };
 
 }

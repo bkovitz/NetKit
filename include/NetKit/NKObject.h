@@ -36,11 +36,13 @@
 #include <cstdint>
 #include <atomic>
 #include <string>
+#include <list>
 #include <map>
 
 namespace netkit {
 
 extern void initialize();
+typedef void *tag;
 
 class object
 {
@@ -48,6 +50,7 @@ public:
 
 	typedef std::map< std::string, std::string > keyvals;
 	typedef smart_ptr< object > ptr;
+	typedef std::list< ptr > list;
 
 	virtual expected< std::int32_t >
 	int_for_key( const std::string &key ) const;
@@ -109,6 +112,9 @@ public:
 	{
 		return m_refs.fetch_add( 0 );
 	}
+	
+	virtual bool
+	equals( const object &that ) const;
 	
 protected:
 

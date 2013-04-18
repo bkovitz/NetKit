@@ -31,12 +31,37 @@
 #include "catch.hpp"
 #include <NetKit/NetKit.h>
 
-TEST_CASE( "NetKit/socket", "socket tests" )
+using namespace netkit;
+
+static const char* g_message = "GET /index.html HTTP/1.1\r\nHost: collobos.com\r\n\r\n";
+
+TEST_CASE( "NetKit/ssl", "ssl tests" )
 {
 	SECTION( "constructors", "socket constructors" )
 	{
-		netkit::tcp::client::ptr sock = new netkit::tcp::client;
-
+		netkit::ip::tcp::socket::ptr	sock = new netkit::ip::tcp::socket;
 		REQUIRE( sock );
+		
+		sock->add( tls::adapter::create() );
+		
+		sock->connect( new uri( "https://www.collobos.com/index.html"), [=]( int status ) mutable
+		{
+			REQUIRE( status == 0 );
+			
+			auto num = sock->send( ( const std::uint8_t* ) g_message, strlen( g_message ) );
+			
+			fprintf( stderr, "wrote %lu bytes\n", num );
+		} );
+		
+		sock->recv( [=]( int status, const std::uint8_t *buf, std::size_t len )
+		{
+			fprintf( stderr, "read %lu bytes: %s\n", len, buf );
+			
+			netkit::runloop::instance()->stop();
+			
+			return true;
+		} );
+		
+		netkit::runloop::instance()->run();
 	}
 }

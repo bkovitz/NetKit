@@ -22,32 +22,93 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * The views and conclusions contained in the software and documentation are those
- * of the authors and should not be interpreted as representing official policies,
- * either expressed or implied, of the FreeBSD Project.
- *
  */
  
-#include "catch.hpp"
-#include <NetKit/NetKit.h>
+#ifndef _netkit_endpoint_h
+#define _netkit_endpoint_h
 
-static const char * g_xml = "<?xml version=\"1.0\"?><catalog><book id=\"bk101\"> <author>Gambardella, Matthew</author> <title>XML Developer's Guide</title> <genre>Computer</genre> <price>44.95</price> <publish_date>2000-10-01</publish_date> <description>An in-depth look at creating applications with XML.</description> </book> </catalog>";
+#include <NetKit/NKURI.h>
+#include <NetKit/NKAddress.h>
+#include <sys/socket.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <net/if.h>
+#include <net/if_dl.h>
+#include <netinet/in.h>
+#include <netdb.h>
 
+#include <deque>
 
-TEST_CASE( "NetKit/xml/1", "xml tests" )
+namespace netkit {
+
+class endpoint : public object
 {
-	netkit::xml::document::ptr document = netkit::xml::document::create( g_xml );
-	REQUIRE( document );
+public:
+
+	typedef smart_ptr< endpoint > ptr;
 	
-	netkit::xml::node::ptr root = document->root();
-	REQUIRE( root );
-	REQUIRE( root->name() == "catalog" );
+	static endpoint::ptr
+	from_sockaddr( const sockaddr_storage &addr );
+
+	virtual void
+	to_sockaddr( sockaddr_storage &addr ) const = 0;
 	
-	netkit::xml::node::ptr child = root->children();
-	REQUIRE( child );
-	REQUIRE( child->name() == "book" );
+	virtual std::string
+	to_string() const = 0;
+};
+
+namespace ip {
+
+class endpoint : public netkit::endpoint
+{
+public:
+
+	typedef smart_ptr< endpoint > ptr;
+	typedef std::deque< ptr > list;
 	
-	netkit::xml::attribute::ptr attr = child->attributes();
-	REQUIRE( attr );
-	REQUIRE( attr->name() == "id" );
+public:
+
+	endpoint( std::uint16_t port );
+
+	endpoint( addrinfo &ai );
+	
+	endpoint( const sockaddr_storage &addr );
+	
+	endpoint( const uri::ptr &uri );
+	
+	endpoint( const address::ptr &host, uint16_t port );
+	
+	virtual ~endpoint();
+	
+	virtual void
+	to_sockaddr( sockaddr_storage &addr ) const;
+	
+	virtual std::string
+	to_string() const;
+	
+	inline const address::ptr&
+	addr() const
+	{
+		return m_addr;
+	}
+	
+	inline std::uint16_t
+	port() const
+	{
+		return m_port;
+	}
+	
+	virtual bool
+	equals( const object &that ) const;
+
+protected:
+
+	address::ptr	m_addr;
+	std::uint16_t	m_port;
+};
+
 }
+
+}
+
+#endif

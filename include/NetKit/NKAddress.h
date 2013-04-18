@@ -28,24 +28,103 @@
  *
  */
  
-#include "catch.hpp"
-#include <NetKit/NetKit.h>
-#include <functional>
+#ifndef _netkit_ip_address_h
+#define _netkit_ip_address_h
 
-using namespace netkit;
+#include <NetKit/NKObject.h>
+#include <NetKit/NKExpected.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <net/if.h>
+#include <net/if_dl.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <deque>
 
-TEST_CASE( "NetKit/http/client", "http client tests" )
+
+namespace netkit {
+
+class address : public object
 {
-	http::request::ptr	request = new http::request( http::method::get, new uri( "http://www.porchdogsoft.com/test.html" ) );
+public:
+
+	typedef smart_ptr< address > ptr;
 	
-	http::client::send( request, [=]( uint32_t error, http::response::ptr response )
+	static address::ptr
+	from_sockaddr( const sockaddr_storage &addr );
+
+	virtual std::string
+	to_string() const = 0;
+};
+
+namespace ip {
+
+class address : public netkit::address
+{
+public:
+
+	typedef smart_ptr< address > ptr;
+	typedef std::deque< ptr > list;
+	typedef std::function< void ( int status, const list &addrs ) > resolve_reply_f;
+	
+	enum type
 	{
-		REQUIRE( response->status() == 200 );
-		
-		REQUIRE( response->body() == "<html>hello</html>\n" );
-		
-		runloop::instance()->stop();
-	} );
+		v4 = 0,
+		v6
+	};
 	
-	runloop::instance()->run();
+public:
+
+	static void
+	resolve( std::string host, resolve_reply_f reply );
+	
+	address( uint32_t addr );
+	
+	address( struct in_addr addr );
+	
+	address( struct in6_addr addr );
+	
+	virtual ~address();
+	
+	inline bool
+	is_v4() const
+	{
+		return ( m_type == v4 ) ? true : false;
+	}
+	
+	inline bool
+	is_v6() const
+	{
+		return ( m_type == v6 ) ? true : false;
+	}
+	
+	expected< in_addr >
+	to_v4() const;
+	
+	expected< in6_addr >
+	to_v6() const;
+
+	virtual std::string
+	to_string() const;
+	
+	
+	
+	virtual bool
+	equals( const object &that ) const;
+
+protected:
+
+	type m_type;
+	
+	union
+	{
+		in_addr		m_v4;
+		in6_addr	m_v6;
+	} m_addr;
+};
+
 }
+
+}
+
+#endif

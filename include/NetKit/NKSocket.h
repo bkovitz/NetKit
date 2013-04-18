@@ -32,6 +32,7 @@
 #define _netkit_socket_h
 
 #include <NetKit/NKRunLoop.h>
+#include <NetKit/NKEndpoint.h>
 #include <NetKit/NKSource.h>
 #include <NetKit/NKSink.h>
 #include <initializer_list>
@@ -47,91 +48,88 @@
 
 namespace netkit {
 
-namespace socket {
-
-#if defined( WIN32 )
-
-typedef SOCKET native;
-static const native null = INVALID_SOCKET;
-
-#else
-
-typedef int native;
-static const native null = -1;
-
-#endif
-
-enum class error
-{
-#if defined( WIN32 )
-	reset		=	WSAECONNRESET,
-	aborted		=	WSAECONNABORTED,
-	in_progress	=	WSAEINPROGRESS,
-	would_block	=	WSAEWOULDBLOCK
-#else
-	reset		=	ECONNRESET,
-	aborted		=	ECONNABORTED,
-	in_progress	=	EINPROGRESS,
-	would_block	=	EAGAIN
-#endif
-};
-
-
-class server : public object
+class socket : public source
 {
 public:
 
-	typedef std::function< sink::ptr ( source::ptr source, const std::uint8_t *buf, size_t len ) >	adopt_f;
-	typedef std::list< adopt_f >																	adopters;
-
-	void
-	bind( std::initializer_list< adopt_f > l );
+	typedef smart_ptr< socket > ptr;
 	
-protected:
+#if defined( WIN32 )
 
-	server( int domain, int type );
+	typedef SOCKET native;
+	static const native null = INVALID_SOCKET;
 
-	server( native fd );
+#else
+
+	typedef int native;
+	static const native null = -1;
+
+#endif
 	
-	server( const server &that );	// Not implemented
-	
-	adopters	m_adopters;
-	native		m_fd;
-};
-
-	
-class client : public source
-{
-public:
-
-	typedef smart_ptr< client > ptr;
-
-	inline runloop::source
-	source() const
+	enum class error
 	{
-		return m_source;
-	}
+#if defined( WIN32 )
+		reset		=	WSAECONNRESET,
+		aborted		=	WSAECONNABORTED,
+		in_progress	=	WSAEINPROGRESS,
+		would_block	=	WSAEWOULDBLOCK
+#else
+		reset		=	ECONNRESET,
+		aborted		=	ECONNABORTED,
+		in_progress	=	EINPROGRESS,
+		would_block	=	EAGAIN
+#endif
+	};
 	
-	inline void
-	set_source( runloop::source s )
+	class adapter : public source::adapter
 	{
-		m_source = s;
+	public:
+	
+		typedef smart_ptr< adapter > ptr;
+		
+		virtual void
+		connect( const endpoint::ptr &endpoint, connect_reply_f reply );
+		
+		virtual void
+		accept( accept_reply_f reply );
+		
+		virtual void
+		peek( peek_reply_f reply );
+	
+		virtual void
+		recv( recv_reply_f reply );
+	
+		virtual std::streamsize
+		send( const std::uint8_t *buf, std::size_t len );
+		
+	private:
+	
+		std::uint8_t m_buf[ 4192 ];
+	};
+	
+	static bool
+	set_blocking( native fd, bool block );
+	
+	inline bool
+	set_blocking( bool val )
+	{
+		return set_blocking( m_fd, val );
 	}
-	
-	virtual ssize_t
-	peek( std::uint8_t *buf, size_t len ) = 0;
-	
-	virtual ssize_t
-	recv( std::uint8_t *buf, size_t len ) = 0;
-	
-	virtual ssize_t
-	send( const std::uint8_t *buf, size_t len ) = 0;
-	
+
 	virtual bool
 	is_open() const;
 	
 	virtual void
 	close();
+	
+	inline bool
+	connected() const
+	{
+		return m_connected;
+	}
+	
+	void
+	on_event( runloop::event_mask mask, runloop::event_f func );
 	
 	inline native
 	fd() const
@@ -141,20 +139,140 @@ public:
 	
 protected:
 
-	client( int domain, int type );
+	socket( int domain, int type );
 
-	client( native fd );
+	socket( native fd );
 	
-	client( const client &that );	// Not implemented
+	socket( native fd, const endpoint::ptr peer );
 	
-	virtual ~client();
+	socket( const socket &that );	// Not implemented
 	
-	bool
-	set_blocking( bool val );
-
-	runloop::source	m_source;
+	virtual ~socket();
+	
+	void
+	init();
+	
+	bool			m_connected;
+	endpoint::ptr	m_peer;
+	runloop::event	m_event;
 	native			m_fd;
 };
+
+
+class acceptor : public object
+{
+public:
+
+	typedef std::function< void ( int status, socket::ptr sock ) >	accept_reply_f;
+	typedef smart_ptr< acceptor >									ptr;
+	
+	acceptor( const endpoint::ptr &endpoint, int domain, int type );
+	
+	acceptor( socket::native fd );
+	
+	virtual ~acceptor();
+	
+	int
+	listen( int size );
+	
+	virtual void
+	accept( accept_reply_f reply ) = 0;
+	
+	inline const endpoint::ptr&
+	endpoint() const
+	{
+		return m_endpoint;
+	}
+	
+protected:
+
+	endpoint::ptr		m_endpoint;
+	runloop::event		m_event;
+	socket::native		m_fd;
+	
+private:
+
+	acceptor( const acceptor &that );	// Not implemented
+};
+
+namespace ip {
+
+class socket : public netkit::socket
+{
+public:
+
+	void
+	connect( const uri::ptr &uri, connect_reply_f reply );
+
+	const ip::endpoint::ptr&
+	peer();
+	
+protected:
+
+	socket( int domain, int type );
+
+	socket( native fd );
+	
+	socket( native fd, const ip::endpoint::ptr &peer );
+	
+	socket( const socket &that );	// Not implemented
+};
+
+class acceptor : public netkit::acceptor
+{
+public:
+
+	acceptor( const ip::endpoint::ptr &endpoint, int type );
+	
+	acceptor( socket::native fd );
+	
+	inline ip::endpoint::ptr
+	endpoint() const
+	{
+		return dynamic_pointer_cast< ip::endpoint, netkit::endpoint >( m_endpoint );
+	}
+	
+private:
+
+	acceptor( const acceptor &that );	// Not implemented
+};
+
+namespace tcp {
+
+class socket : public ip::socket
+{
+public:
+
+	typedef smart_ptr< socket > ptr;
+	
+	socket();
+	
+	socket( native fd );
+	
+	socket( native fd, const ip::endpoint::ptr &peer );
+	
+	virtual ~socket();
+	
+protected:
+
+	std::string m_peer_ethernet_addr;
+};
+
+class acceptor : public ip::acceptor
+{
+public:
+
+	typedef smart_ptr< acceptor > ptr;
+
+	acceptor( const ip::endpoint::ptr &endpoint );
+
+	virtual ~acceptor();
+	
+	virtual void
+	accept( accept_reply_f reply );
+};
+
+}
 
 }
 

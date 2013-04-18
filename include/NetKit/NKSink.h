@@ -32,7 +32,9 @@
 #define _netkit_sink_h
 
 #include <NetKit/NKObject.h>
+#include <NetKit/NKURI.h>
 #include <string>
+#include <ios>
 
 namespace netkit {
 
@@ -47,18 +49,26 @@ public:
 	typedef std::function< void ( void ) >	close_f;
 	typedef smart_ptr< sink >				ptr;
 	
-	sink( const source_ptr &source );
+	sink();
+	
+	sink( const uri::ptr &uri );
 	
 	virtual ~sink();
 	
-	virtual ssize_t
-	process() = 0;
+	virtual tag
+	bind( source_ptr source );
 	
-	ssize_t
-	recv( std::uint8_t *buf, size_t len );
+	virtual tag
+	bind( close_f func );
 	
-	ssize_t
-	send( const std::uint8_t *buf, size_t len );
+	virtual void
+	unbind( tag t );
+	
+	virtual void
+	process( const std::uint8_t *buf, std::size_t len ) = 0;
+	
+	std::streamsize
+	send( const std::uint8_t *buf, std::size_t len );
 	
 	bool
 	is_open() const;
@@ -66,28 +76,12 @@ public:
 	void
 	close();
 	
-	inline const std::string&
-	token() const
-	{
-		return m_token;
-	}
-	
-	inline void
-	set_token( const std::string &val )
-	{
-		m_token = val;
-	}
-	
-	tag
-	register_close_handler( close_f );
-	
-	void
-	unregister_close_handler( tag t );
-	
 protected:
 
-	source_ptr	m_source;
-	std::string	m_token;
+	void
+	run();
+
+	source_ptr m_source;
 };
 
 }

@@ -31,7 +31,7 @@
 #ifndef _netkit_http_h
 #define _netkit_http_h
 
-#include <NetKit/NKTCPSocket.h>
+#include <NetKit/NKSource.h>
 #include <NetKit/NKProxy.h>
 #include <NetKit/NKURI.h>
 #include <NetKit/cstring.h>
@@ -402,20 +402,20 @@ private:
 	std::uint16_t m_status;
 };
 
-
 	
 class connection : public sink
 {
 public:
 
-	typedef std::function< void ( http::response::ptr response, bool upgrade, bool close ) >								response_f;
-	typedef std::function< http::request::ptr ( int method, std::uint16_t major, std::uint16_t minor, const uri::ptr &uri ) >					request_will_begin_f;
-	typedef std::function< int ( http::request::ptr request, const std::uint8_t *buf, size_t len, response_f response ) >	request_body_was_received_f;
-	typedef std::function< int ( http::request::ptr request, response_f func ) >											request_f;
+	typedef std::function< void ( http::response::ptr response, bool upgrade, bool close ) >									response_f;
+	typedef std::function< http::request::ptr ( int method, std::uint16_t major, std::uint16_t minor, const uri::ptr &uri ) >	request_will_begin_f;
+	typedef std::function< int ( http::request::ptr request, const std::uint8_t *buf, size_t len, response_f response ) >		request_body_was_received_f;
+	typedef std::function< int ( http::request::ptr request, response_f func ) >												request_f;
 
 	typedef smart_ptr< connection > ptr;
+	typedef std::list< ptr > list;
 	
-	static sink::ptr
+	static bool
 	adopt( source::ptr source, const std::uint8_t *buf, size_t len );
 	
 	static void
@@ -427,8 +427,11 @@ public:
 	static void
 	bind( std::uint8_t method, const std::string &path, const std::string &type, request_will_begin_f rwb, request_body_was_received_f rbwr, request_f r );
 	
-	virtual ssize_t
-	process();
+	static void
+	bind( std::uint8_t method, const std::string &path, sink::ptr sink );
+	
+	virtual void
+	process( const std::uint8_t *buf, std::size_t len );
 	
 	bool
 	put( message::ptr message );
@@ -494,12 +497,20 @@ protected:
 			m_r( r )
 		{
 		}
+		
+		handler( const std::string &path, sink::ptr sink )
+		:
+			m_path( path ),
+			m_sink( sink )
+		{
+		}
 	
 		std::string					m_path;
 		std::string					m_type;
 		request_will_begin_f		m_rwb;
 		request_body_was_received_f	m_rbwr;
 		request_f					m_r;
+		sink::ptr					m_sink;
 	};
 	
 	typedef std::map< std::uint8_t, handler::list > handlers;
@@ -513,7 +524,7 @@ protected:
 	
 protected:
 
-	connection( const source::ptr &source );
+	connection();
 	
 	virtual ~connection();
 	
@@ -544,6 +555,9 @@ protected:
 	bool
 	resolve( http_parser *parser );
 	
+	friend void					netkit::initialize();
+	
+	static connection::list		*m_instances;
 	static handlers				m_handlers;
 	
 	std::uint8_t				m_method;
@@ -555,6 +569,7 @@ protected:
 	bool						m_okay;
 	std::vector< std::uint8_t >	m_body;
 	
+	bool						m_is_web_socket;
 	http_parser_settings		*m_settings;
 	http_parser					*m_parser;
 	int							m_parse_state;

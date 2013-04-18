@@ -29,6 +29,7 @@
  */
  
 #include "NKHTTP.h"
+#include "NKTLS.h"
 #include "NKBase64.h"
 #include "cstring.h"
 #include "NKPlatform.h"
@@ -724,13 +725,15 @@ response::send_prologue( connection::ptr conn ) const
 #	pragma mark connection implementation
 #endif
 
+connection::list	*connection::m_instances;
 connection::handlers connection::m_handlers;
 
-connection::connection( const source::ptr &source )
+connection::connection()
 :
-	sink( source ),
 	m_okay( true )
 {
+	m_instances->push_back( this );
+	
 	m_settings = new http_parser_settings;
 	memset( m_settings, 0, sizeof( http_parser_settings ) );
 	
@@ -792,6 +795,15 @@ connection::bind( std::uint8_t m, const std::string &path, const std::string &ty
 
 
 void
+connection::bind( std::uint8_t m, const std::string &path, sink::ptr sink )
+{
+	handler::ptr h = new handler( path, sink );
+	
+	bind( m, h );
+}
+
+
+void
 connection::bind( std::uint8_t m, handler::ptr h )
 {
 	handlers::iterator it = m_handlers.find( m );
@@ -825,10 +837,10 @@ connection::http_minor() const
 }
 
 
-netkit::sink::ptr
+bool
 connection::adopt( source::ptr source, const std::uint8_t *buf, size_t len )
 {
-	sink::ptr conn;
+	bool ok = false;
 	
 	if ( ( len >= 3 ) &&
 	     ( ( std::strncasecmp( ( const char* ) buf, "get", 3 ) == 0 ) ||
@@ -836,10 +848,14 @@ connection::adopt( source::ptr source, const std::uint8_t *buf, size_t len )
 	       ( std::strncasecmp( ( const char* ) buf, "opt", 3 ) == 0 ) ||
 	       ( std::strncasecmp( ( const char* ) buf, "hea", 3 ) == 0 ) ) )
 	{
-		conn = new connection( source );
+		sink::ptr conn = new connection;
+		
+		conn->bind( source );
+		
+		ok = true;
 	}
 	
-	return conn;
+	return ok;
 }
 
 
@@ -886,48 +902,22 @@ connection::close()
 }
 
 
-ssize_t
-connection::process()
+void
+connection::process( const std::uint8_t *buf, size_t len )
 {
-	uint8_t	buf[ 4192 ];
-	ssize_t	num;
+	std::streamsize processed;
 
-	while ( 1 )
+	processed = http_parser_execute( m_parser, m_settings, ( const char* ) buf, len );
+
+	if ( processed != len )
 	{
-		memset( buf, 0, sizeof( buf ) );
-		num = recv( ( std::uint8_t* ) buf, sizeof( buf ) );
-
-		if ( num > 0 )
-		{
-			size_t processed;
-
-			processed = http_parser_execute( m_parser, m_settings, ( const char* ) buf, num );
-
-			if ( processed != num )
-			{
-				nklog( log::error, "http_parser_execute() failed: bytes read = %ld, processed = %ld",
-									num, processed );
-				close();
-				break;
-			}
-			
-			if ( m_parser->upgrade )
-			{
-			}
-		}
-		else if ( num < 0 )
-		{
-			nklog( log::error, "recv() returned %d", platform::error() );
-			close();
-			break;
-		}
-		else
-		{
-			break;
-		}
+		nklog( log::error, "http_parser_execute() failed: bytes read = %ld, processed = %ld", len, processed );
+		close();
 	}
 	
-	return num;
+	if ( m_parser->upgrade )
+	{
+	}
 }
 
 
@@ -1099,13 +1089,17 @@ connection::body_was_received( http_parser *parser, const char *buf, size_t len 
 		
 		if ( upgrade )
 		{
-			if ( !self->m_source->secure() )
+			self->m_source->add( tls::adapter::create() );
+			
+			self->m_source->accept( [=]( int err ) mutable
 			{
-				close = true;
-			}
+				if ( err )
+				{
+					self->close();
+				}
+			} );
 		}
-		
-		if ( close )
+		else if ( close )
 		{
 			self->close();
 		}
@@ -1124,13 +1118,17 @@ connection::message_was_received( http_parser *parser )
 		
 		if ( upgrade )
 		{
-			if ( !self->m_source->secure() )
+			self->m_source->add( tls::adapter::create() );
+			
+			self->m_source->accept( [=]( int err ) mutable
 			{
-				close = true;
-			}
+				if ( err )
+				{
+					self->close();
+				}
+			} );
 		}
-		
-		if ( close )
+		else if ( close )
 		{
 			self->close();
 		}

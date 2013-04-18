@@ -42,32 +42,20 @@ source::~source()
 }
 
 
-sink::ptr&
-source::sink()
-{
-	return m_sink;
-}
-
-
-const sink::ptr&
-source::sink() const
-{
-	return m_sink;
-}
-
-
 void
-source::bind( sink::ptr sink )
+source::add( adapter::ptr adapter  )
 {
-	m_sink = sink;
+	adapter->m_source	= this;
+	adapter->m_next		= m_adapters;
+	m_adapters			= adapter;
 }
 
 
-source::tag
-source::register_close_handler( close_f c )
+tag
+source::bind( close_f c )
 {
-	static int	tags = 0;
-	source::tag t = reinterpret_cast< source::tag >( tags++ );
+	static int	tags	= 0;
+	tag			t		= reinterpret_cast< tag >( ++tags );
 	
 	m_close_handlers.push_back( std::make_pair( t, c ) );
 	
@@ -76,7 +64,7 @@ source::register_close_handler( close_f c )
 
 
 void
-source::unregister_close_handler( tag t )
+source::unbind( tag t )
 {
 	for ( auto it = m_close_handlers.begin(); it != m_close_handlers.end(); it++ )
 	{
@@ -86,4 +74,59 @@ source::unregister_close_handler( tag t )
 			break;
 		}
 	}
+	
+	for ( auto adapter = m_adapters; adapter; adapter = adapter->m_next )
+	{
+		if ( adapter == t )
+		{
+		}
+	}
 }
+
+
+void
+source::connect( const endpoint::ptr &endpoint, connect_reply_f reply )
+{
+	m_adapters->connect( endpoint, reply );
+}
+
+		
+void
+source::accept( accept_reply_f reply )
+{
+	m_adapters->accept( reply );
+}
+
+
+void
+source::peek( peek_reply_f reply )
+{
+	return m_adapters->peek( reply );
+}
+
+	
+void
+source::recv( recv_reply_f reply )
+{
+	return m_adapters->recv( reply );
+}
+
+	
+std::streamsize
+source::send( const std::uint8_t *buf, size_t len )
+{
+	return m_adapters->send( buf, len );
+}
+
+
+source::adapter::adapter()
+:
+	m_next( nullptr )
+{
+}
+
+
+source::adapter::~adapter()
+{
+}
+

@@ -31,6 +31,7 @@
 #ifndef _netkit_proxy_h
 #define _netkit_proxy_h
 
+#include <NetKit/NKSocket.h>
 #include <NetKit/NKURI.h>
 #include <string>
 

@@ -30,14 +30,26 @@
  
 #include <NetKit/NKSink.h>
 #include <NetKit/NKSource.h>
+#include <NetKit/NKSocket.h>
 
 using namespace netkit;
 
-sink::sink( const source_ptr &source )
-:
-	m_source( source )
+sink::sink()
 {
-	m_source->bind( this );
+}
+
+
+sink::sink( const uri::ptr &uri )
+{
+	ip::tcp::socket::ptr sock = new ip::tcp::socket;
+	
+	sock->connect( uri, [=]( int status )
+	{
+		if ( status == 0 )
+		{
+			m_source = sock;
+		}
+	} );
 }
 
 
@@ -46,10 +58,35 @@ sink::~sink()
 }
 
 
-ssize_t
-sink::recv( std::uint8_t *buf, size_t len )
+tag
+sink::bind( source::ptr source )
 {
-	return m_source->recv( buf, len );
+	m_source = source;
+	
+	run();
+	
+	return m_source.get();
+}
+
+
+tag
+sink::bind( close_f c )
+{
+	return m_source->bind( c );
+}
+
+	
+void
+sink::unbind( tag t )
+{
+	if ( m_source.get() == t )
+	{
+		m_source = nullptr;
+	}
+	else
+	{
+		m_source->unbind( t );
+	}
 }
 
 
@@ -74,15 +111,13 @@ sink::close()
 }
 
 
-sink::tag
-sink::register_close_handler( close_f c )
-{
-	return m_source->register_close_handler( c );
-}
-
-	
 void
-sink::unregister_close_handler( tag t )
+sink::run()
 {
-	m_source->unregister_close_handler( t );
+	m_source->recv( [=]( int status, const std::uint8_t *buf, std::size_t len )
+	{
+		process( buf, len );
+		
+		return true;
+	} );
 }

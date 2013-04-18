@@ -41,9 +41,9 @@ class runloop : public object
 {
 public:
 
-	typedef void *source;
+	typedef void *event;
 	
-	enum class event
+	enum class event_mask
 	{
 		connect		= ( 1 << 0 ),
 		accept		= ( 1 << 1 ),
@@ -55,29 +55,29 @@ public:
 	
 	typedef smart_ptr< runloop > ptr;
 
-	typedef std::function< void ( void ) >				dispatch_f;
-	typedef std::function< void ( source s, event e ) >	event_f;
+	typedef std::function< void ( void ) >		dispatch_f;
+	typedef std::function< void ( event e ) >	event_f;
 
 	static runloop::ptr
 	instance();
 	
-	virtual source
-	create_source( int fd, event e, event_f f ) = 0;
+	virtual event
+	create( int fd, event_mask m ) = 0;
 	
-	virtual source
-	create_source( std::time_t msec, event_f f ) = 0;
-	
-	virtual void
-	modify( source s, std::time_t msec ) = 0;
+	virtual event
+	create( std::time_t msec ) = 0;
 	
 	virtual void
-	schedule( source s ) = 0;
+	modify( event e, std::time_t msec ) = 0;
 	
 	virtual void
-	suspend( source s ) = 0;
+	schedule( event e, event_f func ) = 0;
 	
 	virtual void
-	cancel( source s ) = 0;
+	suspend( event e ) = 0;
+	
+	virtual void
+	cancel( event e ) = 0;
 	
 	virtual void
 	dispatch_on_main_thread( dispatch_f f ) = 0;
@@ -91,11 +91,11 @@ public:
 
 }
 
-inline netkit::runloop::event
-operator|( netkit::runloop::event a, netkit::runloop::event b )
+inline netkit::runloop::event_mask
+operator|( netkit::runloop::event_mask a, netkit::runloop::event_mask b )
 {
-	typedef std::underlying_type< netkit::runloop::event >::type enum_type;
-	return static_cast< netkit::runloop::event >(static_cast<enum_type>( a ) | static_cast<enum_type>( b ) );
+	typedef std::underlying_type< netkit::runloop::event_mask >::type enum_type;
+	return static_cast< netkit::runloop::event_mask >( static_cast< enum_type >( a ) | static_cast< enum_type >( b ) );
 }
 
 #endif

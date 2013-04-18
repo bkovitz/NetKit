@@ -46,6 +46,8 @@ public:
 	
 	uri();
 	
+	uri( const std::string &scheme, const std::string& host, std::uint16_t port );
+	
 	uri( const std::string& s );
 
 	~uri();
@@ -132,7 +134,7 @@ private:
 
 	std::string	m_scheme;
 	std::string	m_host;
-	int				m_port;
+	int			m_port;
 	std::string	m_path;
 	std::string	m_query;
 };

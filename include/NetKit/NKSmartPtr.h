@@ -95,6 +95,13 @@ public:
 		return *m_ref;
 	}
 	
+	
+	inline const T&
+	operator*() const
+	{
+		return *m_ref;
+	}
+	
     
 	inline T*
 	operator->()

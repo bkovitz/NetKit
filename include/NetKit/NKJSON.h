@@ -123,13 +123,27 @@ public:
 	
 	value();
 
-	value(std::istream &input);
+	value( std::istream &input );
 
 	value( const std::string &v );
 
 	value( const char *v );
-
-	value( int v);
+	
+	value( std::int8_t v );
+	
+	value( std::uint8_t v );
+	
+	value( std::int16_t v );
+	
+	value( std::uint16_t v );
+	
+	value( std::int32_t v );
+	
+	value( std::uint32_t v );
+	
+	value( std::int64_t v );
+	
+	value( std::uint64_t v );
 	
 	value( status v );
 
@@ -209,14 +223,35 @@ public:
 	void
 	set_string( const std::string &v );
 
-	int
-	as_integer( int default_value = 0 ) const;
+	std::int8_t
+	as_int8( std::int8_t default_value = 0 ) const;
+	
+	std::uint8_t
+	as_uint8( std::uint8_t default_value = 0 ) const;
+	
+	std::int16_t
+	as_int16( std::int16_t default_value = 0 ) const;
+	
+	std::uint16_t
+	as_uint16( std::uint16_t default_value = 0 ) const;
+	
+	std::int32_t
+	as_int32( std::int32_t default_value = 0 ) const;
+	
+	std::uint32_t
+	as_uint32( std::uint32_t default_value = 0 ) const;
+	
+	std::int64_t
+	as_int64( std::int64_t default_value = 0 ) const;
+	
+	std::uint64_t
+	as_uint64( std::uint64_t default_value = 0 ) const;
 	
 	status
 	as_status( status = status::ok ) const;
 
 	void
-	set_integer( int v );
+	set_integer( std::int64_t v );
 
 	double
 	as_real( double default_value = 0.0f ) const;
@@ -277,7 +312,7 @@ private:
 	union data
 	{
 		std::string		*m_string;
-		int				*m_integer;
+		std::uint64_t	*m_integer;
 		double			*m_real;
 		array_map		*m_array;
 		object_map		*m_object;
@@ -287,7 +322,7 @@ private:
 
 		data( std::string *newStringvalue);
 
-		data( int *newIntvalue);
+		data( std::uint64_t *newIntvalue);
 
 		data( double *newDoublevalue);
 
@@ -352,11 +387,11 @@ public:
 	typedef smart_ptr< connection >								ptr;
 	typedef std::list< ptr >									list;
 	
-	connection( const source::ptr &source );
+	connection();
 	
 	virtual ~connection();
 
-	static sink::ptr
+	static bool
 	adopt( source::ptr source, const std::uint8_t *buf, size_t len );
 	
 	inline static connection::ptr
@@ -383,12 +418,12 @@ public:
 	bool
 	send_request( value::ptr request, reply_f reply );
 	
-	virtual ssize_t
-	process();
+	virtual void
+	process( const std::uint8_t *buf, std::size_t len );
 	
 protected:
 
-	typedef std::map< std::int32_t, reply_f > reply_handlers;
+	typedef std::map< std::uint64_t, reply_f > reply_handlers;
 	
 	virtual bool
 	send( value::ptr request );
@@ -458,7 +493,6 @@ protected:
 	reply_handlers						m_reply_handlers;
 	static std::atomic< std::int32_t >	m_id;
 	
-	std::string							m_token;
 	std::uint8_t						*m_base;
 	std::uint8_t						*m_eptr;
 	std::uint8_t						*m_end;
@@ -514,12 +548,12 @@ public:
 	typedef std::function< void ( netkit::status error_code, const std::string &error_message, json::value::ptr result ) >	reply_f;
 	typedef smart_ptr< client >																								ptr;
 
-	client( const source::ptr &source );
+	client( source::ptr source );
 	
 	client( const connection::ptr &conn );
 	
-	ssize_t
-	process();
+	void
+	process( const std::uint8_t *buf, std::size_t len );
 	
 	bool
 	is_open() const;
@@ -578,7 +612,56 @@ public:
 		m_ref->retain();
 	}
 	
-	inline smart_ptr( int32_t v )
+	inline smart_ptr( std::int8_t v )
+	:
+		m_ref( new json::value( v ) )
+	{
+		m_ref->retain();
+	}
+	
+	inline smart_ptr( std::uint8_t v )
+	:
+		m_ref( new json::value( v ) )
+	{
+		m_ref->retain();
+	}
+	
+	inline smart_ptr( std::int16_t v )
+	:
+		m_ref( new json::value( v ) )
+	{
+		m_ref->retain();
+	}
+	
+	inline smart_ptr( std::uint16_t v )
+	:
+		m_ref( new json::value( v ) )
+	{
+		m_ref->retain();
+	}
+	
+	inline smart_ptr( std::int32_t v )
+	:
+		m_ref( new json::value( v ) )
+	{
+		m_ref->retain();
+	}
+	
+	inline smart_ptr( std::uint32_t v )
+	:
+		m_ref( new json::value( v ) )
+	{
+		m_ref->retain();
+	}
+	
+	inline smart_ptr( std::int64_t v )
+	:
+		m_ref( new json::value( v ) )
+	{
+		m_ref->retain();
+	}
+	
+	inline smart_ptr( std::uint64_t v )
 	:
 		m_ref( new json::value( v ) )
 	{

@@ -43,23 +43,23 @@ public:
 	
 	virtual ~runloop_mac();
 
-	virtual source
-	create_source( int fd, event e, event_f f );
+	virtual event
+	create( int fd, event_mask m );
 	
-	virtual source
-	create_source( std::time_t msec, event_f f );
-	
-	virtual void
-	modify( source s, std::time_t msec );
+	virtual event
+	create( std::time_t msec );
 	
 	virtual void
-	schedule( source s );
+	modify( event e, std::time_t msec );
 	
 	virtual void
-	suspend( source s );
+	schedule( event e, event_f f );
 	
 	virtual void
-	cancel( source s );
+	suspend( event e );
+	
+	virtual void
+	cancel( event e );
 
 	virtual void
 	dispatch_on_main_thread( dispatch_f f );

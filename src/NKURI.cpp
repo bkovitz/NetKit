@@ -86,6 +86,15 @@ uri::uri()
 }
 
 
+uri::uri( const std::string &scheme, const std::string& host, std::uint16_t port )
+:
+	m_scheme( scheme ),
+	m_host( host ),
+	m_port( port )
+{
+}
+
+
 uri::uri( const std::string& s )
 :
 	m_port( 0 )

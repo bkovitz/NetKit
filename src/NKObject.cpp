@@ -103,3 +103,10 @@ object::set_value_for_key( const std::string &key, const std::string &value )
 {
 	m_map[ key ] = value;
 }
+
+
+bool
+object::equals( const object &that ) const
+{
+	return ( this == &that );
+}
