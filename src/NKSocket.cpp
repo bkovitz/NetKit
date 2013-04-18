@@ -145,35 +145,59 @@ socket::is_open() const
 #endif
 
 void
-socket::adapter::connect( const netkit::endpoint::ptr &endpoint, connect_reply_f reply )
+socket::adapter::connect( const uri::ptr &uri, connect_reply_f reply )
 {
-	std::thread t( [=]()
+	ip::address::resolve( uri->host(), [=]( int status, const ip::address::list &addrs )
 	{
-		socket::ptr				sock = dynamic_pointer_cast< socket, netkit::source >( m_source );
-		struct sockaddr_storage addr;
-	
-		memset( &addr, 0, sizeof( addr ) );
-	
-		endpoint->to_sockaddr( addr );
-		
-		sock->set_blocking( true );
-	
-		int err = ::connect( sock->fd(), ( struct sockaddr* ) &addr, addr.ss_len );
-		
-		if ( err != 0 )
+		ip::endpoint::ptr peer;
+
+		if ( status == 0 )
 		{
-			err = errno;
+			socket::ptr				sock = dynamic_pointer_cast< socket, netkit::source >( m_source );
+			struct sockaddr_storage addr;
+			int						err;
+	
+			memset( &addr, 0, sizeof( addr ) );
+	
+			peer = new ip::endpoint( addrs.front(), uri->port() );
+			peer->to_sockaddr( addr );
+		
+			err = ::connect( sock->fd(), ( struct sockaddr* ) &addr, addr.ss_len );
+		
+			if ( err == 0 )
+			{
+				reply( 0, peer );
+			}
+			else if ( platform::error() == ( int ) socket::error::in_progress )
+			{
+				auto event = runloop::instance()->create( sock->fd(), runloop::event_mask::connect );
+	
+				runloop::instance()->schedule( event, [=]( runloop::event event ) mutable
+				{
+					// We'll use a trick to determine if the connect worked as described here:
+					//
+					// http://cr.yp.to/docs/connect.html
+					//
+					
+					socklen_t len = sizeof( addr );
+					
+					runloop::instance()->cancel( event );
+					
+					err = getpeername( sock->fd(), ( struct sockaddr* ) &addr, &len );
+					
+					reply( ( err == 0 ) ? 0 : platform::error(), peer );
+				} );
+			}
+			else
+			{
+				reply( platform::error(), peer );
+			}
 		}
-		
-		sock->set_blocking( false );
-		
-		runloop::instance()->dispatch_on_main_thread( [=]()
+		else
 		{
-			reply( err );
-		} );
+			reply( status, peer );
+		}
 	} );
-	
-	t.detach();
 }
 
 
@@ -226,11 +250,8 @@ socket::adapter::recv( recv_reply_f reply )
 		{
 			num = ::recv( sock->fd(), m_buf, sizeof( m_buf ), 0 );
 		
-		fprintf( stderr, "sockaet::adapter recv returns %d\n", num );
 			if ( num > 0 )
 			{
-				// Who the fuck knows? This is for you, Hil!
-				
 				if ( !reply( 0, m_buf, num ) )
 				{
 					runloop::instance()->suspend( event );
@@ -391,27 +412,6 @@ ip::socket::socket( native fd, const ip::endpoint::ptr &peer )
 {
 	m_peer = peer;
 }
-
-
-void
-ip::socket::connect( const uri::ptr &uri, connect_reply_f reply )
-{
-	ip::address::resolve( uri->host(), [=]( int status, const ip::address::list &addrs )
-	{
-		if ( status == 0 )
-		{
-			netkit::socket::connect( new ip::endpoint( addrs.front(), uri->port() ), [=]( int status )
-			{
-				reply( status );
-			} );
-		}
-		else
-		{
-			reply( status );
-		}
-	} );
-}
-
 
 #if defined( __APPLE__ )
 #	pragma mark ip::acceptor implementation

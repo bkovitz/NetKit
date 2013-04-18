@@ -43,7 +43,7 @@ sink::sink( const uri::ptr &uri )
 {
 	ip::tcp::socket::ptr sock = new ip::tcp::socket;
 	
-	sock->connect( uri, [=]( int status )
+	sock->connect( uri, [=]( int status, const endpoint::ptr &endpoint )
 	{
 		if ( status == 0 )
 		{

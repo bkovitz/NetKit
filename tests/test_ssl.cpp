@@ -33,9 +33,9 @@
 
 using namespace netkit;
 
-static const char* g_message = "GET /index.html HTTP/1.1\r\nHost: collobos.com\r\n\r\n";
+static const char* g_message = "GET /index.html HTTP/1.1\r\nHost: www.google.com\r\n\r\n";
 
-TEST_CASE( "NetKit/ssl", "ssl tests" )
+TEST_CASE( "NetKit/ssl/1", "ssl client" )
 {
 	SECTION( "constructors", "socket constructors" )
 	{
@@ -44,18 +44,82 @@ TEST_CASE( "NetKit/ssl", "ssl tests" )
 		
 		sock->add( tls::adapter::create() );
 		
-		sock->connect( new uri( "https://www.collobos.com/index.html"), [=]( int status ) mutable
+		sock->connect( new uri( "https://www.google.com/index.html"), [=]( int status, const endpoint::ptr &peer ) mutable
 		{
 			REQUIRE( status == 0 );
 			
 			auto num = sock->send( ( const std::uint8_t* ) g_message, strlen( g_message ) );
 			
-			fprintf( stderr, "wrote %lu bytes\n", num );
+			REQUIRE( num == strlen( g_message ) );
 		} );
 		
 		sock->recv( [=]( int status, const std::uint8_t *buf, std::size_t len )
 		{
+			REQUIRE( status == 0 );
+			
 			fprintf( stderr, "read %lu bytes: %s\n", len, buf );
+			
+			netkit::runloop::instance()->stop();
+			
+			return true;
+		} );
+		
+		netkit::runloop::instance()->run();
+	}
+}
+
+
+TEST_CASE( "NetKit/ssl/2", "ssl server" )
+{
+	SECTION( "constructors", "socket constructors" )
+	{
+		ip::tcp::acceptor::ptr	acceptor = new ip::tcp::acceptor( new ip::endpoint( 0) );
+		REQUIRE( acceptor );
+		
+		acceptor->listen( 5 );
+	
+		acceptor->accept( [=]( int status, socket::ptr sock ) mutable
+		{
+			REQUIRE( status == 0 );
+			
+			sock->add( tls::adapter::create() );
+			
+			sock->accept( [=]( int status )
+			{
+				REQUIRE( status == 0 );
+			} );
+		
+			sock->recv( [=]( int status, const std::uint8_t *buf, std::size_t len ) mutable
+			{
+				REQUIRE( status == 0 );
+				sock->send( buf, len );
+				return true;
+			} );
+		} );
+		
+		ip::tcp::socket::ptr	sock = new ip::tcp::socket;
+		REQUIRE( sock );
+		
+		sock->add( tls::adapter::create() );
+		
+		sock->connect( new uri( "echo", "127.0.0.1", acceptor->endpoint()->port() ), [=]( int status, const endpoint::ptr &peer ) mutable
+		{
+			REQUIRE( status == 0 );
+			
+			auto num = sock->send( ( const std::uint8_t* ) "Hello", 5 );
+			
+			REQUIRE( num == 5 );
+		} );
+		
+		sock->recv( [=]( int status, const std::uint8_t *buf, std::size_t len )
+		{
+			REQUIRE( status == 0 );
+			REQUIRE( len == 5 );
+			REQUIRE( buf[ 0 ] == 'H' );
+			REQUIRE( buf[ 1 ] == 'e' );
+			REQUIRE( buf[ 2 ] == 'l' );
+			REQUIRE( buf[ 3 ] == 'l' );
+			REQUIRE( buf[ 4 ] == 'o' );
 			
 			netkit::runloop::instance()->stop();
 			

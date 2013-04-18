@@ -88,7 +88,7 @@ public:
 		typedef smart_ptr< adapter > ptr;
 		
 		virtual void
-		connect( const endpoint::ptr &endpoint, connect_reply_f reply );
+		connect( const uri::ptr &endpoint, connect_reply_f reply );
 		
 		virtual void
 		accept( accept_reply_f reply );
@@ -200,9 +200,6 @@ namespace ip {
 class socket : public netkit::socket
 {
 public:
-
-	void
-	connect( const uri::ptr &uri, connect_reply_f reply );
 
 	const ip::endpoint::ptr&
 	peer();

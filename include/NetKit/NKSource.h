@@ -42,7 +42,7 @@ class source : public object
 {
 public:
 
-	typedef std::function< void ( int status ) >											connect_reply_f;
+	typedef std::function< void ( int status, const endpoint::ptr &peer ) >					connect_reply_f;
 	typedef std::function< void ( int status ) >											accept_reply_f;
 	typedef std::function< bool ( int status, const std::uint8_t *buf, std::size_t len ) >	peek_reply_f;
 	typedef std::function< bool ( int status, const std::uint8_t *buf, std::size_t len ) >	recv_reply_f;
@@ -60,7 +60,7 @@ public:
 		virtual ~adapter();
 		
 		virtual void
-		connect( const endpoint::ptr &endpoint, connect_reply_f reply ) = 0;
+		connect( const uri::ptr &uri, connect_reply_f reply ) = 0;
 		
 		virtual void
 		accept( accept_reply_f reply ) = 0;
@@ -96,7 +96,7 @@ public:
 	unbind( tag t );
 	
 	void
-	connect( const endpoint::ptr &endpoint, connect_reply_f reply );
+	connect( const uri::ptr &uri, connect_reply_f reply );
 		
 	void
 	accept( accept_reply_f reply );

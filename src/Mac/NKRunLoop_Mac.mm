@@ -66,8 +66,17 @@ runloop_mac::~runloop_mac()
 runloop::event
 runloop_mac::create( int fd, event_mask m )
 {
-	auto event = dispatch_source_create( DISPATCH_SOURCE_TYPE_READ, fd, 0, dispatch_get_main_queue() );
+	dispatch_source_t event = nullptr;
 	
+	if ( ( m == event_mask::connect ) || ( m == event_mask::write ) )
+	{
+		event = dispatch_source_create( DISPATCH_SOURCE_TYPE_WRITE, fd, 0, dispatch_get_main_queue() );
+	}
+	else if ( ( m == event_mask::accept ) || ( m == event_mask::read ) )
+	{
+		event = dispatch_source_create( DISPATCH_SOURCE_TYPE_READ, fd, 0, dispatch_get_main_queue() );
+	}
+
 	dispatch_source_set_cancel_handler( event, ^()
 	{
 	} );

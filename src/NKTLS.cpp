@@ -345,7 +345,7 @@ public:
 	virtual ~tls_impl();
 
 	virtual void
-	connect( const endpoint::ptr &endpoint, source::connect_reply_f reply );
+	connect( const uri::ptr &uri, source::connect_reply_f reply );
 		
 	virtual void
 	accept( source::accept_reply_f reply );
@@ -364,6 +364,7 @@ private:
 	std::string
 	protocol_chooser( const std::vector< std::string > &protocols );
 	
+	bool							m_handshake;
 	TLS::Client						*m_client;
 	TLS::Server						*m_server;
 	std::uint8_t					m_buffer[ 4192 ];
@@ -386,6 +387,7 @@ tls_impl::tls_impl()
 :
 	m_client( nullptr ),
 	m_server( nullptr ),
+	m_handshake( false ),
 	m_creds( m_rng )
 {
 }
@@ -406,14 +408,13 @@ tls_impl::~tls_impl()
 
 
 void
-tls_impl::connect( const endpoint::ptr &endpoint, source::connect_reply_f reply )
+tls_impl::connect( const uri::ptr &uri, source::connect_reply_f reply )
 {
-	m_next->connect( endpoint, [=]( int status ) mutable
+	m_next->connect( uri, [=]( int status, const endpoint::ptr &peer ) mutable
 	{
 		if ( status == 0 )
 		{
-			auto actual_endpoint	= dynamic_pointer_cast< ip::endpoint, netkit::endpoint>( endpoint );
-			auto actual_socket		= dynamic_pointer_cast< netkit::socket, netkit::source >( m_source );
+			auto sock = dynamic_pointer_cast< netkit::socket, netkit::source >( m_source );
 			
 			m_client = new TLS::Client
 							(
@@ -440,9 +441,11 @@ tls_impl::connect( const endpoint::ptr &endpoint, source::connect_reply_f reply 
 									// Don't reply right now, because Botan won't finish initializing this
 									// connection until we've returned true.
 									
+									m_handshake = true;
+									
 									runloop::instance()->dispatch_on_main_thread( [=]()
 									{
-										reply( 0 );
+										reply( 0, peer );
 									} );
 									
 									return true;
@@ -452,14 +455,14 @@ tls_impl::connect( const endpoint::ptr &endpoint, source::connect_reply_f reply 
 								m_creds,
 								m_policy,
 								m_rng,
-								TLS::Server_Information( actual_endpoint->addr()->to_string(), actual_endpoint->port() ),
+								TLS::Server_Information( uri->host(), uri->port() ),
 								TLS::Protocol_Version::latest_tls_version(),
 								std::bind( &tls_impl::protocol_chooser, this, std::placeholders::_1 )
 							);
 		}
 		else
 		{
-			reply( -1 );
+			reply( status, peer );
 		}
 	} );
 }
@@ -472,9 +475,6 @@ tls_impl::accept( source::accept_reply_f reply )
 	{
 		if ( status == 0 )
 		{
-			auto								actual_socket	= dynamic_pointer_cast< netkit::socket, netkit::source >( m_source );
-			const std::vector< std::string >	protocols		= { "echo/1.0", "echo/1.1" };
-			
 			m_server = new TLS::Server
 							(
 								[=]( const byte *buf, std::size_t len )
@@ -512,8 +512,7 @@ tls_impl::accept( source::accept_reply_f reply )
 								m_session,
 								m_creds,
 								m_policy,
-								m_rng,
-								protocols
+								m_rng
 							);
 		}
 	} );
@@ -551,8 +550,8 @@ tls_impl::recv( source::recv_reply_f reply )
 {
 	m_next->recv( [=]( int status, const std::uint8_t *buf, std::size_t len )
 	{
-		bool ret = true;
-	
+		auto ret = true;
+		
 		if ( m_client )
 		{
 			m_client->received_data( buf, len );
@@ -561,13 +560,13 @@ tls_impl::recv( source::recv_reply_f reply )
 		{
 			m_server->received_data( buf, len );
 		}
-
+	
 		if ( m_data.size() > 0 )
 		{
 			ret = reply( 0, &m_data[ 0 ], m_data.size() );
 			m_data.clear();
 		}
-		
+			
 		return ret;
 	} );
 }

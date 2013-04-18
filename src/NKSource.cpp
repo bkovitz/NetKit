@@ -85,9 +85,9 @@ source::unbind( tag t )
 
 
 void
-source::connect( const endpoint::ptr &endpoint, connect_reply_f reply )
+source::connect( const uri::ptr &uri, connect_reply_f reply )
 {
-	m_adapters->connect( endpoint, reply );
+	m_adapters->connect( uri, reply );
 }
 
 		
@@ -101,14 +101,14 @@ source::accept( accept_reply_f reply )
 void
 source::peek( peek_reply_f reply )
 {
-	return m_adapters->peek( reply );
+	m_adapters->peek( reply );
 }
 
 	
 void
 source::recv( recv_reply_f reply )
 {
-	return m_adapters->recv( reply );
+	m_adapters->recv( reply );
 }
 
 	

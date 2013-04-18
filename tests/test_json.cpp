@@ -226,7 +226,7 @@ TEST_CASE( "NetKit/json/3", "json rpc" )
 		reply( response, false, false );
 	} );
 	
-	sock->connect( new uri( "json", "127.0.0.1", acceptor->endpoint()->port() ), [=]( int status )
+	sock->connect( new uri( "json", "127.0.0.1", acceptor->endpoint()->port() ), [=]( int status, const endpoint::ptr &peer )
 	{
 		REQUIRE( status == 0 );
 		
