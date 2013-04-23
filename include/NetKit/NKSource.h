@@ -33,6 +33,8 @@
 
 #include <NetKit/NKRunLoop.h>
 #include <NetKit/NKEndpoint.h>
+#include <NetKit/NKIntrusiveList.h>
+#include <queue>
 #include <list>
 #include <ios>
 
@@ -42,44 +44,54 @@ class source : public object
 {
 public:
 
-	typedef std::function< void ( int status, const endpoint::ptr &peer ) >					connect_reply_f;
-	typedef std::function< void ( int status ) >											accept_reply_f;
-	typedef std::function< bool ( int status, const std::uint8_t *buf, std::size_t len ) >	peek_reply_f;
-	typedef std::function< bool ( int status, const std::uint8_t *buf, std::size_t len ) >	recv_reply_f;
-	typedef std::function< void ( void ) >													close_f;
-	typedef smart_ptr< source >																ptr;
+	typedef std::function< void ( int status ) >							accept_reply_f;
+	typedef std::function< void ( int status, const endpoint::ptr &peer ) >	connect_reply_f;
+	typedef std::function< void ( int status ) >							send_reply_f;
+	typedef std::function< void ( int status, const std::size_t len ) >		peek_reply_f;
+	typedef std::function< void ( int status, const std::size_t len ) >		recv_reply_f;
+	typedef std::function< void ( void ) >									close_f;
+	typedef smart_ptr< source >												ptr;
+	typedef std::vector< std::uint8_t >										buf_t;
 	
 	class adapter
 	{
 	public:
 	
-		typedef adapter *ptr;
+		DECLARE_INTRUSIVE_LIST_OBJECT( adapter )
+		
+		typedef std::function< void ( int status ) >													accept_reply_f;
+		typedef std::function< void ( int status, const uri::ptr &out_uri ) >							preflight_reply_f;
+		typedef std::function< void ( int status ) >													connect_reply_f;
+		typedef std::function< void ( int status, const std::uint8_t *out_buf, std::size_t out_len ) >	send_reply_f;
+		typedef std::function< void ( int status, const std::uint8_t *out_buf, std::size_t out_len ) >	recv_reply_f;
+	
+		typedef adapter						*ptr;
+		typedef intrusive_list< adapter >	list;
 		
 		adapter();
 		
 		virtual ~adapter();
 		
 		virtual void
-		connect( const uri::ptr &uri, connect_reply_f reply ) = 0;
+		accept( accept_reply_f reply );
 		
 		virtual void
-		accept( accept_reply_f reply ) = 0;
-		
-		virtual void
-		peek( peek_reply_f reply ) = 0;
+		preflight( const uri::ptr &uri, preflight_reply_f reply );
 	
 		virtual void
-		recv( recv_reply_f reply ) = 0;
-	
-		virtual std::streamsize
-		send( const std::uint8_t *buf, std::size_t len ) = 0;
+		connect( const uri::ptr &uri, const endpoint::ptr &to, connect_reply_f reply );
 		
+		virtual void
+		send( const std::uint8_t *in_buf, std::size_t in_len, send_reply_f reply );
+		
+		virtual void
+		recv( const std::uint8_t *in_buf, std::size_t in_len, recv_reply_f reply );
+	
 	protected:
 	
 		friend class source;
 		
-		source::ptr		m_source;
-		adapter::ptr	m_next;
+		source::ptr m_source;
 	};
 	
 	source();
@@ -96,19 +108,22 @@ public:
 	unbind( tag t );
 	
 	void
-	connect( const uri::ptr &uri, connect_reply_f reply );
-		
-	void
 	accept( accept_reply_f reply );
 	
 	void
-	peek( peek_reply_f reply );
+	connect( const uri::ptr &uri, connect_reply_f reply );
+		
+	void
+	peek( std::uint8_t *buf, std::size_t len, peek_reply_f reply );
 	
 	void
-	recv( recv_reply_f reply );
+	send( const std::uint8_t *buf, std::size_t len, send_reply_f reply );
 	
-	std::streamsize
-	send( const std::uint8_t *buf, std::size_t len );
+	void
+	send( adapter *adapter, const std::uint8_t *buf, std::size_t len, send_reply_f reply );
+	
+	void
+	recv( std::uint8_t *buf, std::size_t len, recv_reply_f reply );
 	
 	virtual bool
 	is_open() const = 0;
@@ -116,26 +131,65 @@ public:
 	virtual void
 	close() = 0;
 	
-	inline runloop::event
-	write_event() const
-	{
-		return m_write_event;
-	}
-	
-	inline runloop::event
-	read_event() const
-	{
-		return m_read_event;
-	}
-	
 protected:
 
 	typedef std::list< std::pair< tag, close_f > > close_handlers;
 	
+	struct send_info
+	{
+		send_info( const std::uint8_t *buf, std::size_t len, send_reply_f reply )
+		:
+			m_idx( 0 ),
+			m_reply( reply )
+		{
+			//m_buf.resize( len );
+			
+	fprintf( stderr, "new send_info: %c%c%c%c%c\n", buf[ 0 ], buf[ 1 ], buf[ 2 ], buf[ 3 ], buf[ 4 ] );
+			for ( auto i = 0; i < len; i++ )
+			{
+				m_buf.push_back( ( std::uint8_t ) buf[ i ] );
+			}
+	fprintf( stderr, "after push_back: %c%c%c%c%c\n", m_buf[ 0 ], m_buf[ 1 ], m_buf[ 2 ], m_buf[ 3 ], m_buf[ 4 ] );
+		}
+	
+		buf_t			m_buf;
+		std::size_t		m_idx;
+		send_reply_f	m_reply;
+	};
+	
+	
+	virtual int
+	start_connect( const endpoint::ptr &peer, bool &would_block ) = 0;
+	
+	virtual int
+	finish_connect() = 0;
+	
+	virtual std::streamsize
+	start_send( const std::uint8_t *buf, std::size_t len, bool &would_block ) = 0;
+	
+	virtual std::streamsize
+	start_recv( std::uint8_t *buf, std::size_t len, bool &would_block ) = 0;
+	
+	void
+	connect_internal_1( const uri::ptr &uri, connect_reply_f reply );
+	
+	void
+	connect_internal_2( const uri::ptr &uri, const endpoint::ptr &to, connect_reply_f reply );
+	
+	void
+	recv_internal( std::uint8_t *in_buf, std::size_t in_len, bool peek, recv_reply_f reply );
+	
+	void
+	send_internal();
+	
+	adapter::list	m_adapters;
 	close_handlers	m_close_handlers;
-	adapter::ptr	m_adapters;
-	runloop::event	m_write_event;
-	runloop::event	m_read_event;
+	runloop::event	m_send_event;
+	runloop::event	m_recv_event;
+	
+	typedef std::queue< send_info* > send_queue;
+	send_queue		m_send_queue;
+	buf_t			m_recv_buf;
 };
 
 }

@@ -35,6 +35,8 @@ using namespace netkit;
 
 static const char * g_json = "{ \"firstName\": \"John\", \"lastName\": \"Smith\", \"age\": 25, \"human\" : true,\"address\": { \"streetAddress\": \"21 2nd Street\", \"city\": \"New York\", \"state\": \"NY\", \"postalCode\": 10021 }, \"phoneNumber\": [ { \"type\": \"home\", \"number\": \"212 555-1234\" }, { \"type\": \"fax\", \"number\": \"646 555-4567\" } ] }";
 
+static std::uint8_t g_buf[ 64 ];
+		
 TEST_CASE( "NetKit/json/1", "json decoding tests" )
 {
 	netkit::json::value::ptr child;
@@ -201,11 +203,9 @@ TEST_CASE( "NetKit/json/3", "json rpc" )
 	{
 		REQUIRE( status == 0 );
 		
-		sock->peek( [=]( int status, const std::uint8_t *buf, std::size_t len )
+		sock->peek( g_buf, sizeof( g_buf ), [=]( int status, std::size_t len )
 		{
-			REQUIRE( json::connection::adopt( sock, buf, len ) );
-			
-			return false;
+			REQUIRE( json::connection::adopt( sock, g_buf, len ) );
 		} );
 	} );
 
@@ -226,7 +226,7 @@ TEST_CASE( "NetKit/json/3", "json rpc" )
 		reply( response, false, false );
 	} );
 	
-	sock->connect( new uri( "json", "127.0.0.1", acceptor->endpoint()->port() ), [=]( int status, const endpoint::ptr &peer )
+	e->connect( new uri( "json", "127.0.0.1", acceptor->endpoint()->port() ), [=]( int status, const endpoint::ptr &peer )
 	{
 		REQUIRE( status == 0 );
 		

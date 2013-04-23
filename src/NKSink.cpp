@@ -58,14 +58,12 @@ sink::~sink()
 }
 
 
-tag
+void
 sink::bind( source::ptr source )
 {
 	m_source = source;
 	
 	run();
-	
-	return m_source.get();
 }
 
 
@@ -90,10 +88,25 @@ sink::unbind( tag t )
 }
 
 
-ssize_t
-sink::send( const std::uint8_t *buf, size_t len )
+void
+sink::connect( const uri::ptr &uri, source::connect_reply_f reply )
 {
-	return m_source->send( buf, len );
+	m_source->connect( uri, [=]( int status, const endpoint::ptr &peer )
+	{
+		reply( status, peer );
+		
+		if ( status == 0 )
+		{
+			run();
+		}
+	} );
+}
+
+
+void
+sink::send( const std::uint8_t *buf, size_t len, source::send_reply_f reply )
+{
+	return m_source->send( buf, len, reply );
 }
 
 
@@ -114,10 +127,16 @@ sink::close()
 void
 sink::run()
 {
-	m_source->recv( [=]( int status, const std::uint8_t *buf, std::size_t len )
+	m_source->recv( m_buf, sizeof( m_buf ), [=]( int status, std::size_t len )
 	{
-		process( buf, len );
-		
-		return true;
+		if ( len > 0 )
+		{
+			process( m_buf, len );
+			
+			run();
+		}
+		else
+		{
+		}
 	} );
 }

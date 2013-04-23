@@ -39,7 +39,7 @@ TEST_CASE( "NetKit/ssl/1", "ssl client" )
 {
 	SECTION( "constructors", "socket constructors" )
 	{
-		netkit::ip::tcp::socket::ptr	sock = new netkit::ip::tcp::socket;
+		source::ptr	sock = new netkit::ip::tcp::socket;
 		REQUIRE( sock );
 		
 		sock->add( tls::adapter::create() );
@@ -47,21 +47,21 @@ TEST_CASE( "NetKit/ssl/1", "ssl client" )
 		sock->connect( new uri( "https://www.google.com/index.html"), [=]( int status, const endpoint::ptr &peer ) mutable
 		{
 			REQUIRE( status == 0 );
+			char buf[ 512 ];
 			
-			auto num = sock->send( ( const std::uint8_t* ) g_message, strlen( g_message ) );
+			sock->send( ( const std::uint8_t* ) g_message, strlen( g_message ), [=]( int status )
+			{
+				REQUIRE( status == 0 );
+			} );
 			
-			REQUIRE( num == strlen( g_message ) );
-		} );
-		
-		sock->recv( [=]( int status, const std::uint8_t *buf, std::size_t len )
-		{
-			REQUIRE( status == 0 );
+			sock->recv( ( std::uint8_t* ) buf, sizeof( buf ), [=]( int status, std::size_t len )
+			{
+				REQUIRE( status == 0 );
 			
-			fprintf( stderr, "read %lu bytes: %s\n", len, buf );
+				fprintf( stderr, "read %lu bytes: %s\n", len, buf );
 			
-			netkit::runloop::instance()->stop();
-			
-			return true;
+				netkit::runloop::instance()->stop();
+			} );
 		} );
 		
 		netkit::runloop::instance()->run();
@@ -80,6 +80,8 @@ TEST_CASE( "NetKit/ssl/2", "ssl server" )
 	
 		acceptor->accept( [=]( int status, socket::ptr sock ) mutable
 		{
+			std::uint8_t buf[ 64 ];
+	
 			REQUIRE( status == 0 );
 			
 			sock->add( tls::adapter::create() );
@@ -89,11 +91,12 @@ TEST_CASE( "NetKit/ssl/2", "ssl server" )
 				REQUIRE( status == 0 );
 			} );
 		
-			sock->recv( [=]( int status, const std::uint8_t *buf, std::size_t len ) mutable
+			sock->recv( buf, sizeof( buf ), [=]( int status, std::size_t len ) mutable
 			{
 				REQUIRE( status == 0 );
-				sock->send( buf, len );
-				return true;
+				sock->send( buf, len, [=]( int status )
+				{
+				} );
 			} );
 		} );
 		
@@ -104,27 +107,29 @@ TEST_CASE( "NetKit/ssl/2", "ssl server" )
 		
 		sock->connect( new uri( "echo", "127.0.0.1", acceptor->endpoint()->port() ), [=]( int status, const endpoint::ptr &peer ) mutable
 		{
+			std::uint8_t buf[ 64 ];
+			
 			REQUIRE( status == 0 );
 			
-			auto num = sock->send( ( const std::uint8_t* ) "Hello", 5 );
+			sock->send( ( const std::uint8_t* ) "Hello", 5, [=]( int status )
+			{
+				REQUIRE( status == 0 );
+			} );
 			
-			REQUIRE( num == 5 );
+			sock->recv( buf, sizeof( buf ), [=]( int status, std::size_t len )
+			{
+				REQUIRE( status == 0 );
+				REQUIRE( len == 5 );
+				REQUIRE( buf[ 0 ] == 'H' );
+				REQUIRE( buf[ 1 ] == 'e' );
+				REQUIRE( buf[ 2 ] == 'l' );
+				REQUIRE( buf[ 3 ] == 'l' );
+				REQUIRE( buf[ 4 ] == 'o' );
+				
+				netkit::runloop::instance()->stop();
+			} );
 		} );
 		
-		sock->recv( [=]( int status, const std::uint8_t *buf, std::size_t len )
-		{
-			REQUIRE( status == 0 );
-			REQUIRE( len == 5 );
-			REQUIRE( buf[ 0 ] == 'H' );
-			REQUIRE( buf[ 1 ] == 'e' );
-			REQUIRE( buf[ 2 ] == 'l' );
-			REQUIRE( buf[ 3 ] == 'l' );
-			REQUIRE( buf[ 4 ] == 'o' );
-			
-			netkit::runloop::instance()->stop();
-			
-			return true;
-		} );
 		
 		netkit::runloop::instance()->run();
 	}

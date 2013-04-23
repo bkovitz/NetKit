@@ -82,6 +82,8 @@
 		D254EFC016C43DA500851E44 /* NKPlatform.h in Headers */ = {isa = PBXBuildFile; fileRef = D254EFBB16C43DA500851E44 /* NKPlatform.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D254EFC116C43DA500851E44 /* NKRunLoop.h in Headers */ = {isa = PBXBuildFile; fileRef = D254EFBC16C43DA500851E44 /* NKRunLoop.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D254EFC616C43DB500851E44 /* NKJSON.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D254EFC316C43DB500851E44 /* NKJSON.cpp */; };
+		D2597C051725E5BB00FD3D63 /* NKIntrusiveList.h in Headers */ = {isa = PBXBuildFile; fileRef = D2597C041725E5BB00FD3D63 /* NKIntrusiveList.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D2597C061725E5BB00FD3D63 /* NKIntrusiveList.h in Headers */ = {isa = PBXBuildFile; fileRef = D2597C041725E5BB00FD3D63 /* NKIntrusiveList.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D26B0EA716F7C744008379E0 /* cstring.h in Headers */ = {isa = PBXBuildFile; fileRef = D23DF5D115F922160027A8F1 /* cstring.h */; };
 		D26B0EA816F7C744008379E0 /* NetKit.h in Headers */ = {isa = PBXBuildFile; fileRef = D2740F3C15FBAA8600589649 /* NetKit.h */; };
 		D26B0EA916F7C744008379E0 /* NKBase64.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D2740F2815FBA45900589649 /* NKBase64.cpp */; };
@@ -303,6 +305,7 @@
 		D254EFBB16C43DA500851E44 /* NKPlatform.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NKPlatform.h; path = include/NetKit/NKPlatform.h; sourceTree = "<group>"; };
 		D254EFBC16C43DA500851E44 /* NKRunLoop.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NKRunLoop.h; path = include/NetKit/NKRunLoop.h; sourceTree = "<group>"; };
 		D254EFC316C43DB500851E44 /* NKJSON.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = NKJSON.cpp; path = src/NKJSON.cpp; sourceTree = "<group>"; };
+		D2597C041725E5BB00FD3D63 /* NKIntrusiveList.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NKIntrusiveList.h; path = include/NetKit/NKIntrusiveList.h; sourceTree = "<group>"; };
 		D26B0EA316F7C652008379E0 /* libNetKit.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libNetKit.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		D26F04F315FA5B6A003F7389 /* liburiparser.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = liburiparser.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		D26F04F815FA5BA5003F7389 /* UriCommon.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = UriCommon.c; path = ThirdParty/uriparser/src/UriCommon.c; sourceTree = "<group>"; };
@@ -497,6 +500,8 @@
 			children = (
 				D23DF5D115F922160027A8F1 /* cstring.h */,
 				D2740F3C15FBAA8600589649 /* NetKit.h */,
+				D23DF54B15F698F90027A8F1 /* NKAddress.cpp */,
+				D23DF54C15F698F90027A8F1 /* NKAddress.h */,
 				D2740F2815FBA45900589649 /* NKBase64.cpp */,
 				D2740F2915FBA45900589649 /* NKBase64.h */,
 				D2A1180516FCD7E300FAD80F /* NKComponent.cpp */,
@@ -507,8 +512,7 @@
 				D2B09C78170238C9002EE020 /* NKError.cpp */,
 				D23DF54715F698F90027A8F1 /* NKError.h */,
 				D254EFB916C43DA500851E44 /* NKExpected.h */,
-				D23DF54B15F698F90027A8F1 /* NKAddress.cpp */,
-				D23DF54C15F698F90027A8F1 /* NKAddress.h */,
+				D2597C041725E5BB00FD3D63 /* NKIntrusiveList.h */,
 				D23DF57F15F69D300027A8F1 /* NKLog.cpp */,
 				D23DF58715F69F980027A8F1 /* NKLog.h */,
 				D2A1180616FCD7E300FAD80F /* NKMIME.cpp */,
@@ -695,6 +699,7 @@
 				D223BA3C1717336E000C2C44 /* NKWebSocket.h in Headers */,
 				D223BA4B1718C706000C2C44 /* NKTLS.h in Headers */,
 				D223BA511718CFAE000C2C44 /* NKEndpoint.h in Headers */,
+				D2597C051725E5BB00FD3D63 /* NKIntrusiveList.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -738,6 +743,7 @@
 				D223BA3D1717336E000C2C44 /* NKWebSocket.h in Headers */,
 				D223BA4C1718C706000C2C44 /* NKTLS.h in Headers */,
 				D223BA521718CFAE000C2C44 /* NKEndpoint.h in Headers */,
+				D2597C061725E5BB00FD3D63 /* NKIntrusiveList.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

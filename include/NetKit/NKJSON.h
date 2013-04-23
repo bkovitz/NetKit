@@ -552,17 +552,20 @@ public:
 	
 	client( const connection::ptr &conn );
 	
-	void
-	process( const std::uint8_t *buf, std::size_t len );
-	
 	bool
 	is_open() const;
+	
+	void
+	connect( const uri::ptr &uri, source::connect_reply_f reply );
 	
 	void
 	close();
 	
 protected:
 
+	void
+	process( const std::uint8_t *buf, std::size_t len );
+	
 	bool
 	send_notification( const std::string &method, value::ptr params );
 	

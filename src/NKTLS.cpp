@@ -345,30 +345,40 @@ public:
 	virtual ~tls_impl();
 
 	virtual void
-	connect( const uri::ptr &uri, source::connect_reply_f reply );
-		
-	virtual void
 	accept( source::accept_reply_f reply );
 		
 	virtual void
-	peek( source::peek_reply_f reply );
+	preflight( const uri::ptr &uri, preflight_reply_f reply );
 	
 	virtual void
-	recv( source::recv_reply_f reply );
-	
-	virtual std::streamsize
-	send( const std::uint8_t *buf, std::size_t len );
+	connect( const uri::ptr &uri, const endpoint::ptr &to, connect_reply_f reply );
 		
+	virtual void
+	send( const std::uint8_t *in_buf, std::size_t in_len, send_reply_f reply );
+		
+	virtual void
+	recv( const std::uint8_t *in_buf, std::size_t in_len, recv_reply_f reply );
+	
 private:
+	
+	void
+	accept_internal( accept_reply_f reply );
+	
+	void
+	connect_internal( const uri::ptr &uri, const endpoint::ptr &to, connect_reply_f reply );
 	
 	std::string
 	protocol_chooser( const std::vector< std::string > &protocols );
+	
+	void
+	wait_for_handshake();
 	
 	bool							m_handshake;
 	TLS::Client						*m_client;
 	TLS::Server						*m_server;
 	std::uint8_t					m_buffer[ 4192 ];
-	std::vector< std::uint8_t >		m_data;
+	std::vector< std::uint8_t >		m_send_data;
+	std::vector< std::uint8_t >		m_recv_data;
 	AutoSeeded_RNG					m_rng;
 	TLS::Policy						m_policy;
 	TLS::Session_Manager_In_Memory	m_session;
@@ -408,124 +418,176 @@ tls_impl::~tls_impl()
 
 
 void
-tls_impl::connect( const uri::ptr &uri, source::connect_reply_f reply )
-{
-	m_next->connect( uri, [=]( int status, const endpoint::ptr &peer ) mutable
-	{
-		if ( status == 0 )
-		{
-			auto sock = dynamic_pointer_cast< netkit::socket, netkit::source >( m_source );
-			
-			m_client = new TLS::Client
-							(
-								[=]( const byte *buf, std::size_t len )
-								{
-									// We need to make sure this send completes
-									m_next->send( buf, len );
-								},
-								
-								[=]( const byte *buf, std::size_t len, TLS::Alert alert )
-								{
-									if ( alert.is_valid() )
-									{
-										nklog( log::info, "tls alert: %s", alert.type_string().c_str() );
-									}
-									
-									auto old_size = m_data.size();
-									m_data.resize( m_data.size() + len );
-									memcpy( &m_data[ old_size ], buf, len );
-								},
-								
-								[=]( const TLS::Session &session )
-								{
-									// Don't reply right now, because Botan won't finish initializing this
-									// connection until we've returned true.
-									
-									m_handshake = true;
-									
-									runloop::instance()->dispatch_on_main_thread( [=]()
-									{
-										reply( 0, peer );
-									} );
-									
-									return true;
-								},
-								
-								m_session,
-								m_creds,
-								m_policy,
-								m_rng,
-								TLS::Server_Information( uri->host(), uri->port() ),
-								TLS::Protocol_Version::latest_tls_version(),
-								std::bind( &tls_impl::protocol_chooser, this, std::placeholders::_1 )
-							);
-		}
-		else
-		{
-			reply( status, peer );
-		}
-	} );
-}
-
-		
-void
 tls_impl::accept( source::accept_reply_f reply )
 {
-	m_next->accept( [=]( int status )
+	if ( m_next )
 	{
-		if ( status == 0 )
+		m_next->accept( [=]( int status )
 		{
-			m_server = new TLS::Server
-							(
-								[=]( const byte *buf, std::size_t len )
-								{
-									// We need to make sure this send completes
-									
-									m_next->send( buf, len );
-								},
-								
-								[=]( const byte *buf, std::size_t len, TLS::Alert alert )
-								{
-									if ( alert.is_valid() )
-									{
-										nklog( log::info, "tls alert: %s", alert.type_string().c_str() );
-									}
-									
-									auto old_size = m_data.size();
-									m_data.resize( m_data.size() + len );
-									memcpy( &m_data[ old_size ], buf, len );
-								},
-								
-								[=]( const TLS::Session &session )
-								{
-									// Don't reply right now, because Botan won't finish initializing this
-									// connection until we've returned true.
-									
-									runloop::instance()->dispatch_on_main_thread( [=]()
-									{
-										reply( 0 );
-									} );
-									
-									return true;
-								},
-								
-								m_session,
-								m_creds,
-								m_policy,
-								m_rng
-							);
-		}
-	} );
+			if ( status == 0 )
+			{
+				accept_internal( reply );
+			}
+			else
+			{
+				reply( status );
+			}
+		} );
+	}
+	else
+	{
+		accept_internal( reply );
+	}
 }
 
-		
+
 void
-tls_impl::peek( source::peek_reply_f reply )
+tls_impl::accept_internal( source::accept_reply_f reply )
 {
-	m_next->recv( [=]( int status, const std::uint8_t* buf, std::size_t len )
+	m_server = new TLS::Server
+					(
+					[=]( const byte *buf, std::size_t len ) mutable
+					{
+						// We need to make sure this send completes
+						
+						m_source->send( m_next, buf, len, [=]( int status )
+						{
+						} );
+					},
+								
+					[=]( const byte *buf, std::size_t len, TLS::Alert alert )
+					{
+						if ( alert.is_valid() )
+						{
+							nklog( log::info, "tls alert: %s", alert.type_string().c_str() );
+						}
+									
+						auto old_size = m_recv_data.size();
+						m_recv_data.resize( m_recv_data.size() + len );
+						memcpy( &m_recv_data[ old_size ], buf, len );
+					},
+								
+					[=]( const TLS::Session &session )
+					{
+						// Don't reply right now, because Botan won't finish initializing this
+						// connection until we've returned true.
+									
+						runloop::instance()->dispatch_on_main_thread( [=]()
+						{
+							reply( 0 );
+						} );
+									
+						return true;
+					},
+								
+					m_session,
+					m_creds,
+					m_policy,
+					m_rng
+					);
+}
+
+
+void
+tls_impl::preflight( const uri::ptr &uri, preflight_reply_f reply )
+{
+	if ( m_next )
 	{
-		bool ret = true;
-		
+		m_next->preflight( uri, reply );
+	}
+	else
+	{
+		reply( 0, uri );
+	}
+}
+
+
+void
+tls_impl::connect( const uri::ptr &uri, const endpoint::ptr &to, connect_reply_f reply )
+{
+	if ( m_prev )
+	{
+		m_prev->connect( uri, to, [=]( int status ) mutable
+		{
+			if ( status == 0 )
+			{
+				connect_internal( uri, to, reply );
+			}
+			else
+			{
+				reply( status );
+			}
+		} );
+	}
+	else
+	{
+		connect_internal( uri, to, reply );
+	}
+}
+
+
+void
+tls_impl::connect_internal( const uri::ptr &uri, const endpoint::ptr &to, connect_reply_f reply )
+{
+	m_client = new TLS::Client
+					(
+					[=]( const byte *buf, std::size_t len ) mutable
+					{
+						m_source->send( m_next, buf, len, [=]( int status )
+						{
+							// We need to make sure this send completes
+							
+							if ( status != 0 )
+							{
+							}
+						} );
+					},
+								
+					[=]( const byte *buf, std::size_t len, TLS::Alert alert )
+					{
+						if ( alert.is_valid() )
+						{
+							nklog( log::info, "tls alert: %s", alert.type_string().c_str() );
+						}
+									
+						auto old_size = m_recv_data.size();
+						m_recv_data.resize( m_recv_data.size() + len );
+						memcpy( &m_recv_data[ old_size ], buf, len );
+					},
+								
+					[=]( const TLS::Session &session )
+					{
+						// Don't reply right now, because Botan won't finish initializing this
+						// connection until we've returned true.
+									
+						m_handshake = true;
+									
+						runloop::instance()->dispatch_on_main_thread( [=]()
+						{
+							reply( 0 );
+						} );
+									
+						return true;
+					},
+								
+					m_session,
+					m_creds,
+					m_policy,
+					m_rng,
+					TLS::Server_Information( uri->host(), uri->port() ),
+					TLS::Protocol_Version::latest_tls_version(),
+					std::bind( &tls_impl::protocol_chooser, this, std::placeholders::_1 )
+					);
+				
+	wait_for_handshake();
+}
+
+
+void
+tls_impl::recv( const std::uint8_t *in_buf, std::size_t in_len, recv_reply_f reply )
+{
+	m_next->recv( in_buf, in_len, [=]( int status, const std::uint8_t *buf, std::size_t len )
+	{
 		if ( m_client )
 		{
 			m_client->received_data( buf, len );
@@ -534,46 +596,18 @@ tls_impl::peek( source::peek_reply_f reply )
 		{
 			m_server->received_data( buf, len );
 		}
-
-		if ( m_data.size() > 0 )
+	
+		if ( m_recv_data.size() > 0 )
 		{
-			ret = reply( 0, &m_data[ 0 ], m_data.size() );
+			reply( 0, &m_recv_data[ 0 ], m_recv_data.size() );
+			m_recv_data.clear();
 		}
-		
-		return ret;
 	} );
 }
 
-	
+
 void
-tls_impl::recv( source::recv_reply_f reply )
-{
-	m_next->recv( [=]( int status, const std::uint8_t *buf, std::size_t len )
-	{
-		auto ret = true;
-		
-		if ( m_client )
-		{
-			m_client->received_data( buf, len );
-		}
-		else if ( m_server )
-		{
-			m_server->received_data( buf, len );
-		}
-	
-		if ( m_data.size() > 0 )
-		{
-			ret = reply( 0, &m_data[ 0 ], m_data.size() );
-			m_data.clear();
-		}
-			
-		return ret;
-	} );
-}
-
-	
-std::streamsize
-tls_impl::send( const std::uint8_t *buf, std::size_t len )
+tls_impl::send( const std::uint8_t *buf, std::size_t len, send_reply_f reply )
 {
 	try
 	{
@@ -591,11 +625,9 @@ tls_impl::send( const std::uint8_t *buf, std::size_t len )
 		nklog( log::error, "caught exception when sending tls data" );
 		len = -1;
 	}
-	
-	return len;
 }
 
-
+	
 std::string
 tls_impl::protocol_chooser( const std::vector< std::string > &protocols )
 {
@@ -605,4 +637,17 @@ tls_impl::protocol_chooser( const std::vector< std::string > &protocols )
 	}
 	
 	return "http/1.1";
+}
+
+
+void
+tls_impl::wait_for_handshake()
+{
+	if ( !m_handshake )
+	{
+		m_source->recv( nullptr, 0, [=]( int status, size_t len )
+		{
+			wait_for_handshake();
+		} );
+	}
 }

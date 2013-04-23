@@ -34,6 +34,8 @@
 
 using namespace netkit;
 
+static std::uint8_t g_buf[ 64 ];
+		
 TEST_CASE( "NetKit/http/server/1", "http server tests" )
 {
 	ip::tcp::acceptor::ptr	acceptor	= new ip::tcp::acceptor( new ip::endpoint( 0 ) );
@@ -46,11 +48,11 @@ TEST_CASE( "NetKit/http/server/1", "http server tests" )
 	{
 		REQUIRE( status == 0 );
 		
-		sock->peek( [=]( int status, const std::uint8_t *buf, std::size_t len )
+		sock->peek( g_buf, sizeof( g_buf ), [=]( int status, std::size_t len )
 		{
-			REQUIRE( http::connection::adopt( sock, buf, len ) );
-			
-			return false;
+			REQUIRE( status == 0 );
+			REQUIRE( len > 0 );
+			REQUIRE( http::connection::adopt( sock, g_buf, len ) );
 		} );
 	} );
 	
@@ -95,11 +97,11 @@ TEST_CASE( "NetKit/http/server/2", "http server tests" )
 	{
 		REQUIRE( status == 0 );
 		
-		sock->peek( [=]( int status, const std::uint8_t *buf, std::size_t len )
+		sock->peek( g_buf, sizeof( g_buf ), [=]( int status, std::size_t len )
 		{
-			REQUIRE( http::connection::adopt( sock, buf, len ) );
-			
-			return false;
+			REQUIRE( status == 0 );
+			REQUIRE( len > 0 );
+			REQUIRE( http::connection::adopt( sock, g_buf, len ) );
 		} );
 	} );
 	

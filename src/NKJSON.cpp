@@ -3048,36 +3048,16 @@ exit:
 bool
 connection::send( value::ptr request )
 {
-	std::string			msg;
-	int					bytes_left;
-	int					bytes_written;
+	std::string msg;
 	
 	msg = request->flatten();
     msg = encode( msg );
     
-	bytes_left		= ( int ) msg.size();
-	bytes_written	= 0;
+	sink::send( ( const std::uint8_t* ) msg.c_str(), msg.size(), [=]( int status )
+	{
+	} );
 
-    while ( bytes_left )
-    {
-		ssize_t num = sink::send( ( const std::uint8_t* ) msg.c_str() + bytes_written, bytes_left );
-
-		if ( num > 0 )
-		{
-			bytes_left		-= num;
-			bytes_written	+= num;
-		}
-		else if ( num == 0 )
-		{
-			break;
-		}
-		else
-		{
-			break;
-		}
-	}
-	
-	return ( bytes_left == 0 ) ? true : false;
+	return true;
 }
 
 
@@ -3428,9 +3408,9 @@ client::client( const connection::ptr &conn )
 
 
 void
-client::process( const std::uint8_t *buf, std::size_t len )
+client::connect( const uri::ptr &uri, source::connect_reply_f reply )
 {
-	m_connection->process( buf, len );
+	m_connection->connect( uri, reply );
 }
 
 

@@ -81,32 +81,6 @@ public:
 #endif
 	};
 	
-	class adapter : public source::adapter
-	{
-	public:
-	
-		typedef smart_ptr< adapter > ptr;
-		
-		virtual void
-		connect( const uri::ptr &endpoint, connect_reply_f reply );
-		
-		virtual void
-		accept( accept_reply_f reply );
-		
-		virtual void
-		peek( peek_reply_f reply );
-	
-		virtual void
-		recv( recv_reply_f reply );
-	
-		virtual std::streamsize
-		send( const std::uint8_t *buf, std::size_t len );
-		
-	private:
-	
-		std::uint8_t m_buf[ 4192 ];
-	};
-	
 	static bool
 	set_blocking( native fd, bool block );
 	
@@ -151,6 +125,18 @@ protected:
 	
 	void
 	init();
+	
+	virtual int
+	start_connect( const endpoint::ptr &peer, bool &would_block );
+	
+	virtual int
+	finish_connect();
+	
+	virtual std::streamsize
+	start_send( const std::uint8_t *buf, std::size_t len, bool &would_block );
+	
+	virtual std::streamsize
+	start_recv( std::uint8_t *buf, std::size_t len, bool &would_block );
 	
 	bool			m_connected;
 	endpoint::ptr	m_peer;

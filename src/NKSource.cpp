@@ -32,8 +32,10 @@
 
 using namespace netkit;
 
+
 source::source()
 {
+	add( new adapter );
 }
 
 
@@ -43,11 +45,10 @@ source::~source()
 
 
 void
-source::add( adapter::ptr adapter  )
+source::add( adapter::ptr adapter )
 {
-	adapter->m_source	= this;
-	adapter->m_next		= m_adapters;
-	m_adapters			= adapter;
+	m_adapters.push_front( adapter );
+	adapter->m_source = this;
 }
 
 
@@ -74,53 +75,259 @@ source::unbind( tag t )
 			break;
 		}
 	}
+}
+
+
+void
+source::accept( accept_reply_f reply )
+{
+	m_adapters.head()->accept( reply );
+}
+
+
+void
+source::connect( const uri::ptr &in_uri, connect_reply_f reply )
+{
+	endpoint::ptr to;
 	
-	for ( auto adapter = m_adapters; adapter; adapter = adapter->m_next )
+	m_adapters.tail()->preflight( in_uri, [=]( int status, const uri::ptr &out_uri )
 	{
-		if ( adapter == t )
+		if ( status == 0 )
 		{
+			connect_internal_1( out_uri, reply );
 		}
+	} );
+}
+
+
+void
+source::connect_internal_1( const uri::ptr &uri, connect_reply_f reply )
+{
+	ip::address::resolve( uri->host(), [=]( int status, const ip::address::list &addrs )
+	{
+		for ( auto it = addrs.begin(); it != addrs.end(); it++ )
+		{
+			ip::endpoint::ptr	endpoint = new ip::endpoint( *it, uri->port() );
+			bool				would_block;
+			int					ret;
+			
+			ret = start_connect( endpoint, would_block );
+			
+			if ( ret == 0 )
+			{
+				connect_internal_2( uri, endpoint, reply );
+			}
+			else if ( would_block )
+			{
+				runloop::instance()->schedule( m_send_event, [=]( runloop::event event )
+				{
+					int ret;
+
+					runloop::instance()->suspend( event );
+					
+					ret = finish_connect();
+					
+					if ( ret == 0 )
+					{
+						connect_internal_2( uri, endpoint, reply );
+					}
+				} );
+			}
+			else
+			{
+			}
+		}
+	} );
+}
+
+
+void
+source::connect_internal_2( const uri::ptr &uri, const endpoint::ptr &to, connect_reply_f reply )
+{
+	m_adapters.tail()->connect( uri, to, [=]( int status )
+	{
+		reply( status, to );
+	} );
+}
+
+
+void
+source::send( const std::uint8_t *in_buf, size_t in_len, send_reply_f reply )
+{
+	send( m_adapters.head(), in_buf, in_len, reply );
+}
+
+
+void
+source::send( adapter *adapter, const std::uint8_t *in_buf, size_t in_len, send_reply_f reply )
+{
+	fprintf( stderr, "send queue size: %d\n", m_send_queue.size() );
+	
+	adapter->send( in_buf, in_len, [=]( int status, const std::uint8_t *out_buf, std::size_t out_len ) mutable
+	{
+		if ( status == 0 )
+		{
+			send_info *info = new send_info( out_buf, out_len, reply );
+			
+			fprintf( stderr, "send queue size: %d\n", m_send_queue.size() );
+			
+			m_send_queue.push( info );
+		
+			if ( m_send_queue.size() == 1 )
+			{
+				send_internal();
+			}
+		}
+		else
+		{
+			reply( status );
+		}
+	} );
+}
+
+
+void
+source::send_internal()
+{
+	bool			would_block;
+	send_info		*info = m_send_queue.front();
+	std::streamsize ret;
+		
+	fprintf( stderr, "sending: %c%c%c%c%c\n", info->m_buf[ 0 ], info->m_buf[ 1 ], info->m_buf[ 2 ], info->m_buf[ 3 ], info->m_buf[ 4 ] );
+	
+	ret = start_send( &info->m_buf[ info->m_idx ], info->m_buf.size() - info->m_idx, would_block );
+		
+	if ( ret > 0 )
+	{
+		info->m_idx += ret;
+		
+		if ( info->m_idx == info->m_buf.size() )
+		{
+			m_send_queue.pop();
+			info->m_reply( 0 );
+			delete info;
+		}
+	}
+	else if ( would_block )
+	{
+		runloop::instance()->schedule( m_send_event, [=]( runloop::event event )
+		{
+			send_internal();
+		} );
+	}
+	else
+	{
 	}
 }
 
 
 void
-source::connect( const uri::ptr &uri, connect_reply_f reply )
+source::peek( std::uint8_t *buf, std::size_t len, recv_reply_f reply )
 {
-	m_adapters->connect( uri, reply );
-}
-
+	if ( m_recv_buf.size() > 0 )
+	{
+		std::size_t min = std::min( m_recv_buf.size(), len );
 		
-void
-source::accept( accept_reply_f reply )
-{
-	m_adapters->accept( reply );
-}
-
-
-void
-source::peek( peek_reply_f reply )
-{
-	m_adapters->peek( reply );
+		memcpy( buf, &m_recv_buf[ 0 ], min );
+		
+		reply( 0, min );
+	}
+	else
+	{
+		recv_internal( buf, len, true, reply );
+	}
 }
 
 	
 void
-source::recv( recv_reply_f reply )
+source::recv( std::uint8_t *buf, std::size_t len, recv_reply_f reply )
 {
-	m_adapters->recv( reply );
+	if ( m_recv_buf.size() > 0 )
+	{
+		std::size_t min = std::min( m_recv_buf.size(), len );
+		
+		memcpy( buf, &m_recv_buf[ 0 ], min );
+		
+		if ( m_recv_buf.size() == min )
+		{
+			m_recv_buf.clear();
+			
+			fprintf( stderr, "size after clear: %d\n", m_recv_buf.size() );
+		}
+		else
+		{
+			m_recv_buf.resize( m_recv_buf.size() - min );
+		}
+		
+		reply( 0, min );
+	}
+	else
+	{
+		recv_internal( buf, len, false, reply );
+	}
 }
 
-	
-std::streamsize
-source::send( const std::uint8_t *buf, size_t len )
+
+void
+source::recv_internal( std::uint8_t *in_buf, std::size_t in_len, bool peek, recv_reply_f reply )
 {
-	return m_adapters->send( buf, len );
+	bool			would_block	= false;
+	std::streamsize num			= 0;
+	
+	num = start_recv( in_buf, in_len, would_block );
+	
+	if ( num > 0 )
+	{
+		m_adapters.head()->recv( in_buf, num, [=]( int status, const std::uint8_t *out_buf, std::size_t out_len )
+		{
+			if ( status == 0 )
+			{
+				auto min = std::min( out_len, in_len );
+				
+				memcpy( in_buf, out_buf, min );
+				
+				if ( peek )
+				{
+					m_recv_buf.resize( min );
+					memmove( &m_recv_buf[ 0 ], out_buf, min );
+				}
+	
+				if ( out_len > in_len )
+				{
+					std::size_t old = m_recv_buf.size();
+					m_recv_buf.resize( old + ( out_len - in_len ) );
+					memcpy( &m_recv_buf[ old ], out_buf + in_len, out_len - in_len );
+				}
+				
+				reply( 0, min );
+			}
+			else
+			{
+				reply( -1, 0 );
+			}
+		} );
+	}
+	else if ( num == 0 )
+	{
+	}
+	else if ( would_block )
+	{
+		runloop::instance()->schedule( m_recv_event, [=]( runloop::event event )
+		{
+			runloop::instance()->suspend( event );
+			recv_internal( in_buf, in_len, peek, reply );
+		} );
+	}
+	else
+	{
+		reply( -1, 0 );
+	}
 }
 
 
 source::adapter::adapter()
 :
+	m_prev( nullptr ),
 	m_next( nullptr )
 {
 }
@@ -130,3 +337,37 @@ source::adapter::~adapter()
 {
 }
 
+
+void
+source::adapter::accept( accept_reply_f reply )
+{
+	reply( 0 );
+}
+
+		
+void
+source::adapter::preflight( const uri::ptr &uri, preflight_reply_f reply )
+{
+	reply( 0, uri );
+}
+
+	
+void
+source::adapter::connect( const uri::ptr &uri, const endpoint::ptr &to, connect_reply_f reply )
+{
+	reply( 0 );
+}
+
+
+void
+source::adapter::send( const std::uint8_t *in_buf, std::size_t in_len, send_reply_f reply )
+{
+	reply( 0, in_buf, in_len );
+}
+
+		
+void
+source::adapter::recv( const std::uint8_t *in_buf, std::size_t in_len, recv_reply_f reply )
+{
+	reply( 0, in_buf, in_len );
+}

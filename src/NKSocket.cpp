@@ -86,12 +86,77 @@ socket::init()
 {
 	set_blocking( m_fd, false );
 	
-	add( new socket::adapter );
-	
-	m_write_event	= runloop::instance()->create( m_fd, runloop::event_mask::write );
-	m_read_event	= runloop::instance()->create( m_fd, runloop::event_mask::read );
+	m_send_event	= runloop::instance()->create( m_fd, runloop::event_mask::write );
+	m_recv_event	= runloop::instance()->create( m_fd, runloop::event_mask::read );
 }
+
+
+int
+socket::start_connect( const endpoint::ptr &peer, bool &would_block )
+{
+	sockaddr_storage	addr;
+	int					err;
 	
+	peer->to_sockaddr( addr );
+	
+	err			= ::connect( m_fd, ( struct sockaddr* ) &addr, addr.ss_len );
+	would_block = ( err < 0 ) && ( platform::error() == ( int ) socket::error::in_progress ) ? true : false;
+	
+	return err;
+}
+
+
+int
+socket::finish_connect()
+{
+	// We'll use a trick to determine if the connect worked as described here:
+	//
+	// http://cr.yp.to/docs/connect.html
+	//
+	
+	sockaddr_storage	addr;
+	socklen_t			len = sizeof( addr );
+	int					err;
+					
+	err = getpeername( m_fd, ( struct sockaddr* ) &addr, &len );
+	
+	return err;
+}
+
+	
+std::streamsize
+socket::start_send( const std::uint8_t *buf, std::size_t len, bool &would_block )
+{
+	std::streamsize num;
+	
+	num			= ::send( m_fd, buf, len, 0 );
+	would_block = ( num < 0 ) && ( platform::error() == ( int ) socket::error::would_block ) ? true : false;
+
+	if ( ( num < 0 ) && ( !would_block ) )
+	{
+		nklog( log::error, "send returned %d", platform::error() );
+	}
+	
+	return num;
+}
+
+	
+std::streamsize
+socket::start_recv( std::uint8_t *buf, std::size_t len, bool &would_block )
+{
+	std::streamsize num;
+	
+	num			= ::recv( m_fd, buf, len, 0 );
+	would_block = ( num < 0 ) && ( platform::error() == ( int ) socket::error::would_block ) ? true : false;
+	
+	if ( ( num < 0 ) && ( !would_block ) )
+	{
+		nklog( log::error, "recv returned %d", platform::error() );
+	}
+	
+	return num;
+}
+
 
 bool
 socket::set_blocking( native fd, bool block )
@@ -140,6 +205,7 @@ socket::is_open() const
 	return ( m_fd != null ) ? true : false;
 }
 
+#if 0
 #if defined( __APPLE__ )
 #	pragma mark socket::adapter implementation
 #endif
@@ -147,6 +213,7 @@ socket::is_open() const
 void
 socket::adapter::connect( const uri::ptr &uri, connect_reply_f reply )
 {
+#if 0
 	ip::address::resolve( uri->host(), [=]( int status, const ip::address::list &addrs )
 	{
 		ip::endpoint::ptr peer;
@@ -198,6 +265,7 @@ socket::adapter::connect( const uri::ptr &uri, connect_reply_f reply )
 			reply( status, peer );
 		}
 	} );
+#endif
 }
 
 
@@ -211,6 +279,7 @@ socket::adapter::accept( accept_reply_f reply )
 void
 socket::adapter::peek( peek_reply_f reply )
 {
+#if 0
 	runloop::instance()->schedule( m_source->read_event(), [=]( runloop::event event ) mutable
 	{
 		socket::ptr		sock	= dynamic_pointer_cast< socket, netkit::source >( m_source );
@@ -235,12 +304,14 @@ socket::adapter::peek( peek_reply_f reply )
 			}
 		}
 	} );
+#endif
 }
 
 	
 void
 socket::adapter::recv( recv_reply_f reply )
 {
+#if 0
 	runloop::instance()->schedule( m_source->read_event(), [=]( runloop::event event ) mutable
 	{
 		socket::ptr		sock = dynamic_pointer_cast< socket, netkit::source >( m_source );
@@ -272,6 +343,7 @@ socket::adapter::recv( recv_reply_f reply )
 		}
 		while ( num > 0 );
 	} );
+#endif
 }
 
 	
@@ -320,6 +392,7 @@ socket::adapter::send( const std::uint8_t *buf, std::size_t len )
 
 	return total;
 }
+#endif
 
 #if defined( __APPLE__ )
 #	pragma mark acceptor implementation

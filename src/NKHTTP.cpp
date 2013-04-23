@@ -575,7 +575,12 @@ message::send_body( connection_ptr conn ) const
 	
 	if ( body.size() > 0 )
 	{
-		conn->send( reinterpret_cast< const uint8_t* >( body.c_str() ), body.size() );
+		conn->send( reinterpret_cast< const uint8_t* >( body.c_str() ), body.size(), [=]( int status )
+		{
+			if ( status != 0 )
+			{
+			}
+		} );
 	}
 	
 	return true;
@@ -881,17 +886,23 @@ bool
 connection::flush()
 {
 	std::string msg = m_ostream.str();
-	ssize_t		num = 0;
 		
 	if ( msg.size() > 0 )
 	{
 		nklog( log::verbose, "sending msg: %s", msg.c_str() );
-		num = send( reinterpret_cast< const uint8_t* >( msg.c_str() ), msg.size() );
+		
+		send( reinterpret_cast< const std::uint8_t* >( msg.c_str() ), msg.size(), [=]( int status )
+		{
+			if ( status != 0 )
+			{
+			}
+		} );
+		
 		m_ostream.str( "" );
 		m_ostream.clear();
 	}
 		
-	return ( msg.size() == num ) ? true : false;
+	return true;
 }
 
 

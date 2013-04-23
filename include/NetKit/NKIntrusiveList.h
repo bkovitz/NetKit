@@ -28,63 +28,109 @@
  *
  */
  
-#ifndef _netkit_sink_h
-#define _netkit_sink_h
+#ifndef _netkit_intrusive_list
+#define _netkit_intrusive_list
 
-#include <NetKit/NKSource.h>
-#include <NetKit/NKURI.h>
-#include <string>
-#include <ios>
+#include <stddef.h>
 
 namespace netkit {
 
-class sink : public object
+template < class T >
+class intrusive_list
 {
 public:
 
-	typedef void							*tag;
-	typedef std::function< void ( void ) >	close_f;
-	typedef smart_ptr< sink >				ptr;
-	
-	sink();
-	
-	sink( const uri::ptr &uri );
-	
-	virtual ~sink();
-	
-	virtual void
-	bind( source::ptr source );
-	
-	virtual tag
-	bind( close_f func );
-	
-	virtual void
-	unbind( tag t );
-	
-	void
-	connect( const uri::ptr &uri, source::connect_reply_f reply );
-	
-	void
-	send( const std::uint8_t *buf, std::size_t len, source::send_reply_f reply );
-	
-	bool
-	is_open() const;
-	
-	void
-	close();
-	
-protected:
+#define	GETLINK( e, o )			( *(void**)((char*) (e) + (o)) )
+#define ASSIGNLINK( e, l, o )	( *((void**)((char*) (e) + (o))) = (l))
 
-	virtual void
-	process( const std::uint8_t *buf, std::size_t len ) = 0;
+	intrusive_list()
+	{
+		m_head			= nullptr;
+		m_tail			= nullptr;
+		m_next_offset	= offsetof( T, m_next );
+		m_prev_offset	= offsetof( T, m_prev );
+	}
 	
-	void
-	run();
+	~intrusive_list()
+	{
+	}
 
-	source::ptr		m_source;
-	std::uint8_t	m_buf[ 4192 ];
+	inline T*
+	head() const
+	{
+		return m_head;
+	}
+	
+	inline T*
+	tail() const
+	{
+		return m_tail;
+	}
+
+	inline void
+	push_front( T *elem )
+	{
+		T *next = m_head;
+
+		ASSIGNLINK( elem, m_head, m_next_offset );
+		m_head = elem;
+
+		if ( next )
+		{
+			ASSIGNLINK( next, elem, m_prev_offset );
+		}
+		else
+		{
+			m_tail = elem;
+		}
+		
+		ASSIGNLINK( elem, nullptr, m_prev_offset );
+	}
+	
+	inline void
+	remove( T *elem)
+	{
+		T *next;
+		T *prev;
+
+		next = GETLINK( elem, m_next_offset );
+		prev = GETLINK( elem, m_prev_offset );
+
+		if ( prev )
+		{
+			ASSIGNLINK( prev, next, m_next_offset );
+		}
+		else
+		{
+			m_head = next;
+		}
+		
+		if ( next )
+		{
+			ASSIGNLINK( next, prev, m_prev_offset );
+		}
+		else
+		{
+			m_tail = prev;
+		}
+
+		ASSIGNLINK( elem, nullptr, m_next_offset );
+		ASSIGNLINK( elem, nullptr, m_prev_offset );
+	}
+
+private:
+
+	T			*m_head;
+	T			*m_tail;
+	std::size_t	m_next_offset;
+	std::size_t m_prev_offset;
 };
 
 }
+
+
+#define DECLARE_INTRUSIVE_LIST_OBJECT( X )	\
+X *m_next;									\
+X *m_prev;
 
 #endif
