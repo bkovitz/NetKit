@@ -1,0 +1,188 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{C9F453BF-5237-4B58-9FBE-0B4FF7254D1A}</ProjectGuid>
+    <RootNamespace>NetKit</RootNamespace>
+    <ProjectName>NetKit DLL</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(SolutionDir)\DerivedData\Products\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)\DerivedData\Intermediates\NetKit\$(Platform)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(SolutionDir)\DerivedData\Products\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)\DerivedData\Intermediates\NetKit\$(Platform)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>$(SolutionDir)\DerivedData\Products\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)\DerivedData\Intermediates\NetKit\$(Platform)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>$(SolutionDir)\DerivedData\Products\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)\DerivedData\Intermediates\NetKit\$(Platform)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>..\include</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>..\include</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="NKAddress.cpp" />
+    <ClCompile Include="NKBase64.cpp" />
+    <ClCompile Include="NKComponent.cpp" />
+    <ClCompile Include="NKConnection.cpp" />
+    <ClCompile Include="NKDatabase_SQLite.cpp" />
+    <ClCompile Include="NKEndpoint.cpp" />
+    <ClCompile Include="NKError.cpp" />
+    <ClCompile Include="NKHTTP.cpp" />
+    <ClCompile Include="NKJSON.cpp" />
+    <ClCompile Include="NKMIME.cpp" />
+    <ClCompile Include="NKOAuth.cpp" />
+    <ClCompile Include="NKObject.cpp" />
+    <ClCompile Include="NKProxy.cpp" />
+    <ClCompile Include="NKSink.cpp" />
+    <ClCompile Include="NKSocket.cpp" />
+    <ClCompile Include="NKSource.cpp" />
+    <ClCompile Include="NKTLS.cpp" />
+    <ClCompile Include="NKUnicode.cpp" />
+    <ClCompile Include="NKURI.cpp" />
+    <ClCompile Include="NKWebSocket.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\include\NetKit\cstring.h" />
+    <ClInclude Include="..\include\NetKit\NetKit.h" />
+    <ClInclude Include="..\include\NetKit\NKAddress.h" />
+    <ClInclude Include="..\include\NetKit\NKBase64.h" />
+    <ClInclude Include="..\include\NetKit\NKComponent.h" />
+    <ClInclude Include="..\include\NetKit\NKConcurrent.h" />
+    <ClInclude Include="..\include\NetKit\NKDatabase.h" />
+    <ClInclude Include="..\include\NetKit\NKEndpoint.h" />
+    <ClInclude Include="..\include\NetKit\NKError.h" />
+    <ClInclude Include="..\include\NetKit\NKExpected.h" />
+    <ClInclude Include="..\include\NetKit\NKHTTP.h" />
+    <ClInclude Include="..\include\NetKit\NKIntrusiveList.h" />
+    <ClInclude Include="..\include\NetKit\NKJSON.h" />
+    <ClInclude Include="..\include\NetKit\NKLog.h" />
+    <ClInclude Include="..\include\NetKit\NKMIME.h" />
+    <ClInclude Include="..\include\NetKit\NKOAuth.h" />
+    <ClInclude Include="..\include\NetKit\NKObject.h" />
+    <ClInclude Include="..\include\NetKit\NKOutputFilter.h" />
+    <ClInclude Include="..\include\NetKit\NKPlatform.h" />
+    <ClInclude Include="..\include\NetKit\NKProxy.h" />
+    <ClInclude Include="..\include\NetKit\NKRunLoop.h" />
+    <ClInclude Include="..\include\NetKit\NKSink.h" />
+    <ClInclude Include="..\include\NetKit\NKSmartPtr.h" />
+    <ClInclude Include="..\include\NetKit\NKSocket.h" />
+    <ClInclude Include="..\include\NetKit\NKSource.h" />
+    <ClInclude Include="..\include\NetKit\NKTLS.h" />
+    <ClInclude Include="..\include\NetKit\NKUnicode.h" />
+    <ClInclude Include="..\include\NetKit\NKURI.h" />
+    <ClInclude Include="..\include\NetKit\NKWebSocket.h" />
+    <ClInclude Include="NKDatabase_SQLite.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
