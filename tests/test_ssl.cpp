@@ -33,7 +33,7 @@
 
 using namespace netkit;
 
-static const char* g_message = "GET /index.html HTTP/1.1\r\nHost: www.google.com\r\n\r\n";
+static const char* g_message = "GET /index.html HTTP/1.1\r\nHost: www.collobos.com\r\n\r\n";
 
 TEST_CASE( "NetKit/ssl/1", "ssl client" )
 {
@@ -44,10 +44,11 @@ TEST_CASE( "NetKit/ssl/1", "ssl client" )
 		
 		sock->add( tls::adapter::create() );
 		
-		sock->connect( new uri( "https://www.google.com/index.html"), [=]( int status, const endpoint::ptr &peer ) mutable
+		fprintf( stderr, "connecting ssl socket\n" );
+		sock->connect( new uri( "https://www.collobos.com/index.html"), [=]( int status, const endpoint::ptr &peer ) mutable
 		{
 			REQUIRE( status == 0 );
-			char buf[ 512 ];
+			char buf[ 4192 ];
 			
 			sock->send( ( const std::uint8_t* ) g_message, strlen( g_message ), [=]( int status )
 			{

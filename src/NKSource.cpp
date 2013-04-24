@@ -161,15 +161,12 @@ source::send( const std::uint8_t *in_buf, size_t in_len, send_reply_f reply )
 void
 source::send( adapter *adapter, const std::uint8_t *in_buf, size_t in_len, send_reply_f reply )
 {
-	fprintf( stderr, "send queue size: %d\n", m_send_queue.size() );
-	
 	adapter->send( in_buf, in_len, [=]( int status, const std::uint8_t *out_buf, std::size_t out_len ) mutable
 	{
-		if ( status == 0 )
+		if ( out_len > 0 )
 		{
+			fprintf( stderr, "queuing up send info of %d bytes\n", out_len );
 			send_info *info = new send_info( out_buf, out_len, reply );
-			
-			fprintf( stderr, "send queue size: %d\n", m_send_queue.size() );
 			
 			m_send_queue.push( info );
 		
@@ -193,8 +190,6 @@ source::send_internal()
 	send_info		*info = m_send_queue.front();
 	std::streamsize ret;
 		
-	fprintf( stderr, "sending: %c%c%c%c%c\n", info->m_buf[ 0 ], info->m_buf[ 1 ], info->m_buf[ 2 ], info->m_buf[ 3 ], info->m_buf[ 4 ] );
-	
 	ret = start_send( &info->m_buf[ info->m_idx ], info->m_buf.size() - info->m_idx, would_block );
 		
 	if ( ret > 0 )
@@ -280,23 +275,28 @@ source::recv_internal( std::uint8_t *in_buf, std::size_t in_len, bool peek, recv
 	{
 		m_adapters.head()->recv( in_buf, num, [=]( int status, const std::uint8_t *out_buf, std::size_t out_len )
 		{
+			fprintf( stderr, "adapter recv returns status %d and out len of %d\n", status, out_len );
+	
 			if ( status == 0 )
 			{
 				auto min = std::min( out_len, in_len );
 				
-				memcpy( in_buf, out_buf, min );
+				if ( out_len )
+				{
+					memcpy( in_buf, out_buf, min );
 				
-				if ( peek )
-				{
-					m_recv_buf.resize( min );
-					memmove( &m_recv_buf[ 0 ], out_buf, min );
-				}
+					if ( peek )
+					{
+						m_recv_buf.resize( min );
+						memmove( &m_recv_buf[ 0 ], out_buf, min );
+					}
 	
-				if ( out_len > in_len )
-				{
-					std::size_t old = m_recv_buf.size();
-					m_recv_buf.resize( old + ( out_len - in_len ) );
-					memcpy( &m_recv_buf[ old ], out_buf + in_len, out_len - in_len );
+					if ( out_len > in_len )
+					{
+						std::size_t old = m_recv_buf.size();
+						m_recv_buf.resize( old + ( out_len - in_len ) );
+						memcpy( &m_recv_buf[ old ], out_buf + in_len, out_len - in_len );
+					}
 				}
 				
 				reply( 0, min );
@@ -309,6 +309,7 @@ source::recv_internal( std::uint8_t *in_buf, std::size_t in_len, bool peek, recv
 	}
 	else if ( num == 0 )
 	{
+		reply( -1, 0 );
 	}
 	else if ( would_block )
 	{
@@ -355,7 +356,14 @@ source::adapter::preflight( const uri::ptr &uri, preflight_reply_f reply )
 void
 source::adapter::connect( const uri::ptr &uri, const endpoint::ptr &to, connect_reply_f reply )
 {
-	reply( 0 );
+	if ( m_prev )
+	{
+		m_prev->connect( uri, to, reply );
+	}
+	else
+	{
+		reply( 0 );
+	}
 }
 
 

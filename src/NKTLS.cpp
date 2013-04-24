@@ -371,13 +371,14 @@ private:
 	protocol_chooser( const std::vector< std::string > &protocols );
 	
 	void
-	wait_for_handshake();
+	wait_for_connect_handshake( connect_reply_f reply );
 	
 	bool							m_handshake;
 	TLS::Client						*m_client;
 	TLS::Server						*m_server;
 	std::uint8_t					m_buffer[ 4192 ];
 	std::vector< std::uint8_t >		m_send_data;
+	bool							m_sending;
 	std::vector< std::uint8_t >		m_recv_data;
 	AutoSeeded_RNG					m_rng;
 	TLS::Policy						m_policy;
@@ -398,6 +399,7 @@ tls_impl::tls_impl()
 	m_client( nullptr ),
 	m_server( nullptr ),
 	m_handshake( false ),
+	m_sending( false ),
 	m_creds( m_rng )
 {
 }
@@ -450,9 +452,24 @@ tls_impl::accept_internal( source::accept_reply_f reply )
 					{
 						// We need to make sure this send completes
 						
-						m_source->send( m_next, buf, len, [=]( int status )
+						if ( m_sending )
 						{
-						} );
+							auto old_size = m_send_data.size();
+							m_send_data.resize( m_send_data.size() + len );
+							memcpy( &m_send_data[ old_size ], buf, len );
+						}
+						else
+						{
+							fprintf( stderr, "trying to send buffer of length: %d\n", len );
+							m_source->send( m_next, buf, len, [=]( int status )
+							{
+								// We need to make sure this send completes
+							
+								if ( status != 0 )
+								{
+								}
+							} );
+						}
 					},
 								
 					[=]( const byte *buf, std::size_t len, TLS::Alert alert )
@@ -533,14 +550,28 @@ tls_impl::connect_internal( const uri::ptr &uri, const endpoint::ptr &to, connec
 					(
 					[=]( const byte *buf, std::size_t len ) mutable
 					{
-						m_source->send( m_next, buf, len, [=]( int status )
+						// This can be called when we're not in the context of a send
+						
+						if ( m_sending )
 						{
-							// We need to make sure this send completes
+							auto old_size = m_send_data.size();
+							m_send_data.resize( m_send_data.size() + len );
+							memcpy( &m_send_data[ old_size ], buf, len );
+						}
+						else
+						{
+							fprintf( stderr, "sending %d bytes of handshake info\n", len );
 							
-							if ( status != 0 )
+							m_source->send( m_next, buf, len, [=]( int status )
 							{
-							}
-						} );
+								// We need to make sure this send completes
+							
+								if ( status != 0 )
+								{
+									reply( status );
+								}
+							} );
+						}
 					},
 								
 					[=]( const byte *buf, std::size_t len, TLS::Alert alert )
@@ -549,8 +580,8 @@ tls_impl::connect_internal( const uri::ptr &uri, const endpoint::ptr &to, connec
 						{
 							nklog( log::info, "tls alert: %s", alert.type_string().c_str() );
 						}
-									
 						auto old_size = m_recv_data.size();
+fprintf( stderr, "read %d bytes of data, old size = %d\n", len, old_size );
 						m_recv_data.resize( m_recv_data.size() + len );
 						memcpy( &m_recv_data[ old_size ], buf, len );
 					},
@@ -561,7 +592,7 @@ tls_impl::connect_internal( const uri::ptr &uri, const endpoint::ptr &to, connec
 						// connection until we've returned true.
 									
 						m_handshake = true;
-									
+					fprintf( stderr, "got handshake!!!!\n" );
 						runloop::instance()->dispatch_on_main_thread( [=]()
 						{
 							reply( 0 );
@@ -579,36 +610,19 @@ tls_impl::connect_internal( const uri::ptr &uri, const endpoint::ptr &to, connec
 					std::bind( &tls_impl::protocol_chooser, this, std::placeholders::_1 )
 					);
 				
-	wait_for_handshake();
-}
-
-
-void
-tls_impl::recv( const std::uint8_t *in_buf, std::size_t in_len, recv_reply_f reply )
-{
-	m_next->recv( in_buf, in_len, [=]( int status, const std::uint8_t *buf, std::size_t len )
-	{
-		if ( m_client )
-		{
-			m_client->received_data( buf, len );
-		}
-		else if ( m_server )
-		{
-			m_server->received_data( buf, len );
-		}
-	
-		if ( m_recv_data.size() > 0 )
-		{
-			reply( 0, &m_recv_data[ 0 ], m_recv_data.size() );
-			m_recv_data.clear();
-		}
-	} );
+	wait_for_connect_handshake( reply );
 }
 
 
 void
 tls_impl::send( const std::uint8_t *buf, std::size_t len, send_reply_f reply )
 {
+	fprintf( stderr, "trying to encrypt of len %d: %s\n", len, buf );
+	m_send_data.clear();
+	
+	
+	m_sending = true;
+	
 	try
 	{
 		if ( m_client )
@@ -625,9 +639,57 @@ tls_impl::send( const std::uint8_t *buf, std::size_t len, send_reply_f reply )
 		nklog( log::error, "caught exception when sending tls data" );
 		len = -1;
 	}
+	
+	m_sending = false;
+	
+	if ( m_send_data.size() > 0 )
+	{
+		m_next->send( &m_send_data[ 0 ], m_send_data.size(), reply );
+	}
+	else
+	{
+		reply( 0, nullptr, 0 );
+	}
 }
 
+
+void
+tls_impl::recv( const std::uint8_t *in_buf, std::size_t in_len, recv_reply_f reply )
+{
+	m_next->recv( in_buf, in_len, [=]( int status, const std::uint8_t *out_buf, std::size_t out_len )
+	{
+		m_recv_data.clear();
+		
+		try
+		{
+fprintf( stderr, "calling m_client->received data with buffer len = %d\n", out_len );
+			if ( m_client )
+			{
+				m_client->received_data( out_buf, out_len );
+			}
+			else if ( m_server )
+			{
+				m_server->received_data( out_buf, out_len );
+			}
+		}
+		catch ( ... )
+		{
+			fprintf( stderr, "caught exception while receiving data\n" );
+		}
 	
+	fprintf( stderr, "recv data size = %d\n", m_recv_data.size() );
+		if ( m_recv_data.size() > 0 )
+		{
+			reply( 0, &m_recv_data[ 0 ], m_recv_data.size() );
+		}
+		else
+		{
+			reply( 0, nullptr, 0 );
+		}
+	} );
+}
+
+
 std::string
 tls_impl::protocol_chooser( const std::vector< std::string > &protocols )
 {
@@ -641,13 +703,21 @@ tls_impl::protocol_chooser( const std::vector< std::string > &protocols )
 
 
 void
-tls_impl::wait_for_handshake()
+tls_impl::wait_for_connect_handshake( connect_reply_f reply )
 {
 	if ( !m_handshake )
 	{
-		m_source->recv( nullptr, 0, [=]( int status, size_t len )
+		m_source->recv( m_buffer, sizeof( m_buffer ), [=]( int status, size_t len )
 		{
-			wait_for_handshake();
+			if ( status == 0 )
+			{
+				wait_for_connect_handshake( reply );
+			}
+			else
+			{
+				fprintf( stderr, "error while waiting for handshake\n" );
+				reply( status );
+			}
 		} );
 	}
 }

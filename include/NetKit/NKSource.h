@@ -139,17 +139,10 @@ protected:
 	{
 		send_info( const std::uint8_t *buf, std::size_t len, send_reply_f reply )
 		:
+			m_buf( buf, buf + len ),
 			m_idx( 0 ),
 			m_reply( reply )
 		{
-			//m_buf.resize( len );
-			
-	fprintf( stderr, "new send_info: %c%c%c%c%c\n", buf[ 0 ], buf[ 1 ], buf[ 2 ], buf[ 3 ], buf[ 4 ] );
-			for ( auto i = 0; i < len; i++ )
-			{
-				m_buf.push_back( ( std::uint8_t ) buf[ i ] );
-			}
-	fprintf( stderr, "after push_back: %c%c%c%c%c\n", m_buf[ 0 ], m_buf[ 1 ], m_buf[ 2 ], m_buf[ 3 ], m_buf[ 4 ] );
 		}
 	
 		buf_t			m_buf;

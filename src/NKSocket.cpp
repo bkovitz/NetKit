@@ -132,6 +132,7 @@ socket::start_send( const std::uint8_t *buf, std::size_t len, bool &would_block 
 	num			= ::send( m_fd, buf, len, 0 );
 	would_block = ( num < 0 ) && ( platform::error() == ( int ) socket::error::would_block ) ? true : false;
 
+fprintf( stderr, "start_send returned %d\n", num );
 	if ( ( num < 0 ) && ( !would_block ) )
 	{
 		nklog( log::error, "send returned %d", platform::error() );
@@ -146,9 +147,11 @@ socket::start_recv( std::uint8_t *buf, std::size_t len, bool &would_block )
 {
 	std::streamsize num;
 	
+	fprintf( stderr, "start_recv: buffer length = %d\n", len );
 	num			= ::recv( m_fd, buf, len, 0 );
 	would_block = ( num < 0 ) && ( platform::error() == ( int ) socket::error::would_block ) ? true : false;
 	
+	fprintf( stderr, "start recv: %d  would block = %s\n", num, would_block ? "true" : "false" );
 	if ( ( num < 0 ) && ( !would_block ) )
 	{
 		nklog( log::error, "recv returned %d", platform::error() );
