@@ -49,8 +49,6 @@ using namespace netkit;
 #endif
 
 socket::socket( int domain, int type )
-:
-	m_event( NULL )
 {
 	m_fd = ::socket( domain, type, 0 );
 	
@@ -63,7 +61,6 @@ socket::socket( int domain, int type )
 
 socket::socket( native fd )
 :
-	m_event( NULL ),
 	m_fd( fd )
 {
 	init();
@@ -72,7 +69,6 @@ socket::socket( native fd )
 
 socket::socket( native fd, const endpoint::ptr peer )
 :
-	m_event( NULL ),
 	m_peer( peer ),
 	m_fd( fd )
 {
@@ -93,8 +89,8 @@ socket::init()
 
 	set_blocking( m_fd, false );
 	
-	m_recv_event	= runloop::instance()->create( m_fd, runloop::event_mask::read );
 	m_send_event	= runloop::instance()->create( m_fd, runloop::event_mask::write );
+	m_recv_event	= runloop::instance()->create( m_fd, runloop::event_mask::read );
 }
 
 
@@ -192,12 +188,6 @@ socket::close()
 	for ( auto it = m_close_handlers.begin(); it != m_close_handlers.end(); it++ )
 	{
 		it->second();
-	}
-	
-	if ( m_event )
-	{
-		runloop::instance()->cancel( m_event );
-		m_event = NULL;
 	}
 	
 	if ( m_fd != null )
@@ -570,39 +560,50 @@ ip::tcp::socket::close()
 
 ip::tcp::acceptor::acceptor( const ip::endpoint::ptr &endpoint )
 :
-	ip::acceptor( endpoint, SOCK_STREAM )
+	ip::acceptor( endpoint, SOCK_STREAM ),
+	m_event( nullptr )
 {
 }
 
 
 ip::tcp::acceptor::~acceptor()
 {
+	if ( m_event )
+	{
+		runloop::instance()->cancel( m_event );
+	}
 }
 
 
 void
 ip::tcp::acceptor::accept( accept_reply_f reply )
 {
-	auto event = runloop::instance()->create( m_fd, runloop::event_mask::read );
-	
-	runloop::instance()->schedule( event, [=]( runloop::event event )
+	assert( !m_event );
+
+	if ( !m_event )
 	{
-		socket::native			new_fd;
-		struct sockaddr_storage	addr;
-		socklen_t				addr_len = sizeof( addr );
-		socket::ptr				new_sock;
-		
-		runloop::instance()->suspend( event );
+		m_event = runloop::instance()->create( m_fd, runloop::event_mask::read );
 	
-		new_fd = ::accept( m_fd, ( struct sockaddr* ) &addr, &addr_len );
-	
-		if ( new_fd != socket::null )
+		runloop::instance()->schedule( m_event, [=]( runloop::event event )
 		{
-			new_sock = new ip::tcp::socket( new_fd, new ip::endpoint( addr ) );
+			socket::native			new_fd;
+			struct sockaddr_storage	addr;
+			socklen_t				addr_len = sizeof( addr );
+			socket::ptr				new_sock;
 			
-		// new_sock->get_ethernet_addr();
+			runloop::instance()->cancel( m_event );
+			m_event = nullptr;
 		
-			reply( 0, new_sock.get() );
-		}
-	} );
+			new_fd = ::accept( m_fd, ( struct sockaddr* ) &addr, &addr_len );
+		
+			if ( new_fd != socket::null )
+			{
+				new_sock = new ip::tcp::socket( new_fd, new ip::endpoint( addr ) );
+				
+			// new_sock->get_ethernet_addr();
+			
+				reply( 0, new_sock.get() );
+			}
+		} );
+	}
 }

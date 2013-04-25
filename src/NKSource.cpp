@@ -37,6 +37,9 @@ using namespace netkit;
 #endif
 
 source::source()
+:
+	m_send_event( nullptr ),
+	m_recv_event( nullptr )
 {
 	add( new adapter );
 }
@@ -44,6 +47,24 @@ source::source()
 
 source::~source()
 {
+	if ( m_send_event )
+	{
+		runloop::instance()->cancel( m_send_event );
+	}
+
+	if ( m_recv_event )
+	{
+		runloop::instance()->cancel( m_recv_event );
+	}
+
+	auto adapter = m_adapters.head();
+
+	while ( adapter )
+	{
+		adapter::ptr next = adapter->m_next;
+		delete adapter;
+		adapter = next;
+	}
 }
 
 

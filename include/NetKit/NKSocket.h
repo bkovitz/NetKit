@@ -143,7 +143,6 @@ protected:
 	
 	bool			m_connected;
 	endpoint::ptr	m_peer;
-	runloop::event	m_event;
 	native			m_fd;
 };
 
@@ -256,6 +255,10 @@ public:
 	
 	virtual void
 	accept( accept_reply_f reply );
+
+protected:
+
+	runloop::event m_event;
 };
 
 }

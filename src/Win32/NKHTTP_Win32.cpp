@@ -379,7 +379,7 @@ client_win32::on_headers_are_available()
 		goto exit;
 	}
 
-	m_response->set_status( statusCode );
+	m_response->set_status( ( std::uint16_t ) statusCode );
 
 	if ( ( statusCode == 401 ) || ( statusCode == 407 ) )
 	{
