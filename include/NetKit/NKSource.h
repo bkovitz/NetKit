@@ -129,7 +129,7 @@ public:
 	is_open() const = 0;
 	
 	virtual void
-	close() = 0;
+	close();
 	
 protected:
 

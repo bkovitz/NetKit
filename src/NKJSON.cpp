@@ -2993,9 +2993,11 @@ exit:
 }
 
 
-void
+bool
 connection::process( const std::uint8_t *buf, std::size_t len )
 {
+	bool ok = true;
+
 	if ( num_bytes_unused() < len )
 	{
 		add( len - num_bytes_unused() );
@@ -3008,7 +3010,10 @@ connection::process( const std::uint8_t *buf, std::size_t len )
 	if ( !really_process() )
 	{
 		shutdown();
+		ok = false;
 	}
+
+	return ok;
 }
 
 

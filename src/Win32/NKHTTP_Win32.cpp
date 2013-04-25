@@ -127,7 +127,7 @@ client_win32::callback( HINTERNET handle, DWORD_PTR context, DWORD code, void* i
 
 	if ( self )
 	{
-		std::lock_guard< std::recursive_mutex > guard( self->m_mutex );
+		self->m_mutex.lock();
 
 		switch ( code )
 		{
@@ -137,6 +137,8 @@ client_win32::callback( HINTERNET handle, DWORD_PTR context, DWORD code, void* i
 				{
 					self->on_send_request_complete();
 				} );
+
+				self->m_mutex.unlock();
 			}
 			break;
 	
@@ -146,6 +148,8 @@ client_win32::callback( HINTERNET handle, DWORD_PTR context, DWORD code, void* i
 				{
 					self->on_headers_are_available();
 				} );
+
+				self->m_mutex.unlock();
 			}
 			break;
 
@@ -155,11 +159,15 @@ client_win32::callback( HINTERNET handle, DWORD_PTR context, DWORD code, void* i
 				{
 					self->on_read( length );
 				} );
+
+				self->m_mutex.unlock();
 			}
 			break;
 
 			case WINHTTP_CALLBACK_STATUS_HANDLE_CLOSING:
 			{
+				self->m_mutex.unlock();
+
 				runloop::instance()->dispatch_on_main_thread( [=]()
 				{
 					self->on_closing( handle );
@@ -172,12 +180,19 @@ client_win32::callback( HINTERNET handle, DWORD_PTR context, DWORD code, void* i
 				WINHTTP_ASYNC_RESULT	*result = (WINHTTP_ASYNC_RESULT*) info;
 				DWORD					error = result->dwError;
 
+				self->m_mutex.unlock();
+
 				runloop::instance()->dispatch_on_main_thread( [=]()
 				{
 					self->on_error( handle, error );
 				} );
 			}
 	        break;
+
+			default:
+			{
+				self->m_mutex.unlock();
+			}
 		}
 	}
 }
@@ -453,6 +468,7 @@ client_win32::on_error( HANDLE handle, DWORD error )
 	nklog( log::info, "on_error(handle = 0x%x, error = %d)", handle, error );
 	nklog( log::info, "session handle = 0x%x", m_session_handle );	
 	reply( error );
+	release();
 }
 
 

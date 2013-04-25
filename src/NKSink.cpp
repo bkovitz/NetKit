@@ -55,7 +55,6 @@ sink::sink( const uri::ptr &uri )
 
 sink::~sink()
 {
-	fprintf( stderr, "in sink::~sink\n" );
 }
 
 
@@ -94,10 +93,8 @@ sink::connect( const uri::ptr &uri, source::connect_reply_f reply )
 {
 	source::ptr source = new ip::tcp::socket;
 
-	fprintf( stderr, "before this = 0x%lx\n", this );
 	source->connect( uri, [=]( int status, const endpoint::ptr &peer )
 	{
-		fprintf( stderr, "after this = 0x%lx\n", this );
 		if ( status == 0 )
 		{
 			bind( source );
@@ -136,13 +133,10 @@ sink::run()
 	{
 		if ( len > 0 )
 		{
-			process( m_buf, len );
-			
-			run();
-		}
-		else
-		{
-			fprintf( stderr, "m_srouce->recv() returns %d\n", status );
+			if ( process( m_buf, len ) )
+			{
+				run();
+			}
 		}
 	} );
 }

@@ -143,12 +143,9 @@ source::connect_internal_1( const uri::ptr &uri, connect_reply_f reply )
 			}
 			else if ( would_block )
 			{
-				fprintf( stderr, "connect would block...scheduling write event\n" );
 				runloop::instance()->schedule( m_send_event, [=]( runloop::event event )
 				{
 					int ret;
-
-				fprintf( stderr, "got connect event\n" );
 
 					runloop::instance()->suspend( event );
 					
@@ -193,7 +190,6 @@ source::send( adapter *adapter, const std::uint8_t *in_buf, size_t in_len, send_
 	{
 		if ( out_len > 0 )
 		{
-			fprintf( stderr, "queuing up send info of %d bytes\n", out_len );
 			send_info *info = new send_info( out_buf, out_len, reply );
 			
 			m_send_queue.push( info );
@@ -274,8 +270,6 @@ source::recv( std::uint8_t *buf, std::size_t len, recv_reply_f reply )
 		if ( m_recv_buf.size() == min )
 		{
 			m_recv_buf.clear();
-			
-			fprintf( stderr, "size after clear: %d\n", m_recv_buf.size() );
 		}
 		else
 		{
@@ -303,8 +297,6 @@ source::recv_internal( std::uint8_t *in_buf, std::size_t in_len, bool peek, recv
 	{
 		m_adapters.head()->recv( in_buf, num, [=]( int status, const std::uint8_t *out_buf, std::size_t out_len )
 		{
-			fprintf( stderr, "adapter recv returns status %d and out len of %d\n", status, out_len );
-	
 			if ( status == 0 )
 			{
 				std::size_t min = std::min( out_len, in_len );
@@ -341,10 +333,8 @@ source::recv_internal( std::uint8_t *in_buf, std::size_t in_len, bool peek, recv
 	}
 	else if ( would_block )
 	{
-		fprintf( stderr, "schduling recv event\n" );
 		runloop::instance()->schedule( m_recv_event, [=]( runloop::event event )
 		{
-			fprintf( stderr, "got recv event\n" );
 			runloop::instance()->suspend( event );
 			recv_internal( in_buf, in_len, peek, reply );
 		} );
@@ -352,6 +342,23 @@ source::recv_internal( std::uint8_t *in_buf, std::size_t in_len, bool peek, recv
 	else
 	{
 		reply( -1, 0 );
+	}
+}
+
+
+void
+source::close()
+{
+	if ( m_send_event )
+	{
+		runloop::instance()->cancel( m_send_event );
+		m_send_event = nullptr;
+	}
+
+	if ( m_recv_event )
+	{
+		runloop::instance()->cancel( m_recv_event );
+		m_recv_event = nullptr;
 	}
 }
 

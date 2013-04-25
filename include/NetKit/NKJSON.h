@@ -418,7 +418,7 @@ public:
 	bool
 	send_request( value::ptr request, reply_f reply );
 	
-	virtual void
+	virtual bool
 	process( const std::uint8_t *buf, std::size_t len );
 	
 protected:

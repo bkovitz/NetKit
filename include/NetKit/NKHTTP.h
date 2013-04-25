@@ -449,7 +449,7 @@ public:
 	static void
 	bind( std::uint8_t method, const std::string &path, sink::ptr sink );
 	
-	virtual void
+	virtual bool
 	process( const std::uint8_t *buf, std::size_t len );
 	
 	bool

@@ -66,7 +66,6 @@ runloop_win32::create( int fd, event_mask m )
 	atom		*a	= nullptr;
 	DWORD		err	= 0;
 
-	fprintf( stderr, "in runloop create for fd: %d with event mask %d\n", fd, m );
 	for ( auto it = m_sources.begin(); it != m_sources.end(); it++ )
 	{
 		if ( ( *it )->m_socket == fd )
@@ -127,6 +126,8 @@ runloop_win32::create( int fd, event_mask m )
 
 	a->m_source = s;
 	s->m_atoms.push_back( a );
+
+	assert( s->m_atoms.size() <= 2 );
 
 exit:
 
@@ -199,12 +200,28 @@ void
 runloop_win32::schedule( event e, event_f func )
 {
 	atom	*a			= reinterpret_cast< atom* >( e );
-	source	*s			= a->m_source;
+	source	*s			= nullptr;
 	worker	*w			= nullptr;
 	DWORD	registered	= FALSE;
 	DWORD	err			= 0;
 
-	fprintf( stderr, "in runloop schdule for fd: %d\n", s->m_socket );
+	assert( a );
+
+	if ( !a )
+	{
+		nklog( log::error, "schedule() called with null event" );
+		goto exit;
+	}
+
+	s = a->m_source;
+
+	assert( s );
+
+	if ( !s )
+	{
+		nklog( log::error, "schedule() called with bad atom" );
+		goto exit;
+	}
 
 	// First check our main Worker. In most cases, we won't have to worry about threads
 
@@ -303,8 +320,6 @@ exit:
 	{
 		delete w;
 	}
-
-	return;
 }
 
 
@@ -331,8 +346,19 @@ runloop_win32::unregisterSocket( socket::ptr sock )
 void
 runloop_win32::suspend( event e )
 {
-	atom	*a = reinterpret_cast< atom* >( e );
-	source	*s = a->m_source;
+	atom	*a = nullptr;
+	source	*s = nullptr;
+
+	assert( e );
+
+	if ( !e )
+	{
+		nklog( log::error, "null event" );
+		goto exit;
+	}
+	
+	a = reinterpret_cast< atom* >( e );
+	s = a->m_source;
 
 	if ( !a->m_scheduled )
 	{
@@ -398,10 +424,24 @@ exit:
 void
 runloop_win32::cancel( event e )
 {
-	atom	*a = reinterpret_cast< atom* >( e );
-	source	*s = a->m_source;
+	atom	*a = nullptr;
+	source	*s = nullptr;
 
-	suspend( e );
+	assert( e );
+
+	if ( !e )
+	{
+		nklog( log::error, "null event" );
+		goto exit;
+	}
+
+	a = reinterpret_cast< atom* >( e );
+	s = a->m_source;
+
+	if ( a->m_scheduled )
+	{
+		suspend( a );
+	}
 
 	s->m_atoms.remove( a );
 
@@ -421,6 +461,10 @@ runloop_win32::cancel( event e )
 			delete s;
 		}
 	} );
+
+exit:
+
+	return;
 }
 
 	
@@ -740,7 +784,6 @@ runloop_win32::worker::run( int32_t msec )
 
 		if ( ( get_main_worker() == this ) || ( waitItemIndex == 0 ) )
 		{
-			fprintf( stderr, "dispatching event to handler\n" );
 			s->dispatch();
 		}
 		else

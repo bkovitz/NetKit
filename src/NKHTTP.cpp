@@ -913,22 +913,24 @@ connection::close()
 }
 
 
-void
+bool
 connection::process( const std::uint8_t *buf, size_t len )
 {
-	std::streamsize processed;
-
-	processed = http_parser_execute( m_parser, m_settings, ( const char* ) buf, len );
+	std::streamsize processed	= http_parser_execute( m_parser, m_settings, ( const char* ) buf, len );
+	bool			ok			= true;
 
 	if ( processed != len )
 	{
 		nklog( log::error, "http_parser_execute() failed: bytes read = %ld, processed = %ld", len, processed );
+		ok = false;
 		close();
 	}
 	
 	if ( m_parser->upgrade )
 	{
 	}
+
+	return ok;
 }
 
 
@@ -1158,9 +1160,6 @@ connection::resolve( http_parser *parser )
 	{
 		for ( handler::list::iterator it2 = it->second.begin(); it2 != it->second.end(); it2++ )
 		{
-			fprintf( stderr, "m_path = %s\n", ( *it2 )->m_path.c_str() );
-			fprintf( stderr, "m_type = %s\n", ( *it2 )->m_type.c_str() );
-			
 			try
 			{
 				std::regex regex1( ( *it2 )->m_path );
@@ -1174,11 +1173,7 @@ connection::resolve( http_parser *parser )
 			}
 			catch ( std::exception &exc )
 			{
-				fprintf( stderr, "exc: %s\n", exc.what() );
-			}
-			catch ( ... )
-			{
-				fprintf( stderr, "cuaght\n" );
+				nklog( log::error, "caught exception in regex: %s", exc.what() );
 			}
 		}
 	}
@@ -1208,7 +1203,6 @@ connection::resolve( http_parser *parser )
 	
 	if ( m_request->expect() == "100-continue" )
 	{
-		fprintf( stderr, "sending 100-continue\n" );
 		response::ptr response = http::response::create( http_major(), http_minor(), http::status::cont, false );
 		put( response.get() );
 	}

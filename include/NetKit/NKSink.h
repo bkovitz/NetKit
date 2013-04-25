@@ -75,7 +75,7 @@ public:
 	
 protected:
 
-	virtual void
+	virtual bool
 	process( const std::uint8_t *buf, std::size_t len ) = 0;
 	
 	void
