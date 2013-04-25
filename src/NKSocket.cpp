@@ -31,10 +31,15 @@
 #include <NetKit/NKSocket.h>
 #include <NetKit/NKPlatform.h>
 #include <NetKit/NKLog.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <unistd.h>
-#include <fcntl.h>
+#if defined( WIN32 )
+#include <WinSock2.h>
+#include <WS2tcpip.h>
+#else
+#	include <sys/socket.h>
+#	include <arpa/inet.h>
+#	include <unistd.h>
+#	include <fcntl.h>
+#endif
 #include <thread>
 
 using namespace netkit;
@@ -84,10 +89,12 @@ socket::~socket()
 void
 socket::init()
 {
+	fprintf( stderr, "socket::init() for fd = %d\n", m_fd );
+
 	set_blocking( m_fd, false );
 	
-	m_send_event	= runloop::instance()->create( m_fd, runloop::event_mask::write );
 	m_recv_event	= runloop::instance()->create( m_fd, runloop::event_mask::read );
+	m_send_event	= runloop::instance()->create( m_fd, runloop::event_mask::write );
 }
 
 
@@ -95,13 +102,14 @@ int
 socket::start_connect( const endpoint::ptr &peer, bool &would_block )
 {
 	sockaddr_storage	addr;
+	std::size_t			len;
 	int					err;
+
+	len = peer->to_sockaddr( addr );
 	
-	peer->to_sockaddr( addr );
-	
-	err			= ::connect( m_fd, ( struct sockaddr* ) &addr, addr.ss_len );
-	would_block = ( err < 0 ) && ( platform::error() == ( int ) socket::error::in_progress ) ? true : false;
-	
+	err			= ::connect( m_fd, ( struct sockaddr* ) &addr, len );
+	would_block = ( err < 0 ) && ( ( platform::error() == ( int ) socket::error::in_progress ) || ( platform::error() == ( int ) socket::error::would_block ) ) ? true : false;
+	fprintf( stderr, "connect returns %d -> %d\n", err, platform::error() );
 	return err;
 }
 
@@ -129,7 +137,7 @@ socket::start_send( const std::uint8_t *buf, std::size_t len, bool &would_block 
 {
 	std::streamsize num;
 	
-	num			= ::send( m_fd, buf, len, 0 );
+	num			= ::send( m_fd, reinterpret_cast< const_buf_t >( buf ), len, 0 );
 	would_block = ( num < 0 ) && ( platform::error() == ( int ) socket::error::would_block ) ? true : false;
 
 fprintf( stderr, "start_send returned %d\n", num );
@@ -147,11 +155,11 @@ socket::start_recv( std::uint8_t *buf, std::size_t len, bool &would_block )
 {
 	std::streamsize num;
 	
-	fprintf( stderr, "start_recv: buffer length = %d\n", len );
-	num			= ::recv( m_fd, buf, len, 0 );
+	fprintf( stderr, "start_recv( %d ): buffer length = %d\n", m_fd, len );
+	num			= ::recv( m_fd, reinterpret_cast< buf_t >( buf ), len, 0 );
 	would_block = ( num < 0 ) && ( platform::error() == ( int ) socket::error::would_block ) ? true : false;
 	
-	fprintf( stderr, "start recv: %d  would block = %s\n", num, would_block ? "true" : "false" );
+	fprintf( stderr, "start recv: %d  would block = %s\n", ( int ) num, would_block ? "true" : "false" );
 	if ( ( num < 0 ) && ( !would_block ) )
 	{
 		nklog( log::error, "recv returned %d", platform::error() );
@@ -167,7 +175,7 @@ socket::set_blocking( native fd, bool block )
 #if defined( WIN32 )
 	u_long flags = block ? 0 : 1;
 
-	return ioctlsocket( fd, FIONBIO, &flags );
+	return ioctlsocket( fd, FIONBIO, &flags ) ? true : false;
 #else
 	int flags = block ? fcntl( fd, F_GETFL, 0 ) & ~O_NONBLOCK : fcntl( fd, F_GETFL, 0 ) | O_NONBLOCK;
 
@@ -179,6 +187,8 @@ socket::set_blocking( native fd, bool block )
 void
 socket::close()
 {
+	fprintf( stderr, "in socket::close for socket %d\n", m_fd );
+
 	for ( auto it = m_close_handlers.begin(); it != m_close_handlers.end(); it++ )
 	{
 		it->second();
@@ -429,11 +439,12 @@ acceptor::listen( int size )
 	sockaddr_storage	saddr	= { 0 };
 	sockaddr_storage	saddr2	= { 0 };
 	socklen_t			slen	= sizeof( sockaddr_storage );
+	std::size_t			len		= 0;
 	int					ret;
 	
-	m_endpoint->to_sockaddr( saddr );
+	len = m_endpoint->to_sockaddr( saddr );
 	
-	ret = ::bind( m_fd, ( struct sockaddr* ) &saddr, saddr.ss_len );
+	ret = ::bind( m_fd, ( struct sockaddr* ) &saddr, len );
 	
 	if ( ret != 0 )
 	{
@@ -572,7 +583,7 @@ ip::tcp::acceptor::~acceptor()
 void
 ip::tcp::acceptor::accept( accept_reply_f reply )
 {
-	auto event = runloop::instance()->create( m_fd, runloop::event_mask::accept );
+	auto event = runloop::instance()->create( m_fd, runloop::event_mask::read );
 	
 	runloop::instance()->schedule( event, [=]( runloop::event event )
 	{
@@ -591,7 +602,7 @@ ip::tcp::acceptor::accept( accept_reply_f reply )
 			
 		// new_sock->get_ethernet_addr();
 		
-			reply( 0, new_sock );
+			reply( 0, new_sock.get() );
 		}
 	} );
 }

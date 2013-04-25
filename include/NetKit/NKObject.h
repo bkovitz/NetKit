@@ -39,6 +39,19 @@
 #include <list>
 #include <map>
 
+#if defined(_WIN32) && !defined(EFI32) && !defined(EFI64)
+#   define NETKIT_STDCALL __stdcall
+#   if defined( NETKIT_SDK_EXPORTS )
+#       define NETKIT_DLL __declspec( dllexport )
+#   else
+//#       define NETKIT_DLL __declspec( dllimport )
+#		define NETKIT_DLL
+#   endif
+#else
+#   define NETKIT_STDCALL
+#   define NETKIT_DLL
+#endif
+
 namespace netkit {
 
 extern void initialize();

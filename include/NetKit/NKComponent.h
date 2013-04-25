@@ -37,7 +37,7 @@
 
 namespace netkit {
 
-class component : public object
+class NETKIT_DLL component : public object
 {
 public:
 
@@ -84,7 +84,7 @@ protected:
 	virtual
 	~component();
 	
-	enum status m_status;
+	enum class status m_status;
 	
 private:
 

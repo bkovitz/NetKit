@@ -36,7 +36,7 @@
 namespace netkit {
 
 template < class T >
-class intrusive_list
+class NETKIT_DLL intrusive_list
 {
 public:
 

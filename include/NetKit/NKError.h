@@ -31,7 +31,9 @@
 #ifndef _netkit_error_h
 #define _netkit_error_h
 
+#include <NetKit/NKObject.h>
 #include <string>
+#include <iostream>
 
 namespace netkit {
 
@@ -56,9 +58,14 @@ enum class status
 	internal_error		= -32604
 };
 
-std::string
+std::string NETKIT_DLL
 status_to_string( status v );
 
 }
+
+
+std::ostream& NETKIT_DLL
+operator<<(std::ostream &output, const netkit::status status );
+
 
 #endif

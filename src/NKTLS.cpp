@@ -33,18 +33,21 @@
 #include <NetKit/NKLog.h>
 #include <NetKit/NKPlatform.h>
 #include <NetKit/NKError.h>
+#if 0
 #include <sys/socket.h>
 #include <botan_all.h>
 #include <iostream>
 #include <fstream>
 #include <memory>
 #include <thread>
+#endif
 
 
 using namespace netkit;
-using namespace Botan;
+//using namespace Botan;
 
 
+#if 0
 
 bool value_exists(const std::vector<std::string>& vec,
                   const std::string& val)
@@ -334,8 +337,9 @@ public:
 
       std::map<Botan::X509_Certificate, Botan::Private_Key*> certs_and_keys;
 };
+#endif
 
-
+#if 0
 class tls_impl : public netkit::tls::adapter
 {
 public:
@@ -385,14 +389,16 @@ private:
 	TLS::Session_Manager_In_Memory	m_session;
 	Credentials_Manager_Simple		m_creds;
 };
+#endif
 
 
 tls::adapter::ptr
 tls::adapter::create()
 {
-	return new tls_impl;
+	return nullptr;
 }
 
+#if 0
 
 tls_impl::tls_impl()
 :
@@ -721,3 +727,4 @@ tls_impl::wait_for_connect_handshake( connect_reply_f reply )
 		} );
 	}
 }
+#endif

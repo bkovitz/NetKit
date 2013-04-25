@@ -47,7 +47,7 @@ sink::sink( const uri::ptr &uri )
 	{
 		if ( status == 0 )
 		{
-			m_source = sock;
+			m_source = sock.get();
 		}
 	} );
 }
@@ -55,6 +55,7 @@ sink::sink( const uri::ptr &uri )
 
 sink::~sink()
 {
+	fprintf( stderr, "in sink::~sink\n" );
 }
 
 
@@ -91,14 +92,18 @@ sink::unbind( tag t )
 void
 sink::connect( const uri::ptr &uri, source::connect_reply_f reply )
 {
-	m_source->connect( uri, [=]( int status, const endpoint::ptr &peer )
+	source::ptr source = new ip::tcp::socket;
+
+	fprintf( stderr, "before this = 0x%lx\n", this );
+	source->connect( uri, [=]( int status, const endpoint::ptr &peer )
 	{
-		reply( status, peer );
-		
+		fprintf( stderr, "after this = 0x%lx\n", this );
 		if ( status == 0 )
 		{
-			run();
+			bind( source );
 		}
+
+		reply( status, peer );
 	} );
 }
 
@@ -137,6 +142,7 @@ sink::run()
 		}
 		else
 		{
+			fprintf( stderr, "m_srouce->recv() returns %d\n", status );
 		}
 	} );
 }

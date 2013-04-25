@@ -31,6 +31,7 @@
 #ifndef _netkit_log_h
 #define _netkit_log_h
 
+#include <NetKit/NKObject.h>
 
 #if defined( WIN32 )
 
@@ -49,7 +50,7 @@
 
 namespace netkit {
 
-class log
+class NETKIT_DLL log
 {
 public:
 

@@ -37,7 +37,7 @@ namespace netkit {
 
 namespace tls {
 
-class adapter : public source::adapter
+class NETKIT_DLL adapter : public source::adapter
 {
 public:
 

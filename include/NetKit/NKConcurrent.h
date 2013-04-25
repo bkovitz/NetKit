@@ -39,7 +39,7 @@ namespace netkit {
 namespace concurrent {
 
 template < class Data >
-class queue
+class NETKIT_DLL queue
 {
 public:
 

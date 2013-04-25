@@ -31,20 +31,10 @@
 #include <NetKit/NKEndpoint.h>
 #include <NetKit/NKPlatform.h>
 #include <NetKit/NKLog.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <netdb.h>
 #include <sstream>
 #include <thread>
 
 using namespace netkit;
-
-
-inline bool
-operator==( sockaddr_storage s1, sockaddr_storage s2 )
-{
-    return ( s1.ss_len == s2.ss_len ) && ( memcmp( &s1, &s2, s1.ss_len ) == 0 );
-}
 
 #if defined( __APPLE__ )
 #	pragma mark endpoint implementation
@@ -131,27 +121,33 @@ ip::endpoint::~endpoint()
 }
 
 
-void
+std::size_t
 ip::endpoint::to_sockaddr( sockaddr_storage &addr ) const
 {
+	std::size_t len = 0;
+
 	if ( m_addr->is_v4() )
 	{
 		struct sockaddr_in *v4_addr = ( struct sockaddr_in* ) &addr;
 		
 		v4_addr->sin_family		= AF_INET;
-		v4_addr->sin_len		= sizeof( sockaddr_in );
 		v4_addr->sin_addr		= m_addr->to_v4().get();
 		v4_addr->sin_port		= htons( m_port );
+
+		len						= sizeof( sockaddr_in );
 	}
 	else if ( m_addr->is_v6() )
 	{
 		struct sockaddr_in6 *v6_addr = ( struct sockaddr_in6* ) &addr;
 		
 		v6_addr->sin6_family	= AF_INET6;
-		v6_addr->sin6_len		= sizeof( sockaddr_in6 );
 		v6_addr->sin6_addr		= m_addr->to_v6().get();
 		v6_addr->sin6_port		= htons( m_port );
+
+		len						= sizeof( sockaddr_in6 );
 	}
+
+	return len;
 }
 
 
@@ -189,7 +185,7 @@ ip::endpoint::to_string() const
 
 		DWORD buf_size = sizeof( buf );
 		
-		if ( WSAAddressToStringA( ( LPSOCKADDR ) &m_native, sizeof( m_native ), NULL, buf, &bufSize ) != 0 )
+		if ( WSAAddressToStringA( ( LPSOCKADDR ) &addr, sizeof( addr ), NULL, buf, &buf_size ) != 0 )
 
 #else
 

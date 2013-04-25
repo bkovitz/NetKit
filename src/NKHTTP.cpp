@@ -28,18 +28,18 @@
  *
  */
  
-#include "NKHTTP.h"
-#include "NKTLS.h"
-#include "NKBase64.h"
-#include "cstring.h"
-#include "NKPlatform.h"
-#include "NKLog.h"
+#include <NetKit/NKHTTP.h>
+#include <NetKit/NKTLS.h>
+#include <NetKit/NKBase64.h>
+#include <NetKit/cstring.h>
+#include <NetKit/NKPlatform.h>
+#include <NetKit/NKLog.h>
 #include <http_parser.h>
+#include <algorithm>
 #include <fstream>
 #include <regex>
 #include <assert.h>
 #include <stdarg.h>
-#include <openssl/ssl.h>
 #if defined(WIN32)
 #	include <shlwapi.h>
 #	include <tchar.h>
@@ -590,7 +590,7 @@ message::send_body( connection_ptr conn ) const
 #	pragma mark request implementation
 #endif
 
-request::request( std::uint16_t major, std::uint16_t minor, int method, const uri::ptr &uri )
+request::request( std::uint16_t major, std::uint16_t minor, int method, const netkit::uri::ptr &uri )
 :
 	message( major, minor ),
 	m_method( method ),
@@ -843,7 +843,7 @@ connection::http_minor() const
 
 
 bool
-connection::adopt( source::ptr source, const std::uint8_t *buf, size_t len )
+connection::adopt( netkit::source::ptr source, const std::uint8_t *buf, size_t len )
 {
 	bool ok = false;
 	
@@ -996,8 +996,6 @@ connection::header_field_was_received( http_parser *parser, const char *buf, siz
 		self->m_header_field.append( str );
 	}
 
-exit:
-
 	return ret;
 }
 
@@ -1031,11 +1029,11 @@ connection::headers_were_received( http_parser *parser )
 	
 	if ( !self->resolve( parser ) )
 	{
-		response::ptr response = new http::response( self->http_major(), self->http_minor(), http::status::not_found, false );
+		response::ptr response = http::response::create( self->http_major(), self->http_minor(), http::status::not_found, false );
 		response->add_to_header( "Connection", "Close" );
 		response->add_to_header( "Content-Type", "text/html" );
 		*response << "<html>Error 404: Content Not Found</html>";
-		self->put( response );
+		self->put( response.get() );
 		ret = -1;
 		goto exit;
 	}
@@ -1096,7 +1094,7 @@ connection::body_was_received( http_parser *parser, const char *buf, size_t len 
 	
 	return self->m_handler->m_rbwr( self->m_request, ( const uint8_t* ) buf, len, [=]( response::ptr response, bool upgrade, bool close )
 	{
-		self->put( response );
+		self->put( response.get() );
 		
 		if ( upgrade )
 		{
@@ -1125,7 +1123,7 @@ connection::message_was_received( http_parser *parser )
 	
 	return self->m_handler->m_r( self->m_request, [=]( response::ptr response, bool upgrade, bool close )
 	{
-		self->put( response );
+		self->put( response.get() );
 		
 		if ( upgrade )
 		{
@@ -1160,13 +1158,27 @@ connection::resolve( http_parser *parser )
 	{
 		for ( handler::list::iterator it2 = it->second.begin(); it2 != it->second.end(); it2++ )
 		{
-			std::regex regex1( ( *it2 )->m_path );
-			std::regex regex2( ( *it2 )->m_type );
+			fprintf( stderr, "m_path = %s\n", ( *it2 )->m_path.c_str() );
+			fprintf( stderr, "m_type = %s\n", ( *it2 )->m_type.c_str() );
 			
-			if ( std::regex_search( m_uri_value, regex1 ) && std::regex_search( m_content_type, regex2 ) )
+			try
 			{
-				m_handler = *it2;
-				break;
+				std::regex regex1( ( *it2 )->m_path );
+				std::regex regex2( regexify( ( *it2 )->m_type ) );
+			
+				if ( std::regex_search( m_uri_value, regex1 ) && std::regex_search( m_content_type, regex2 ) )
+				{
+					m_handler = *it2;
+					break;
+				}
+			}
+			catch ( std::exception &exc )
+			{
+				fprintf( stderr, "exc: %s\n", exc.what() );
+			}
+			catch ( ... )
+			{
+				fprintf( stderr, "cuaght\n" );
 			}
 		}
 	}
@@ -1183,7 +1195,7 @@ connection::resolve( http_parser *parser )
 	}
 	else
 	{
-		m_request = new http::request( http_major(), http_minor(), parser->method, new uri( m_uri_value ) );
+		m_request = http::request::create( http_major(), http_minor(), parser->method, new uri( m_uri_value ) );
 	}
 
 	if ( !m_request )
@@ -1197,8 +1209,8 @@ connection::resolve( http_parser *parser )
 	if ( m_request->expect() == "100-continue" )
 	{
 		fprintf( stderr, "sending 100-continue\n" );
-		response::ptr response = new http::response( http_major(), http_minor(), http::status::cont, false );
-		put( response );
+		response::ptr response = http::response::create( http_major(), http_minor(), http::status::cont, false );
+		put( response.get() );
 	}
 	
 	resolved = true;
@@ -1208,6 +1220,42 @@ exit:
 	return resolved;
 }
 
+
+static void
+replace( std::string& str, const std::string& oldStr, const std::string& newStr)
+{
+  size_t pos = 0;
+  while((pos = str.find(oldStr, pos)) != std::string::npos)
+  {
+     str.replace(pos, oldStr.length(), newStr);
+     pos += newStr.length();
+  }
+}
+
+
+std::string
+connection::regexify( const std::string &in )
+{
+	std::string out( in );
+
+	replace( out, "\\", "\\\\" );
+    replace( out, "^", "\\^");
+	replace( out, ".", "\\.");
+	replace( out, "$", "\\$");
+	replace( out, "|", "\\|");
+    replace( out, "(", "\\(");
+    replace( out, ")", "\\)");
+    replace( out, "[", "\\[");
+    replace( out, "]", "\\]");
+    replace( out, "*", "\\*");
+    replace( out, "+", "\\+");
+    replace( out, "?", "\\?");
+    replace( out, "/", "\\/");
+	replace( out, "\\?", ".");
+    replace( out, "\\*", ".*");
+
+	return out;
+}
 
 #if defined( __APPLE__ )
 #	pragma mark client implementation

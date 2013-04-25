@@ -32,12 +32,15 @@
 #define _netkit_runloop_h
 
 #include <NetKit/NKObject.h>
+#if defined( WIN32 )
+#	include <WinSock2.h>
+#endif
 #include <functional>
 #include <ctime>
 
 namespace netkit {
 
-class runloop : public object
+class NETKIT_DLL runloop : public object
 {
 public:
 
@@ -45,8 +48,6 @@ public:
 	
 	enum class event_mask
 	{
-		connect		= ( 1 << 0 ),
-		accept		= ( 1 << 1 ),
 		read		= ( 1 << 2 ),
 		write		= ( 1 << 3 ),
 		oob			= ( 1 << 4 ),
@@ -63,6 +64,13 @@ public:
 	
 	virtual event
 	create( int fd, event_mask m ) = 0;
+
+#if defined( WIN32 )
+
+	virtual event
+	create( HANDLE h ) = 0;
+
+#endif
 	
 	virtual event
 	create( std::time_t msec ) = 0;
@@ -96,6 +104,13 @@ operator|( netkit::runloop::event_mask a, netkit::runloop::event_mask b )
 {
 	typedef std::underlying_type< netkit::runloop::event_mask >::type enum_type;
 	return static_cast< netkit::runloop::event_mask >( static_cast< enum_type >( a ) | static_cast< enum_type >( b ) );
+}
+
+inline bool
+operator&( netkit::runloop::event_mask a, netkit::runloop::event_mask b )
+{
+	typedef std::underlying_type< netkit::runloop::event_mask >::type enum_type;
+	return ( static_cast< enum_type >( a ) & static_cast< enum_type >( b ) ) ? true : false;
 }
 
 #endif

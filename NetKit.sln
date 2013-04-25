@@ -1,13 +1,23 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NetKit DLL", "src\NetKit.vcxproj", "{C9F453BF-5237-4B58-9FBE-0B4FF7254D1A}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NetKit", "src\Win32\NetKit.vcxproj", "{C9F453BF-5237-4B58-9FBE-0B4FF7254D1A}"
+	ProjectSection(ProjectDependencies) = postProject
+		{A5F7EB50-D6D6-46C6-B974-0D492A9B8852} = {A5F7EB50-D6D6-46C6-B974-0D492A9B8852}
+		{4FD9D996-5CDA-4C2C-AE9D-0D69B28A84A0} = {4FD9D996-5CDA-4C2C-AE9D-0D69B28A84A0}
+		{46FDE6A0-5180-4D8D-81DA-32E2427B7ECF} = {46FDE6A0-5180-4D8D-81DA-32E2427B7ECF}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "uriparser", "ThirdParty\uriparser\uriparser.vcxproj", "{A5F7EB50-D6D6-46C6-B974-0D492A9B8852}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "http-parser", "ThirdParty\http-parser\http-parser.vcxproj", "{46FDE6A0-5180-4D8D-81DA-32E2427B7ECF}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "botan", "ThirdParty\botan\botan.vcxproj", "{88435F98-A5E7-4996-8BB2-93F3FE6545F6}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sqlite", "ThirdParty\sqlite\sqlite.vcxproj", "{4FD9D996-5CDA-4C2C-AE9D-0D69B28A84A0}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tests", "tests\Win32\tests.vcxproj", "{9A030256-EFC3-411A-8CC9-7C651D90016B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{C9F453BF-5237-4B58-9FBE-0B4FF7254D1A} = {C9F453BF-5237-4B58-9FBE-0B4FF7254D1A}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -41,14 +51,18 @@ Global
 		{46FDE6A0-5180-4D8D-81DA-32E2427B7ECF}.Release|Win32.Build.0 = Release|Win32
 		{46FDE6A0-5180-4D8D-81DA-32E2427B7ECF}.Release|x64.ActiveCfg = Release|x64
 		{46FDE6A0-5180-4D8D-81DA-32E2427B7ECF}.Release|x64.Build.0 = Release|x64
-		{88435F98-A5E7-4996-8BB2-93F3FE6545F6}.Debug|Win32.ActiveCfg = Debug|Win32
-		{88435F98-A5E7-4996-8BB2-93F3FE6545F6}.Debug|Win32.Build.0 = Debug|Win32
-		{88435F98-A5E7-4996-8BB2-93F3FE6545F6}.Debug|x64.ActiveCfg = Debug|x64
-		{88435F98-A5E7-4996-8BB2-93F3FE6545F6}.Debug|x64.Build.0 = Debug|x64
-		{88435F98-A5E7-4996-8BB2-93F3FE6545F6}.Release|Win32.ActiveCfg = Release|Win32
-		{88435F98-A5E7-4996-8BB2-93F3FE6545F6}.Release|Win32.Build.0 = Release|Win32
-		{88435F98-A5E7-4996-8BB2-93F3FE6545F6}.Release|x64.ActiveCfg = Release|x64
-		{88435F98-A5E7-4996-8BB2-93F3FE6545F6}.Release|x64.Build.0 = Release|x64
+		{4FD9D996-5CDA-4C2C-AE9D-0D69B28A84A0}.Debug|Win32.ActiveCfg = Debug|Win32
+		{4FD9D996-5CDA-4C2C-AE9D-0D69B28A84A0}.Debug|Win32.Build.0 = Debug|Win32
+		{4FD9D996-5CDA-4C2C-AE9D-0D69B28A84A0}.Debug|x64.ActiveCfg = Debug|x64
+		{4FD9D996-5CDA-4C2C-AE9D-0D69B28A84A0}.Release|Win32.ActiveCfg = Release|Win32
+		{4FD9D996-5CDA-4C2C-AE9D-0D69B28A84A0}.Release|Win32.Build.0 = Release|Win32
+		{4FD9D996-5CDA-4C2C-AE9D-0D69B28A84A0}.Release|x64.ActiveCfg = Release|Win32
+		{9A030256-EFC3-411A-8CC9-7C651D90016B}.Debug|Win32.ActiveCfg = Debug|Win32
+		{9A030256-EFC3-411A-8CC9-7C651D90016B}.Debug|Win32.Build.0 = Debug|Win32
+		{9A030256-EFC3-411A-8CC9-7C651D90016B}.Debug|x64.ActiveCfg = Debug|x64
+		{9A030256-EFC3-411A-8CC9-7C651D90016B}.Release|Win32.ActiveCfg = Release|Win32
+		{9A030256-EFC3-411A-8CC9-7C651D90016B}.Release|Win32.Build.0 = Release|Win32
+		{9A030256-EFC3-411A-8CC9-7C651D90016B}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

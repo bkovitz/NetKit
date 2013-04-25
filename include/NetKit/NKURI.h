@@ -38,7 +38,7 @@
 
 namespace netkit {
 
-class uri : public object
+class NETKIT_DLL uri : public object
 {
 public:
 

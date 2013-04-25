@@ -32,6 +32,9 @@
 
 using namespace netkit;
 
+#if defined( min )
+#	undef min
+#endif
 
 source::source()
 {
@@ -111,17 +114,20 @@ source::connect_internal_1( const uri::ptr &uri, connect_reply_f reply )
 			bool				would_block;
 			int					ret;
 			
-			ret = start_connect( endpoint, would_block );
+			ret = start_connect( endpoint.get(), would_block );
 			
 			if ( ret == 0 )
 			{
-				connect_internal_2( uri, endpoint, reply );
+				connect_internal_2( uri, endpoint.get(), reply );
 			}
 			else if ( would_block )
 			{
+				fprintf( stderr, "connect would block...scheduling write event\n" );
 				runloop::instance()->schedule( m_send_event, [=]( runloop::event event )
 				{
 					int ret;
+
+				fprintf( stderr, "got connect event\n" );
 
 					runloop::instance()->suspend( event );
 					
@@ -129,12 +135,13 @@ source::connect_internal_1( const uri::ptr &uri, connect_reply_f reply )
 					
 					if ( ret == 0 )
 					{
-						connect_internal_2( uri, endpoint, reply );
+						connect_internal_2( uri, endpoint.get(), reply );
 					}
 				} );
 			}
 			else
 			{
+				reply( ret, endpoint.get() );
 			}
 		}
 	} );
@@ -194,7 +201,7 @@ source::send_internal()
 		
 	if ( ret > 0 )
 	{
-		info->m_idx += ret;
+		info->m_idx += ( std::size_t ) ret;
 		
 		if ( info->m_idx == info->m_buf.size() )
 		{
@@ -279,7 +286,7 @@ source::recv_internal( std::uint8_t *in_buf, std::size_t in_len, bool peek, recv
 	
 			if ( status == 0 )
 			{
-				auto min = std::min( out_len, in_len );
+				std::size_t min = std::min( out_len, in_len );
 				
 				if ( out_len )
 				{
@@ -313,8 +320,10 @@ source::recv_internal( std::uint8_t *in_buf, std::size_t in_len, bool peek, recv
 	}
 	else if ( would_block )
 	{
+		fprintf( stderr, "schduling recv event\n" );
 		runloop::instance()->schedule( m_recv_event, [=]( runloop::event event )
 		{
+			fprintf( stderr, "got recv event\n" );
 			runloop::instance()->suspend( event );
 			recv_internal( in_buf, in_len, peek, reply );
 		} );

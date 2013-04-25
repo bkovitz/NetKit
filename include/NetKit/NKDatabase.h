@@ -74,7 +74,7 @@ public:
 };
 
 
-class statement : public netkit::object
+class NETKIT_DLL statement : public netkit::object
 {
 public:
 
@@ -98,7 +98,7 @@ public:
 
 
 template <class Type, class Ptr>
-class iterator
+class NETKIT_DLL iterator
 {
 public:
 
@@ -168,7 +168,7 @@ private:
 };
 
 
-class manager : public object {
+class NETKIT_DLL manager : public object {
 public:
 
 	typedef smart_ptr< manager > ptr;
@@ -202,7 +202,7 @@ public:
 };
 
 
-class object : public netkit::object
+class NETKIT_DLL object : public netkit::object
 {
 public:
 

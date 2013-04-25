@@ -35,7 +35,6 @@
 #include <NetKit/NKEndpoint.h>
 #include <NetKit/NKSource.h>
 #include <NetKit/NKSink.h>
-#include <initializer_list>
 #include <functional>
 #include <errno.h>
 #if defined( WIN32 )
@@ -48,7 +47,7 @@
 
 namespace netkit {
 
-class socket : public source
+class NETKIT_DLL socket : public source
 {
 public:
 
@@ -58,11 +57,15 @@ public:
 
 	typedef SOCKET native;
 	static const native null = INVALID_SOCKET;
+	typedef const char * const_buf_t;
+	typedef char* buf_t;
 
 #else
 
 	typedef int native;
 	static const native null = -1;
+	typedef const void* const_buf_t;
+	typedef void* buf_t;
 
 #endif
 	
@@ -145,7 +148,7 @@ protected:
 };
 
 
-class acceptor : public object
+class NETKIT_DLL acceptor : public object
 {
 public:
 
@@ -183,7 +186,7 @@ private:
 
 namespace ip {
 
-class socket : public netkit::socket
+class NETKIT_DLL socket : public netkit::socket
 {
 public:
 
@@ -201,7 +204,7 @@ protected:
 	socket( const socket &that );	// Not implemented
 };
 
-class acceptor : public netkit::acceptor
+class NETKIT_DLL acceptor : public netkit::acceptor
 {
 public:
 
@@ -222,7 +225,7 @@ private:
 
 namespace tcp {
 
-class socket : public ip::socket
+class NETKIT_DLL socket : public ip::socket
 {
 public:
 
@@ -241,7 +244,7 @@ protected:
 	std::string m_peer_ethernet_addr;
 };
 
-class acceptor : public ip::acceptor
+class NETKIT_DLL acceptor : public ip::acceptor
 {
 public:
 

@@ -29,19 +29,11 @@
 
 #include <NetKit/NKURI.h>
 #include <NetKit/NKAddress.h>
-#include <sys/socket.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <net/if.h>
-#include <net/if_dl.h>
-#include <netinet/in.h>
-#include <netdb.h>
-
 #include <deque>
 
 namespace netkit {
 
-class endpoint : public object
+class NETKIT_DLL endpoint : public object
 {
 public:
 
@@ -50,7 +42,7 @@ public:
 	static endpoint::ptr
 	from_sockaddr( const sockaddr_storage &addr );
 
-	virtual void
+	virtual std::size_t
 	to_sockaddr( sockaddr_storage &addr ) const = 0;
 	
 	virtual std::string
@@ -59,7 +51,7 @@ public:
 
 namespace ip {
 
-class endpoint : public netkit::endpoint
+class NETKIT_DLL endpoint : public netkit::endpoint
 {
 public:
 
@@ -80,7 +72,7 @@ public:
 	
 	virtual ~endpoint();
 	
-	virtual void
+	virtual std::size_t
 	to_sockaddr( sockaddr_storage &addr ) const;
 	
 	virtual std::string

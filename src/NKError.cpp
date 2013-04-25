@@ -153,3 +153,10 @@ netkit::status_to_string( netkit::status status )
 	
 	return s;
 }
+
+
+std::ostream&
+operator<<( std::ostream &output, const netkit::status status )
+{
+	return output << ( int ) status;
+}

@@ -40,7 +40,7 @@
 
 namespace netkit {
 
-class source : public object
+class NETKIT_DLL source : public object
 {
 public:
 

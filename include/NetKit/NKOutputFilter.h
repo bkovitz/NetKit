@@ -4,6 +4,10 @@
 #include <streambuf>
 #include <limits>
 
+#if defined( max )
+#	undef max
+#endif
+
 namespace netkit {
 
 template <typename T>
@@ -45,7 +49,7 @@ public:
 		}
 		else if ( m_destination )
 		{
-				assert( ch >= 0 && ch <= static_cast<int_type>(std::numeric_limits<unsigned char>::max()));
+				assert( ( ch >= 0 ) && ( ch <= static_cast< int_type >( std::numeric_limits< unsigned char >::max() ) ) );
 				result = m_inserter( *m_destination, ch );
 		}
 

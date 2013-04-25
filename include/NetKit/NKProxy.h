@@ -37,7 +37,7 @@
 
 namespace netkit {
 
-class proxy : public object
+class NETKIT_DLL proxy : public object
 {
 public:
 

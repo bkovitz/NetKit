@@ -1388,7 +1388,7 @@ value::load( const std::string &s )
 
 value::value()
 :
-	m_type(type::null)
+	m_kind(type::null)
 {
 	m_data.m_string = NULL;
 }
@@ -1396,7 +1396,7 @@ value::value()
 
 value::value(std::istream &input)
 :
-	m_type(type::null)
+	m_kind(type::null)
 {
 	load_from_stream(input);
 }
@@ -1404,7 +1404,7 @@ value::value(std::istream &input)
 
 value::value(const std::string &newString)
 :
-	m_type( type::string ),
+	m_kind( type::string ),
 	m_data( new std::string(newString))
 {
 }
@@ -1412,7 +1412,7 @@ value::value(const std::string &newString)
 
 value::value(const char *newCString)
 :
-	m_type( type::string ),
+	m_kind( type::string ),
 	m_data( new std::string(newCString))
 {
 }
@@ -1420,7 +1420,7 @@ value::value(const char *newCString)
 
 value::value( std::int8_t val )
 :
-	m_type( type::integer ),
+	m_kind( type::integer ),
 	m_data( new std::uint64_t( val ) )
 {
 }
@@ -1428,7 +1428,7 @@ value::value( std::int8_t val )
 
 value::value( std::uint8_t val )
 :
-	m_type( type::integer ),
+	m_kind( type::integer ),
 	m_data( new std::uint64_t( val ) )
 {
 }
@@ -1436,7 +1436,7 @@ value::value( std::uint8_t val )
 
 value::value( std::int16_t val )
 :
-	m_type( type::integer ),
+	m_kind( type::integer ),
 	m_data( new std::uint64_t( val ) )
 {
 }
@@ -1444,7 +1444,7 @@ value::value( std::int16_t val )
 
 value::value( std::uint16_t val )
 :
-	m_type( type::integer ),
+	m_kind( type::integer ),
 	m_data( new std::uint64_t( val ) )
 {
 }
@@ -1452,7 +1452,7 @@ value::value( std::uint16_t val )
 
 value::value( std::int32_t val )
 :
-	m_type( type::integer ),
+	m_kind( type::integer ),
 	m_data( new std::uint64_t( val ) )
 {
 }
@@ -1460,7 +1460,7 @@ value::value( std::int32_t val )
 
 value::value( std::uint32_t val )
 :
-	m_type( type::integer ),
+	m_kind( type::integer ),
 	m_data( new std::uint64_t( val ) )
 {
 }
@@ -1468,7 +1468,7 @@ value::value( std::uint32_t val )
 
 value::value( std::int64_t val )
 :
-	m_type( type::integer ),
+	m_kind( type::integer ),
 	m_data( new std::uint64_t( val ) )
 {
 }
@@ -1476,7 +1476,7 @@ value::value( std::int64_t val )
 
 value::value( std::uint64_t val )
 :
-	m_type( type::integer ),
+	m_kind( type::integer ),
 	m_data( new std::uint64_t( val ) )
 {
 }
@@ -1484,7 +1484,7 @@ value::value( std::uint64_t val )
 
 value::value( status v )
 :
-	m_type( type::integer ),
+	m_kind( type::integer ),
 	m_data( new std::uint64_t( ( std::uint64_t ) v ) )
 {
 }
@@ -1492,7 +1492,7 @@ value::value( status v )
 
 value::value(double newDouble)
 :
-	m_type( type::real ),
+	m_kind( type::real ),
 	m_data(new double(newDouble))
 {
 }
@@ -1500,15 +1500,15 @@ value::value(double newDouble)
 
 value::value(bool newBoolean)
 :
-	m_type( type::boolean ),
+	m_kind( type::boolean ),
 	m_data(new bool(newBoolean))
 {
 }
 
 
-value::value( enum type t )
+value::value( type t )
 :
-	m_type( t )
+	m_kind( t )
 {
 	switch ( t )
 	{
@@ -1581,13 +1581,13 @@ value::equal( const value &v ) const
 		goto exit;
 	}
 	
-	if ( m_type != v.m_type)
+	if ( m_kind != v.m_kind)
 	{
 		result = false;
 		goto exit;
 	}
 	
-	switch ( m_type )
+	switch ( m_kind )
 	{
 		case type::string:
 		{
@@ -1647,9 +1647,9 @@ exit:
 void
 value::assign( const value &v )
 {
-	m_type = v.m_type;
+	m_kind = v.m_kind;
 	
-	switch ( m_type )
+	switch ( m_kind )
 	{
 		case type::string:
 			m_data.m_string = new std::string( *v.m_data.m_string);
@@ -1676,7 +1676,7 @@ value::assign( const value &v )
 			break;
 
 		default:
-			m_type = type::null;
+			m_kind = type::null;
 			break;
 	}
 }
@@ -1717,9 +1717,9 @@ value::operator<(const value &rhs) const
 
 	if (this != &rhs)
 	{
-		if ( m_type == rhs.m_type)
+		if ( m_kind == rhs.m_kind)
 		{
-			switch ( m_type )
+			switch ( m_kind )
 			{
 				case type::string:
 					result = (*m_data.m_string < *m_data.m_string);
@@ -1769,8 +1769,8 @@ value::operator>(const value &rhs) const
 		bool result = false;
 
 		if (this != &rhs) {
-			if ( m_type == rhs.m_type) {
-				switch (m_type) {
+			if ( m_kind == rhs.m_kind) {
+				switch (m_kind) {
 				case type::string:
 					result = (*m_data.m_string > *m_data.m_string);
 					break;
@@ -1823,10 +1823,10 @@ value::operator[](const char *key)
 value::ptr
 value::operator[](const object_map::key_type &key)
 {
-	if ( m_type != type::object )
+	if ( m_kind != type::object )
 	{
 		clear();
-		m_type = type::object;
+		m_kind = type::object;
 		m_data.m_object = new object_map();
 	}
 
@@ -1837,10 +1837,10 @@ value::operator[](const object_map::key_type &key)
 value::ptr
 value::operator[](array_map::size_type index)
 {
-	if (m_type != type::array )
+	if (m_kind != type::array )
 	{
 		clear();
-		m_type = type::array;
+		m_kind = type::array;
 		m_data.m_array = new array_map(index + 1);
 	}
 
@@ -1848,45 +1848,45 @@ value::operator[](array_map::size_type index)
 }
 
 
-enum value::type
-value::type() const
+value::type
+value::kind() const
 {
-	return m_type;
+	return m_kind;
 }
 
 
 bool
 value::is_string() const
 {
-	return ( m_type == type::string );
+	return ( m_kind == type::string );
 }
 
 
 bool
 value::is_integer() const
 {
-	return m_type == type::integer;
+	return m_kind == type::integer;
 }
 
 
 bool
 value::is_status() const
 {
-	return m_type == type::integer;
+	return m_kind == type::integer;
 }
 
 
 bool
 value::is_real() const
 {
-	return m_type == type::real;
+	return m_kind == type::real;
 }
 
 
 bool
 value::is_member( const std::string &key ) const
 {
-	if ( m_type == type::object )
+	if ( m_kind == type::object )
 	{
 		auto it = m_data.m_object->find( key );
 		return ( it != m_data.m_object->end() );
@@ -1918,49 +1918,49 @@ value::all_keys() const
 bool
 value::is_object() const
 {
-	return m_type == type::object;
+	return m_kind == type::object;
 }
 
 
 bool
 value::is_array() const
 {
-	return m_type == type::array;
+	return m_kind == type::array;
 }
 
 
 bool
 value::is_bool() const
 {
-	return m_type == type::boolean;
+	return m_kind == type::boolean;
 }
 
 
 bool
 value::is_null() const
 {
-	return m_type == type::null;
+	return m_kind == type::null;
 }
 
 
 std::string
 value::as_string( const std::string &default_value ) const
 {
-	return ( m_type == type::string ) ? *m_data.m_string : default_value;
+	return ( m_kind == type::string ) ? *m_data.m_string : default_value;
 }
 
 
 void
 value::set_string(std::string const &newString)
 {
-	if (m_type == type::string)
+	if (m_kind == type::string)
 	{
 		*m_data.m_string = newString;
 	}
 	else
 	{
 		clear();
-		m_type = type::string;
+		m_kind = type::string;
 		m_data.m_string = new std::string(newString);
 	}
 }
@@ -1969,77 +1969,77 @@ value::set_string(std::string const &newString)
 std::int8_t
 value::as_int8( std::int8_t default_value ) const
 {
-	return ( m_type == type::integer ) ? *m_data.m_integer : default_value;
+	return ( m_kind == type::integer ) ? ( std::int8_t ) *m_data.m_integer : default_value;
 }
 
 
 std::uint8_t
 value::as_uint8( std::uint8_t default_value ) const
 {
-	return ( m_type == type::integer ) ? *m_data.m_integer : default_value;
+	return ( m_kind == type::integer ) ? ( std::uint8_t ) *m_data.m_integer : default_value;
 }
 
 
 std::int16_t
 value::as_int16( std::int16_t default_value ) const
 {
-	return ( m_type == type::integer ) ? *m_data.m_integer : default_value;
+	return ( m_kind == type::integer ) ? ( std::int16_t ) *m_data.m_integer : default_value;
 }
 
 
 std::uint16_t
 value::as_uint16( std::uint16_t default_value ) const
 {
-	return ( m_type == type::integer ) ? *m_data.m_integer : default_value;
+	return ( m_kind == type::integer ) ? ( std::uint16_t ) *m_data.m_integer : default_value;
 }
 
 
 std::int32_t
 value::as_int32( std::int32_t default_value ) const
 {
-	return ( m_type == type::integer ) ? ( std::int32_t ) *m_data.m_integer : default_value;
+	return ( m_kind == type::integer ) ? ( std::int32_t ) *m_data.m_integer : default_value;
 }
 
 
 std::uint32_t
 value::as_uint32( std::uint32_t default_value ) const
 {
-	return ( m_type == type::integer ) ? ( std::uint32_t ) *m_data.m_integer : default_value;
+	return ( m_kind == type::integer ) ? ( std::uint32_t ) *m_data.m_integer : default_value;
 }
 
 
 std::int64_t
 value::as_int64( std::int64_t default_value ) const
 {
-	return ( m_type == type::integer ) ? *m_data.m_integer : default_value;
+	return ( m_kind == type::integer ) ? *m_data.m_integer : default_value;
 }
 
 
 std::uint64_t
 value::as_uint64( std::uint64_t default_value ) const
 {
-	return ( m_type == type::integer ) ? *m_data.m_integer : default_value;
+	return ( m_kind == type::integer ) ? *m_data.m_integer : default_value;
 }
 
 
 status
 value::as_status( status default_value ) const
 {
-	return ( m_type == type::integer ) ? ( status ) *m_data.m_integer : default_value;
+	return ( m_kind == type::integer ) ? ( status ) *m_data.m_integer : default_value;
 }
 
 
 void
 value::set_integer( std::int64_t newInt)
 {
-	if (m_type == type::integer)
+	if (m_kind == type::integer)
 	{
 		*m_data.m_integer = newInt;
 	}
 	else
 	{
 		clear();
-		m_type = type::integer;
+		m_kind = type::integer;
 		m_data.m_integer = new std::uint64_t( newInt );
 	}
 }
@@ -2048,21 +2048,21 @@ value::set_integer( std::int64_t newInt)
 double
 value::as_real( double default_value ) const
 {
-	return ( m_type == type::real ) ? *m_data.m_real : default_value;
+	return ( m_kind == type::real ) ? *m_data.m_real : default_value;
 }
 
 
 void
 value::set_real(double newDouble)
 {
-	if (m_type == type::real)
+	if (m_kind == type::real)
 	{
 		*m_data.m_real = newDouble;
 	}
 	else
 	{
 		clear();
-		m_type = type::real;
+		m_kind = type::real;
 		m_data.m_real = new double(newDouble);
 	}
 }
@@ -2071,14 +2071,14 @@ value::set_real(double newDouble)
 void
 value::set_object(const object_map &newobject)
 {
-	if (m_type == type::object)
+	if (m_kind == type::object)
 	{
 		*m_data.m_object = newobject;
 	}
 	else
 	{
 		clear();
-		m_type = type::object;
+		m_kind = type::object;
 		m_data.m_object = new object_map(newobject);
 	}
 }
@@ -2087,14 +2087,14 @@ value::set_object(const object_map &newobject)
 void
 value::set_array(const array_map &newarray)
 {
-	if (m_type == type::array)
+	if (m_kind == type::array)
 	{
 		*m_data.m_array = newarray;
 	}
 	else
 	{
 		clear();
-		m_type = type::array;
+		m_kind = type::array;
 		m_data.m_array = new array_map(newarray);
 	}
 }
@@ -2103,10 +2103,10 @@ value::set_array(const array_map &newarray)
 bool
 value::append( const value::ptr &v )
 {
-	if ( m_type != type::array )
+	if ( m_kind != type::array )
 	{
 		clear();
-		m_type = type::array;
+		m_kind = type::array;
 		m_data.m_array = new array_map;
 	}
 	
@@ -2118,11 +2118,11 @@ value::append( const value::ptr &v )
 size_t
 value::size() const
 {
-	if ( m_type == type::array )
+	if ( m_kind == type::array )
 	{
 		return m_data.m_array->size();
 	}
-	else if ( m_type == type::object )
+	else if ( m_kind == type::object )
 	{
 		return m_data.m_object->size();
 	}
@@ -2136,21 +2136,21 @@ value::size() const
 bool
 value::as_bool( bool default_value ) const
 {
-	return ( m_type == type::boolean ) ? *m_data.m_bool : default_value;
+	return ( m_kind == type::boolean ) ? *m_data.m_bool : default_value;
 }
 
 
 void
 value::set_bool(bool newBoolean)
 {
-	if (m_type == type::boolean)
+	if (m_kind == type::boolean)
 	{
 		*m_data.m_bool = newBoolean;
 	}
 	else
 	{
 		clear();
-		m_type = type::boolean;
+		m_kind = type::boolean;
 		m_data.m_bool = new bool(newBoolean);
 	}
 }
@@ -2159,7 +2159,7 @@ value::set_bool(bool newBoolean)
 void value::set_null()
 {
 	clear();
-	m_type = type::null;
+	m_kind = type::null;
 	m_data.m_string = NULL;
 }
 
@@ -2664,10 +2664,10 @@ value::read_array(std::istream &input, array_map &result)
 			{
 				input.putback(currentChar);
 				result.push_back(new value);
-				result.back()->m_type = type::unknown;
+				result.back()->m_kind = type::unknown;
 				result.back()->load_from_stream(input);
 
-				if (result.back()->m_type == type::unknown)
+				if (result.back()->m_kind == type::unknown)
 				{
 					result.pop_back();
 				}
@@ -2785,7 +2785,7 @@ value::read_to_non_white_space(std::istream &input, char &currentCharacter)
 void
 value::clear()
 {
-	switch ( m_type )
+	switch ( m_kind )
 	{
 		case type::string:
 		{
@@ -2882,7 +2882,7 @@ netkit::operator<<(std::ostream &output, const value::ptr &v)
 std::ostream&
 netkit::json::operator<<(std::ostream &output, const value &v)
 {
-	switch (v.type())
+	switch ( v.kind() )
 	{
 		case value::type::string:
 			output << structural::BEGIN_END_STRING << value::escape_minimum_characters( v.as_string() ) << structural::BEGIN_END_STRING;
@@ -3392,11 +3392,10 @@ server::reply_with_error( reply_f r, netkit::status status, bool upgrade, bool c
 #	pragma mark client implementation
 #endif
 
-client::client( source::ptr source )
+client::client()
 :
 	m_connection( new connection )
 {
-	m_connection->bind( source );
 }
 
 

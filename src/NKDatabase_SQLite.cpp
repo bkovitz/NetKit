@@ -67,7 +67,7 @@ manager_impl::is_connected() const
 }
 
 
-enum status
+netkit::status
 manager_impl::exec( const std::string &str )
 {
 	char *error = NULL;
@@ -136,7 +136,9 @@ database::manager_impl::add_observer( const std::string &tableName, observer *o 
 	}
 	else
 	{
-		list l = { o };
+		list l;
+
+		l.push_back( 0 );
 		
 		m_omap[ tableName ] = l;
 	}

@@ -52,13 +52,13 @@ TEST_CASE( "NetKit/http/server/1", "http server tests" )
 		{
 			REQUIRE( status == 0 );
 			REQUIRE( len > 0 );
-			REQUIRE( http::connection::adopt( sock, g_buf, len ) );
+			REQUIRE( http::connection::adopt( sock.get(), g_buf, len ) );
 		} );
 	} );
 	
 	http::connection::bind( http::method::get, "/found", "*", [=]( http::request::ptr request, http::connection::response_f reply )
 	{
-		http::response::ptr response = new http::response( request->major(), request->minor(), 200, false );
+		http::response::ptr response = http::response::create( request->major(), request->minor(), 200, false );
 		
 		response->add_to_header( "Content-Type", "text/plain" );
 		response->add_to_header( "Content-Length", 5 );
@@ -72,7 +72,7 @@ TEST_CASE( "NetKit/http/server/1", "http server tests" )
 	
 	os << "http://127.0.0.1:" << acceptor->endpoint()->port() << "/found";
 	
-	request	= new http::request( 1, 1, http::method::get, new uri( os.str() ) );
+	request	= http::request::create( 1, 1, http::method::get, new uri( os.str() ) );
 	
 	http::client::send( request, [=]( int32_t error, const http::response::ptr &response )
 	{
@@ -101,13 +101,13 @@ TEST_CASE( "NetKit/http/server/2", "http server tests" )
 		{
 			REQUIRE( status == 0 );
 			REQUIRE( len > 0 );
-			REQUIRE( http::connection::adopt( sock, g_buf, len ) );
+			REQUIRE( http::connection::adopt( sock.get(), g_buf, len ) );
 		} );
 	} );
 	
 	http::connection::bind( http::method::get, "/found", "*", [=]( http::request::ptr request, http::connection::response_f func )
 	{
-		http::response::ptr response = new http::response( request->major(), request->minor(), 200, false );
+		http::response::ptr response = http::response::create( request->major(), request->minor(), 200, false );
 		
 		func( response, false, false );
 		
@@ -116,7 +116,7 @@ TEST_CASE( "NetKit/http/server/2", "http server tests" )
 	
 	os << "http://127.0.0.1:" << acceptor->endpoint()->port() << "/notfound";
 	
-	request	= new http::request( 1, 1, http::method::get, new uri( os.str() ) );
+	request	= http::request::create( 1, 1, http::method::get, new uri( os.str() ) );
 	
 	http::client::send( request, [&]( int32_t error, const http::response::ptr &response )
 	{

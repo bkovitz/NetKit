@@ -31,13 +31,14 @@
 #ifndef _netkit_base64_h
 #define _netkit_base64_h
 
+#include <NetKit/NKObject.h>
 #include <string>
 
 namespace netkit {
 
 namespace codec {
 
-class base64
+class NETKIT_DLL base64
 {
 public:
 

@@ -38,7 +38,7 @@
 
 namespace netkit {
 
-class sink : public object
+class NETKIT_DLL sink : public object
 {
 public:
 

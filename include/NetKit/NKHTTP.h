@@ -53,7 +53,7 @@ typedef smart_ptr< connection > connection_ptr;
 
 struct method
 {
-	static std::string
+	static std::string NETKIT_DLL
 	to_string( std::uint8_t val );
 	
 	static const std::uint8_t delet;
@@ -87,7 +87,7 @@ struct method
 
 struct status
 {
-	static std::string
+	static std::string NETKIT_DLL
 	to_string( std::uint16_t val );
 	
 	static const std::uint16_t error;
@@ -137,7 +137,7 @@ struct status
 };
 
 
-class message : public object
+class NETKIT_DLL message : public object
 {
 public:
 
@@ -248,15 +248,14 @@ protected:
 };
 
 
-class request : public message
+class NETKIT_DLL request : public message
 {
 public:
 
 	typedef smart_ptr< request > ptr;
 
-	request( std::uint16_t major, std::uint16_t minor, int method, const uri::ptr &uri );
-	
-	request( const request &that );
+	static request::ptr
+	create( std::uint16_t major, std::uint16_t minor, int method, const uri::ptr &uri );
 
 	virtual ~request();
 	
@@ -319,6 +318,18 @@ public:
 	{
 		m_proxy = proxy;
 	}
+
+	inline bool
+	redirect() const
+	{
+		return m_redirect;
+	}
+
+	inline void
+	set_redirect( bool val )
+	{
+		m_redirect = val;
+	}
 	
 	inline bool
 	secure() const
@@ -349,6 +360,10 @@ public:
 	
 protected:
 
+	request( std::uint16_t major, std::uint16_t minor, int method, const uri::ptr &uri );
+	
+	request( const request &that );
+
 	void
 	init();
 
@@ -357,6 +372,7 @@ protected:
 	int				m_method;
 	uri::ptr		m_uri;
 	proxy::ptr		m_proxy;
+	bool			m_redirect;
 	bool			m_secure;
 	std::string		m_host;
 	std::string		m_expect;
@@ -367,15 +383,14 @@ protected:
 };
 
 
-class response : public message
+class NETKIT_DLL response : public message
 {
 public:
 
 	typedef smart_ptr< response > ptr;
 
-	response( std::uint16_t major, std::uint16_t minor, std::uint16_t status, bool keep_alive );
-	
-	response( const response &that );
+	static response::ptr
+	create( std::uint16_t major, std::uint16_t minor, std::uint16_t status, bool keep_alive );
 
 	virtual ~response();
 
@@ -394,7 +409,11 @@ public:
 	virtual void
 	send_prologue( connection_ptr conn ) const;
 
-private:
+protected:
+
+	response( std::uint16_t major, std::uint16_t minor, std::uint16_t status, bool keep_alive );
+	
+	response( const response &that );
 
 	void
 	init();
@@ -403,7 +422,7 @@ private:
 };
 
 	
-class connection : public sink
+class NETKIT_DLL connection : public sink
 {
 public:
 
@@ -554,6 +573,9 @@ protected:
 	
 	bool
 	resolve( http_parser *parser );
+
+	std::string
+	regexify( const std::string &s );
 	
 	friend void					netkit::initialize();
 	
@@ -588,7 +610,7 @@ protected:
 };
 
 
-class client : public object
+class NETKIT_DLL client : public object
 {
 public:
 

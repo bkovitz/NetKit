@@ -32,9 +32,6 @@
 #include <NetKit/NKRunLoop.h>
 #include <NetKit/NKPlatform.h>
 #include <NetKit/NKLog.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <netdb.h>
 #include <sstream>
 #include <thread>
 
@@ -44,7 +41,7 @@ using namespace netkit;
 inline bool
 operator==( sockaddr_storage s1, sockaddr_storage s2 )
 {
-    return ( s1.ss_len == s2.ss_len ) && ( memcmp( &s1, &s2, s1.ss_len ) == 0 );
+    return memcmp( &s1, &s2, sizeof( sockaddr_storage ) ) == 0;
 }
 
 #if defined( __APPLE__ )
@@ -230,7 +227,14 @@ ip::address::to_string() const
 	{
 #if defined( WIN32 )
 
-		if ( WSAAddressToStringA( ( LPSOCKADDR ) &m_native, sizeof( m_native ), NULL, buf, &bufSize ) != 0 )
+		sockaddr_in	addr;
+		DWORD		buf_size = sizeof( buf );
+
+		memset( &addr, 0, sizeof( addr ) );
+		addr.sin_family	= AF_INET;
+		addr.sin_addr	= m_addr.m_v4;
+
+		if ( WSAAddressToStringA( ( LPSOCKADDR ) &addr, sizeof( addr ), NULL, buf, &buf_size ) != 0 )
 		
 #else
 	
@@ -245,7 +249,14 @@ ip::address::to_string() const
 	{
 #if defined( WIN32 )
 
-		if ( WSAAddressToStringA( ( LPSOCKADDR ) &m_native, sizeof( m_native ), NULL, buf, &bufSize ) != 0 )
+		sockaddr_in6	addr;
+		DWORD			buf_size = sizeof( buf );
+
+		memset( &addr, 0, sizeof( addr ) );
+		addr.sin6_family	= AF_INET;
+		addr.sin6_addr		= m_addr.m_v6;
+
+		if ( WSAAddressToStringA( ( LPSOCKADDR ) &m_addr, sizeof( m_addr ), NULL, buf, &buf_size ) != 0 )
 
 #else
 

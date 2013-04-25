@@ -73,7 +73,7 @@ namespace netkit {
 
 namespace json {
 
-class value : public netkit::object
+class NETKIT_DLL value : public netkit::object
 {
 public:
 
@@ -153,7 +153,7 @@ public:
 
 	value( const value &v );
 	
-	value( enum type t );
+	value( enum class type t );
 
 	~value();
 	
@@ -191,7 +191,7 @@ public:
 	operator[](size_t index);
 
 	type
-	type() const;
+	kind() const;
 
 	bool
 	is_string() const;
@@ -360,11 +360,11 @@ private:
 	void
 	output(std::ostream &output, bool indent = true, bool escapeAll = false) const;
 
-	enum type	m_type;
-	data		m_data;
+	type	m_kind;
+	data	m_data;
 };
 
-class escaper
+class NETKIT_DLL escaper
 {
 public:
 
@@ -379,7 +379,7 @@ private:
 };
 
 
-class connection : public sink
+class NETKIT_DLL connection : public sink
 {
 public:
 
@@ -499,7 +499,7 @@ protected:
 };
 
 
-class server
+class NETKIT_DLL server
 {
 public:
 
@@ -541,14 +541,14 @@ private:
 };
 
 
-class client : public object
+class NETKIT_DLL client : public object
 {
 public:
 
 	typedef std::function< void ( netkit::status error_code, const std::string &error_message, json::value::ptr result ) >	reply_f;
 	typedef smart_ptr< client >																								ptr;
 
-	client( source::ptr source );
+	client();
 	
 	client( const connection::ptr &conn );
 	
@@ -577,16 +577,16 @@ protected:
 	connection::ptr m_connection;
 };
 
-std::ostream&
+std::ostream& NETKIT_DLL
 operator<<(std::ostream &output, const array_map &a);
 
-std::ostream&
+std::ostream& NETKIT_DLL
 operator<<(std::ostream& output, const object_map& o);
 
-std::ostream&
+std::ostream& NETKIT_DLL
 operator<<( std::ostream &os, const std::vector< json::value::ptr > &a );
 
-std::ostream&
+std::ostream& NETKIT_DLL
 operator<<( std::ostream &os, const std::map< std::string, json::value::ptr > &m );
 
 }
@@ -753,7 +753,7 @@ public:
 	inline bool
 	operator==( const smart_ptr<json::value> &that )
 	{
-		fprintf( stderr, "comparing %d to %d\n", m_ref->type(), that.m_ref->type() );
+		fprintf( stderr, "comparing %d to %d\n", m_ref->kind(), that.m_ref->kind() );
 		return ( *m_ref == *that.m_ref );
 	}
 

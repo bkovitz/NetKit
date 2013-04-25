@@ -33,18 +33,23 @@
 
 #include <NetKit/NKObject.h>
 #include <NetKit/NKExpected.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <net/if.h>
-#include <net/if_dl.h>
-#include <netinet/in.h>
-#include <netdb.h>
+#if defined( WIN32 )
+#	include <WinSock2.h>
+#	include <Ws2tcpip.h>
+#else
+#	include <sys/socket.h>
+#	include <arpa/inet.h>
+#	include <net/if.h>
+#	include <net/if_dl.h>
+#	include <netinet/in.h>
+#	include <netdb.h>
+#endif
 #include <deque>
 
 
 namespace netkit {
 
-class address : public object
+class NETKIT_DLL address : public object
 {
 public:
 
@@ -106,8 +111,6 @@ public:
 
 	virtual std::string
 	to_string() const;
-	
-	
 	
 	virtual bool
 	equals( const object &that ) const;

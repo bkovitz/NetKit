@@ -28,8 +28,8 @@
  *
  */
  
-#include "NKURI.h"
-#include "cstring.h"
+#include <NetKit/NKURI.h>
+#include <NetKit/cstring.h>
 #include <uriparser/Uri.h>
 #include <string>
 #include <algorithm>
@@ -127,6 +127,7 @@ uri::recompose() const
 {
 	std::string	ret;
 	UriUriStructA	uri;
+	std::string		port;
 	strings			components;
 	strings			encodedComponents;
 	char			*str	= NULL;
@@ -142,11 +143,10 @@ uri::recompose() const
 	
 	if ( m_port != 0 )
 	{
-		char buf[ 12 ];
-		
-		sprintf( buf, "%d", m_port );
-		uri.portText.first		= buf;
-		uri.portText.afterLast	= buf + strlen( buf );
+		port = std::to_string( m_port );
+
+		uri.portText.first		= port.c_str();
+		uri.portText.afterLast	= port.c_str() + port.size();
 	}
 	
 	components = split( m_path, '/' );
@@ -156,7 +156,7 @@ uri::recompose() const
 		UriPathSegmentA **path = &uri.pathHead;
 		int index = 0;
 		
-		for ( std::vector< std::string>::iterator it = components.begin(); it != components.end(); it++ )
+		for ( auto it = components.begin(); it != components.end(); it++ )
 		{
 			encodedComponents.push_back( encode( *it ) );
 			*path = ( UriPathSegmentA* ) malloc( sizeof ( UriPathSegmentA ) );

@@ -132,7 +132,7 @@ public:
 	{
 		new( &m_storage ) std::exception_ptr( std::move( exception ) );
     }
-
+/*
 	template <typename F, typename = decltype(std::declval<F>()())>
 	inline expected( F function )
 	:
@@ -148,6 +148,7 @@ public:
             new( &m_storage ) std::exception_ptr( std::current_exception() );
         }
     }
+*/
 
 	inline ~expected()
 	{
@@ -302,6 +303,7 @@ namespace detail {
 	}
 }
 
+/*
 template <typename T, typename... Args>
 inline expected<T>
 make_expected(Args&&... args)
@@ -311,6 +313,7 @@ make_expected(Args&&... args)
 		return T( std::forward< Args >( args )... );
     });
 }
+*/
 
 
 template <typename T>

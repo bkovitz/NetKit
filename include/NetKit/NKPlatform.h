@@ -31,6 +31,7 @@
 #ifndef _netkit_platform_h
 #define _netkit_platform_h
 
+#include <NetKit/NKObject.h>
 #include <string>
 
 #if defined( WIN32 )
@@ -53,19 +54,19 @@ namespace netkit {
 
 namespace platform {
 
-std::string
+std::string NETKIT_DLL
 machine_name();
 
-std::string
+std::string NETKIT_DLL
 machine_description();
 
-std::string
+std::string NETKIT_DLL
 machine_id();
 
-std::string
+std::string NETKIT_DLL
 uuid();
 
-bool
+bool NETKIT_DLL
 create_folder( const std::string& folder );
 
 inline int
