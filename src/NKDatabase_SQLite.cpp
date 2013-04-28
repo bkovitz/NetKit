@@ -48,6 +48,7 @@ manager::instance()
 
 manager_impl::manager_impl( sqlite3 * db )
 :
+	m_tags( 1 ),
 	m_db( db )
 {
 	sqlite3_update_hook( m_db, database_was_changed, this );
@@ -125,20 +126,21 @@ exit:
 }
 
 
-void
-database::manager_impl::add_observer( const std::string &tableName, observer *o )
+database::manager::tag
+database::manager_impl::add_observer( const std::string &tableName, observer_reply_f reply )
 {
-	auto it = m_omap.find( tableName );
+	auto	it	= m_omap.find( tableName );
+	tag		t	= reinterpret_cast< tag >( ++m_tags );
 	
 	if ( it != m_omap.end() )
 	{
-		it->second.push_back( o );
+		it->second.push_back( std::make_pair( t, reply ) );
 	}
 	else
 	{
 		list l;
 
-		l.push_back( 0 );
+		l.push_back( std::make_pair( t, reply ) );
 		
 		m_omap[ tableName ] = l;
 	}
@@ -147,19 +149,27 @@ database::manager_impl::add_observer( const std::string &tableName, observer *o 
 		
 	while ( stmt->step() )
 	{
-		o->object_was_updated( tableName, stmt->int64_at_column( 0 ) );
+		reply( database::manager::observer_flags::update, stmt->int64_at_column( 0 ) );
 	}
+
+	return t;
 }
 		
 
 void
-database::manager_impl::remove_observer( const std::string &tableName, observer * o )
+database::manager_impl::remove_observer( const std::string &tableName, tag t )
 {
-	map::iterator it = m_omap.find( tableName );
+	auto it1 = m_omap.find( tableName );
 	
-	if ( it != m_omap.end() )
+	if ( it1 != m_omap.end() )
 	{
-		it->second.remove( o );
+		for ( auto it2 = it1->second.begin(); it2 != it1->second.end(); it2++ )
+		{
+			if ( it2->first == t )
+			{
+				it1->second.erase( it2 );
+			}
+		} 
 	}
 }
 
@@ -172,20 +182,20 @@ database::manager_impl::database_was_changed( void* context, int action, const c
 
 	if ( it1 != self->m_omap.end() )
 	{
-		for ( list::iterator it2 = it1->second.begin(); it2 != it1->second.end(); it2++ )
+		for ( auto it2 = it1->second.begin(); it2 != it1->second.end(); it2++ )
 		{
 			switch ( action )
 			{
 				 case SQLITE_INSERT:
 				 case SQLITE_UPDATE:
 				 {
-					( *it2 )->object_was_updated( table_name, oid );
+					it2->second( observer_flags::update, oid );
 				 }
 				 break;
 				 
 				 case SQLITE_DELETE:
 				 {
-					( *it2 )->object_was_removed( table_name, oid );
+					it2->second( observer_flags::delet, oid );
 				 }
 				 break;
 			}

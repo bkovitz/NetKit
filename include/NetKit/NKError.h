@@ -55,6 +55,7 @@ enum class status
 	method_not_found	= -32601,
 	invalid_params		= -32602,
 	uninitialized		= -32603,
+	not_logged_in		= -32604,
 	internal_error		= -32604
 };
 

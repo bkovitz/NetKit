@@ -47,6 +47,7 @@
 #include <NetKit/NKRunLoop.h>
 #include <NetKit/NKSource.h>
 #include <NetKit/NKSink.h>
+#include <NetKit/NKUnicode.h>
 #include <NetKit/NKTLS.h>
 #include <NetKit/NKProxy.h>
 #include <NetKit/NKLog.h>

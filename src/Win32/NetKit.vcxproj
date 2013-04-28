@@ -90,8 +90,9 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\..\include;..\..\ThirdParty\http-parser\git;..\..\ThirdParty\uriparser\git\include;..\..\ThirdParty\sqlite;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\include;..\..\ThirdParty\http-parser;..\..\ThirdParty\uriparser\include;..\..\ThirdParty\sqlite;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -101,19 +102,38 @@
     <Lib>
       <TargetMachine>MachineX86</TargetMachine>
     </Lib>
+    <PreBuildEvent>
+      <Command>IF EXIST ..\..\ThirdParty\http-parser GOTO URIPARSER
+   git clone git://github.com/joyent/http-parser.git ../../ThirdParty/http-parser
+:URIPARSER
+
+IF EXIST ..\..\ThirdParty\uriparser GOTO DONE
+    git clone git://uriparser.git.sourceforge.net/gitroot/uriparser/uriparser ../../ThirdParty/uriparser
+:DONE</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\..\include;..\..\ThirdParty\http-parser\git;..\..\ThirdParty\uriparser\git\include;..\..\ThirdParty\sqlite;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\include;..\..\ThirdParty\http-parser;..\..\ThirdParty\uriparser\include;..\..\ThirdParty\sqlite;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>ws2_32.lib;$(SolutionDir)\DerivedData\Products\$(Platform)\$(Configuration)\uriparser.lib;$(SolutionDir)\DerivedData\Products\$(Platform)\$(Configuration)\http-parser.lib;$(SolutionDir)\DerivedData\Products\$(Platform)\$(Configuration)\sqlite.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(SolutionDir)\DerivedData\Products\$(Platform)\$(Configuration)\NetKit.dll</OutputFile>
     </Link>
+    <PreBuildEvent>
+      <Command>IF EXIST ..\..\ThirdParty\http-parser GOTO URIPARSER
+   git clone git://github.com/joyent/http-parser.git ../../ThirdParty/http-parser
+:URIPARSER
+
+IF EXIST ..\..\ThirdParty\uriparser GOTO DONE
+    git clone git://uriparser.git.sourceforge.net/gitroot/uriparser/uriparser ../../ThirdParty/uriparser
+:DONE</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -121,8 +141,9 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>..\..\include;..\..\ThirdParty\http-parser\git;..\..\ThirdParty\uriparser\git\include;..\..\ThirdParty\sqlite;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\include;..\..\ThirdParty\http-parser;..\..\ThirdParty\uriparser\include;..\..\ThirdParty\sqlite;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -134,6 +155,15 @@
     <Lib>
       <TargetMachine>MachineX86</TargetMachine>
     </Lib>
+    <PreBuildEvent>
+      <Command>IF EXIST ..\..\ThirdParty\http-parser GOTO URIPARSER
+   git clone git://github.com/joyent/http-parser.git ../../ThirdParty/http-parser
+:URIPARSER
+
+IF EXIST ..\..\ThirdParty\uriparser GOTO DONE
+    git clone git://uriparser.git.sourceforge.net/gitroot/uriparser/uriparser ../../ThirdParty/uriparser
+:DONE</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -141,8 +171,9 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>..\..\include;..\..\ThirdParty\http-parser\git;..\..\ThirdParty\uriparser\git\include;..\..\ThirdParty\sqlite;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\include;..\..\ThirdParty\http-parser;..\..\ThirdParty\uriparser\include;..\..\ThirdParty\sqlite;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -151,8 +182,33 @@
       <AdditionalDependencies>ws2_32.lib;$(SolutionDir)\DerivedData\Products\$(Platform)\$(Configuration)\uriparser.lib;$(SolutionDir)\DerivedData\Products\$(Platform)\$(Configuration)\http-parser.lib;$(SolutionDir)\DerivedData\Products\$(Platform)\$(Configuration)\sqlite.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(SolutionDir)\DerivedData\Products\$(Platform)\$(Configuration)\NetKit.dll</OutputFile>
     </Link>
+    <PreBuildEvent>
+      <Command>IF EXIST ..\..\ThirdParty\http-parser GOTO URIPARSER
+   git clone git://github.com/joyent/http-parser.git ../../ThirdParty/http-parser
+:URIPARSER
+
+IF EXIST ..\..\ThirdParty\uriparser GOTO DONE
+    git clone git://uriparser.git.sourceforge.net/gitroot/uriparser/uriparser ../../ThirdParty/uriparser
+:DONE</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\ThirdParty\http-parser\http_parser.c" />
+    <ClCompile Include="..\..\ThirdParty\sqlite\sqlite3.c" />
+    <ClCompile Include="..\..\ThirdParty\uriparser\src\UriCommon.c" />
+    <ClCompile Include="..\..\ThirdParty\uriparser\src\UriCompare.c" />
+    <ClCompile Include="..\..\ThirdParty\uriparser\src\UriEscape.c" />
+    <ClCompile Include="..\..\ThirdParty\uriparser\src\UriFile.c" />
+    <ClCompile Include="..\..\ThirdParty\uriparser\src\UriIp4.c" />
+    <ClCompile Include="..\..\ThirdParty\uriparser\src\UriIp4Base.c" />
+    <ClCompile Include="..\..\ThirdParty\uriparser\src\UriNormalize.c" />
+    <ClCompile Include="..\..\ThirdParty\uriparser\src\UriNormalizeBase.c" />
+    <ClCompile Include="..\..\ThirdParty\uriparser\src\UriParse.c" />
+    <ClCompile Include="..\..\ThirdParty\uriparser\src\UriParseBase.c" />
+    <ClCompile Include="..\..\ThirdParty\uriparser\src\UriQuery.c" />
+    <ClCompile Include="..\..\ThirdParty\uriparser\src\UriRecompose.c" />
+    <ClCompile Include="..\..\ThirdParty\uriparser\src\UriResolve.c" />
+    <ClCompile Include="..\..\ThirdParty\uriparser\src\UriShorten.c" />
     <ClCompile Include="..\NKAddress.cpp" />
     <ClCompile Include="..\NKBase64.cpp" />
     <ClCompile Include="..\NKComponent.cpp" />
@@ -208,6 +264,18 @@
     <ClInclude Include="..\..\include\NetKit\NKUnicode.h" />
     <ClInclude Include="..\..\include\NetKit\NKURI.h" />
     <ClInclude Include="..\..\include\NetKit\NKWebSocket.h" />
+    <ClInclude Include="..\..\ThirdParty\http-parser\http_parser.h" />
+    <ClInclude Include="..\..\ThirdParty\sqlite\sqlite3.h" />
+    <ClInclude Include="..\..\ThirdParty\uriparser\include\uriparser\Uri.h" />
+    <ClInclude Include="..\..\ThirdParty\uriparser\include\uriparser\UriBase.h" />
+    <ClInclude Include="..\..\ThirdParty\uriparser\include\uriparser\UriDefsAnsi.h" />
+    <ClInclude Include="..\..\ThirdParty\uriparser\include\uriparser\UriDefsConfig.h" />
+    <ClInclude Include="..\..\ThirdParty\uriparser\include\uriparser\UriDefsUnicode.h" />
+    <ClInclude Include="..\..\ThirdParty\uriparser\include\uriparser\UriIp4.h" />
+    <ClInclude Include="..\..\ThirdParty\uriparser\src\UriCommon.h" />
+    <ClInclude Include="..\..\ThirdParty\uriparser\src\UriIp4Base.h" />
+    <ClInclude Include="..\..\ThirdParty\uriparser\src\UriNormalizeBase.h" />
+    <ClInclude Include="..\..\ThirdParty\uriparser\src\UriParseBase.h" />
     <ClInclude Include="..\NKDatabase_SQLite.h" />
     <ClInclude Include=".\CRC32.h" />
     <ClInclude Include=".\EventLog.h" />

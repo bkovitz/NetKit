@@ -62,18 +62,6 @@ extern std::string
 sanitize( const std::string &str );
 
 
-class observer
-{
-public:
-	
-	virtual void
-	object_was_updated( const std::string &table, int64_t oid ) = 0;
-	
-	virtual void
-	object_was_removed( const std::string &table, int64_t oid ) = 0;
-};
-
-
 class NETKIT_DLL statement : public netkit::object
 {
 public:
@@ -171,7 +159,18 @@ private:
 class NETKIT_DLL manager : public object {
 public:
 
+	struct observer_flags
+	{
+		enum
+		{
+			update,
+			delet
+		};
+	};
+
+	typedef std::function< void ( std::int32_t flags, std::uint64_t oid ) > observer_reply_f;
 	typedef smart_ptr< manager > ptr;
+	typedef void*				tag;
 	
 	static bool
 	create( const uri::ptr &uri );
@@ -182,11 +181,11 @@ public:
 	virtual bool
 	is_connected() const = 0;
 
-	virtual void
-	add_observer( const std::string &table_name, observer *o ) = 0;
+	virtual tag
+	add_observer( const std::string &table_name, observer_reply_f reply ) = 0;
 	
 	virtual void
-	remove_observer( const std::string &table_name, observer *o ) = 0;
+	remove_observer( const std::string &table_name, tag t ) = 0;
 
 	virtual netkit::status
 	exec( const std::string &str ) = 0;
