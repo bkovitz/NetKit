@@ -1,7 +1,7 @@
 #ifndef _netkit_database_h
 #define _netkit_database_h
 
-#include <NetKit/NKSmartPtr.h>
+#include <NetKit/NKSmartRef.h>
 #include <NetKit/NKCookie.h>
 #include <NetKit/NKComponent.h>
 #include <NetKit/NKURI.h>
@@ -12,7 +12,7 @@
 
 
 #define DECLARE_PERSISTENT_OBJECT( NAME, TABLENAME )		\
-typedef netkit::database::iterator< NAME, ptr > iterator;	\
+typedef netkit::database::iterator< NAME, ref > iterator;	\
 static const std::string&							\
 table_name()										\
 {													\
@@ -32,25 +32,25 @@ count()												\
 static iterator										\
 find()												\
 {													\
-	return netkit::database::object::find<NAME, ptr>();		\
+	return netkit::database::object::find<NAME, ref>();		\
 }													\
-static ptr											\
+static ref											\
 find( int64_t oid )									\
 {													\
-	return netkit::database::object::find<NAME, ptr>( oid );	\
+	return netkit::database::object::find<NAME, ref>( oid );	\
 }													\
-static ptr											\
+static ref											\
 find( const std::string &uuid )						\
 {													\
-	return netkit::database::object::find<NAME, ptr>( uuid );	\
+	return netkit::database::object::find<NAME, ref>( uuid );	\
 }													\
 template <class T>									\
 static iterator										\
 find( const std::string &key, T val )				\
 {													\
-	return netkit::database::object::find<NAME, ptr>( key, val );	\
+	return netkit::database::object::find<NAME, ref>( key, val );	\
 }													\
-NAME( const netkit::database::statement::ptr &stmt );\
+NAME( const netkit::database::statement::ref &stmt );\
 static bool initialize();							\
 virtual bool save() const;
 
@@ -78,7 +78,7 @@ class NETKIT_DLL statement : public netkit::object
 {
 public:
 
-	typedef smart_ptr< statement > ptr;
+	typedef smart_ref< statement > ref;
 
 	virtual bool
 	step() = 0;
@@ -106,7 +106,7 @@ public:
 	{
 	}
 
-	iterator( const statement::ptr &stmt )
+	iterator( const statement::ref &stmt )
 	:
 		m_stmt( stmt )
 	{
@@ -125,7 +125,7 @@ public:
 	}
 	
 	iterator&
-	operator=( const statement::ptr &stmt )
+	operator=( const statement::ref &stmt )
 	{
 		m_stmt = stmt;
 		
@@ -164,7 +164,7 @@ public:
 private:
 
 	Ptr				m_object;
-	statement::ptr	m_stmt;
+	statement::ref	m_stmt;
 };
 
 
@@ -172,12 +172,12 @@ class NETKIT_DLL manager : public object {
 public:
 
 	typedef std::function< void ( std::int32_t action, const oids &oids ) > observer_reply_f;
-	typedef smart_ptr< manager >											ptr;
+	typedef smart_ref< manager >											ref;
 	
 	static bool
-	create( const uri::ptr &uri );
+	create( const uri::ref &uri );
 	
-	static manager::ptr
+	static manager::ref
 	instance();
 	
 	virtual bool
@@ -192,7 +192,7 @@ public:
 	virtual netkit::status
 	exec( const std::string &str ) = 0;
 
-	virtual statement::ptr
+	virtual statement::ref
 	select( const std::string &str ) = 0;
 	
 	virtual int64_t
@@ -207,7 +207,7 @@ class NETKIT_DLL object : public netkit::object
 {
 public:
 
-	typedef smart_ptr< object > ptr;
+	typedef smart_ref< object > ref;
 	typedef int64_t oid_t;
 
 	object()
@@ -217,7 +217,7 @@ public:
 	{
 	}
 
-	object( const database::statement::ptr &stmt )
+	object( const database::statement::ref &stmt )
 	:
 		m_oid( stmt->int64_at_column( 0 ) ),
 		m_uuid( stmt->text_at_column( 1 ) ),
@@ -240,7 +240,7 @@ public:
 	count()
 	{
 		std::ostringstream	os;
-		statement::ptr		stmt;
+		statement::ref		stmt;
 		int					rows = 0;
 		
 		os << "SELECT COUNT(*) FROM " << Type::table_name() << ";";
@@ -263,7 +263,7 @@ public:
 
 		os << "SELECT * FROM " << Type::table_name() << ";";
 
-		statement::ptr s = manager::instance()->select( os.str() );
+		statement::ref s = manager::instance()->select( os.str() );
 
 		return iterator<Type, Ptr>( s );
 	}
@@ -273,7 +273,7 @@ public:
 	find( int64_t oid )
 	{
 		std::ostringstream	os;
-		statement::ptr		stmt;
+		statement::ref		stmt;
 		Type			*	t;
 		
 		os << "SELECT * FROM " << Type::table_name() << " WHERE oid = " << oid << ";";
@@ -297,7 +297,7 @@ public:
 	find( const std::string &uuid )
 	{
 		std::ostringstream	os;
-		statement::ptr		stmt;
+		statement::ref		stmt;
 		Type			*	t;
 		
 		os << "SELECT * FROM " << Type::table_name() << " WHERE uuid LIKE '" << sanitize( uuid ) << "';";
@@ -324,7 +324,7 @@ public:
 
 		os << "SELECT * FROM " << Type::table_name() << " WHERE " << key << "=" << val << ";";
 
-		statement::ptr s = manager::instance()->select( os.str() );
+		statement::ref s = manager::instance()->select( os.str() );
 
 		return iterator<Type, Ptr>( s );
 	}
@@ -337,7 +337,7 @@ public:
 
 		os << "SELECT * FROM " << Type::table_name() << " WHERE " << key << "=" << val << ";";
 
-		statement::ptr s = manager::instance()->select( os.str() );
+		statement::ref s = manager::instance()->select( os.str() );
 
 		return iterator<Type, Ptr>( s );
 	}
@@ -350,7 +350,7 @@ public:
 
 		os << "SELECT * FROM " << Type::table_name() << " WHERE " << key << " LIKE '" << sanitize( val ) << "';";
 
-		statement::ptr s = manager::instance()->select( os.str() );
+		statement::ref s = manager::instance()->select( os.str() );
 
 		return iterator<Type, Ptr>( s );
 	}
@@ -363,7 +363,7 @@ public:
 
 		os << "SELECT * FROM " << Type::table_name() << " WHERE " << key << " LIKE '" << sanitize( val ) << "';";
 
-		statement::ptr s = manager::instance()->select( os.str() );
+		statement::ref s = manager::instance()->select( os.str() );
 
 		return iterator<Type, Ptr>( s );
 	}

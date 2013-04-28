@@ -258,7 +258,7 @@ IF EXIST ..\..\ThirdParty\uriparser GOTO DONE
     <ClInclude Include="..\..\include\NetKit\NKProxy.h" />
     <ClInclude Include="..\..\include\NetKit\NKRunLoop.h" />
     <ClInclude Include="..\..\include\NetKit\NKSink.h" />
-    <ClInclude Include="..\..\include\NetKit\NKSmartPtr.h" />
+    <ClInclude Include="..\..\include\NetKit\NKSmartRef.h" />
     <ClInclude Include="..\..\include\NetKit\NKSocket.h" />
     <ClInclude Include="..\..\include\NetKit\NKSource.h" />
     <ClInclude Include="..\..\include\NetKit\NKTLS.h" />

@@ -14,10 +14,10 @@ using namespace netkit::database;
 #	pragma mark database::manager_impl implementation
 #endif
 
-static manager::ptr g_manager;
+static manager::ref g_manager;
 
 bool
-manager::create( const uri::ptr &uri )
+manager::create( const uri::ref &uri )
 {
 	sqlite3	*db;
 	int		err;
@@ -39,7 +39,7 @@ manager::create( const uri::ptr &uri )
 }
 
 
-manager::ptr
+manager::ref
 manager::instance()
 {
 	return g_manager;
@@ -90,7 +90,7 @@ manager_impl::exec( const std::string &str )
 }
 
 
-database::statement::ptr
+database::statement::ref
 database::manager_impl::select( const std::string &str )
 {
 	sqlite3_stmt *stmt;

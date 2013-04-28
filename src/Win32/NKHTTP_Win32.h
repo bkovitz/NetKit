@@ -14,17 +14,17 @@ class request_win32 : public request
 {
 public:
 
-	typedef smart_ptr< request_win32 > ptr;
+	typedef smart_ref< request_win32 > ref;
 
 	request_win32( std::uint16_t major, std::uint16_t minor, int method, const std::string &uri );
 	
-	request_win32( std::uint16_t major, std::uint16_t minor, int method, const uri::ptr &uri );
+	request_win32( std::uint16_t major, std::uint16_t minor, int method, const uri::ref &uri );
 
 	request_win32( const request_win32 &that );
 
 	virtual ~request_win32();
 
-	request::ptr
+	request::ref
 	copy() const;
 
 	inline HINTERNET
@@ -91,7 +91,7 @@ class response_win32 : public response
 {
 public:
 
-	typedef smart_ptr< response_win32 > ptr;
+	typedef smart_ref< response_win32 > ref;
 
 	response_win32( std::uint16_t major, std::uint16_t minor, std::uint16_t status, bool keep_alive );
 
@@ -99,7 +99,7 @@ public:
 
 	virtual ~response_win32();
 
-	response::ptr
+	response::ref
 	copy() const;
 
 	char buf[ 4192 ];
@@ -112,10 +112,10 @@ class client_win32 : public client
 {
 public:
 
-	typedef smart_ptr< client_win32 > ptr;
+	typedef smart_ref< client_win32 > ref;
 	typedef client super;
 
-	client_win32( const request::ptr &request, auth_f handler, response_f reply );
+	client_win32( const request::ref &request, auth_f handler, response_f reply );
 
 	void
 	send_request();
@@ -148,8 +148,8 @@ private:
 	void
 	reply( DWORD error );
 
-	request_win32::ptr		m_request;
-	response_win32::ptr		m_response;
+	request_win32::ref		m_request;
+	response_win32::ref		m_response;
 	std::uint8_t			m_scratch[ 4192 ];
 	HINTERNET				m_session_handle;
 	uint32_t				m_resolve_timeout;

@@ -37,9 +37,9 @@ class NETKIT_DLL endpoint : public object
 {
 public:
 
-	typedef smart_ptr< endpoint > ptr;
+	typedef smart_ref< endpoint > ref;
 	
-	static endpoint::ptr
+	static endpoint::ref
 	from_sockaddr( const sockaddr_storage &addr );
 
 	virtual std::size_t
@@ -55,8 +55,8 @@ class NETKIT_DLL endpoint : public netkit::endpoint
 {
 public:
 
-	typedef smart_ptr< endpoint > ptr;
-	typedef std::deque< ptr > list;
+	typedef smart_ref< endpoint > ref;
+	typedef std::deque< ref > list;
 	
 public:
 
@@ -66,9 +66,9 @@ public:
 	
 	endpoint( const sockaddr_storage &addr );
 	
-	endpoint( const uri::ptr &uri );
+	endpoint( const uri::ref &uri );
 	
-	endpoint( const address::ptr &host, uint16_t port );
+	endpoint( const address::ref &host, uint16_t port );
 	
 	virtual ~endpoint();
 	
@@ -78,7 +78,7 @@ public:
 	virtual std::string
 	to_string() const;
 	
-	inline const address::ptr&
+	inline const address::ref&
 	addr() const
 	{
 		return m_addr;
@@ -95,7 +95,7 @@ public:
 
 protected:
 
-	address::ptr	m_addr;
+	address::ref	m_addr;
 	std::uint16_t	m_port;
 };
 

@@ -31,7 +31,7 @@
 #ifndef _netkit_object_h
 #define _netkit_object_h
 
-#include <NetKit/NKSmartPtr.h>
+#include <NetKit/NKSmartRef.h>
 #include <NetKit/NKExpected.h>
 #include <cstdint>
 #include <atomic>
@@ -62,8 +62,8 @@ class object
 public:
 
 	typedef std::map< std::string, std::string > keyvals;
-	typedef smart_ptr< object > ptr;
-	typedef std::list< ptr > list;
+	typedef smart_ref< object > ref;
+	typedef std::list< ref > list;
 
 	virtual expected< std::int32_t >
 	int_for_key( const std::string &key ) const;

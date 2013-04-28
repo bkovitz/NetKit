@@ -40,10 +40,10 @@ using namespace netkit;
 #	pragma mark endpoint implementation
 #endif
 
-endpoint::ptr
+endpoint::ref
 endpoint::from_sockaddr( const sockaddr_storage &addr )
 {
-	endpoint::ptr ret;
+	endpoint::ref ret;
 	
 	if ( ( addr.ss_family == AF_INET ) || ( addr.ss_family == AF_INET6 ) )
 	{
@@ -103,12 +103,12 @@ ip::endpoint::endpoint( const sockaddr_storage &addr )
 }
 
 	
-ip::endpoint::endpoint( const uri::ptr &uri )
+ip::endpoint::endpoint( const uri::ref &uri )
 {
 }
 
 	
-ip::endpoint::endpoint( const address::ptr &addr, uint16_t port )
+ip::endpoint::endpoint( const address::ref &addr, uint16_t port )
 :
 	m_addr( addr ),
 	m_port( port )

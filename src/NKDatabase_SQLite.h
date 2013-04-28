@@ -22,7 +22,7 @@ class statement_impl : public statement
 {
 public:
 
-	typedef smart_ptr< statement > ptr;
+	typedef smart_ref< statement > ref;
 
 	statement_impl( sqlite3_stmt *stmt )
 	:
@@ -95,7 +95,7 @@ public:
 	virtual netkit::status
 	exec( const std::string &str );
 
-	virtual statement::ptr
+	virtual statement::ref
 	select( const std::string &str );
 	
 	virtual int64_t

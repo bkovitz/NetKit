@@ -8,8 +8,8 @@
 
 using namespace netkit::http;
 
-request::ptr
-request::create( std::uint16_t major, std::uint16_t minor, int method, const netkit::uri::ptr &uri )
+request::ref
+request::create( std::uint16_t major, std::uint16_t minor, int method, const netkit::uri::ref &uri )
 {
 	return new request_win32( major, minor, method, uri );
 }
@@ -24,7 +24,7 @@ request_win32::request_win32( std::uint16_t major, std::uint16_t minor, int meth
 }
 
 
-request_win32::request_win32( std::uint16_t major, std::uint16_t minor, int method, const netkit::uri::ptr& u )
+request_win32::request_win32( std::uint16_t major, std::uint16_t minor, int method, const netkit::uri::ref& u )
 :
 	request( major, minor, method, u ),
 	m_connect_handle( NULL ),
@@ -56,14 +56,14 @@ request_win32::~request_win32()
 }
 
 
-request::ptr
+request::ref
 request_win32::copy() const
 {
 	return new request_win32( *this );
 }
 
 
-response::ptr
+response::ref
 response::create( std::uint16_t major, std::uint16_t minor, std::uint16_t status, bool keep_alive )
 {
 	return new response_win32( major, minor, status, keep_alive );
@@ -84,7 +84,7 @@ response_win32::response_win32( const response_win32 &that )
 }
 
 
-response::ptr
+response::ref
 response_win32::copy() const
 {
 	return new response_win32( *this );
@@ -95,7 +95,7 @@ response_win32::~response_win32()
 {
 }
 
-client_win32::client_win32( const request::ptr &request, auth_f handler, response_f reply )
+client_win32::client_win32( const request::ref &request, auth_f handler, response_f reply )
 :
 	client( request, handler, reply ),
 	m_session_handle( NULL ),
@@ -199,9 +199,9 @@ client_win32::callback( HINTERNET handle, DWORD_PTR context, DWORD code, void* i
 
 
 void
-client::send( const request::ptr &request, response_f response_func )
+client::send( const request::ref &request, response_f response_func )
 {
-    client_win32 *self = new client_win32( request, [=]( request::ptr &request, uint32_t status )
+    client_win32 *self = new client_win32( request, [=]( request::ref &request, uint32_t status )
     {
         return false;
     }, response_func );

@@ -43,7 +43,7 @@ public:
 
 	typedef adapter *ptr;
 	
-	static adapter::ptr
+	static adapter::ref
 	create();
 };
 

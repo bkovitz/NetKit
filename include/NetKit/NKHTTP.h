@@ -49,7 +49,7 @@ namespace netkit {
 namespace http {
 
 class connection;
-typedef smart_ptr< connection > connection_ptr;
+typedef smart_ref< connection > connection_ref;
 
 struct method
 {
@@ -143,7 +143,7 @@ public:
 
 	typedef std::list< std::pair< std::string, std::string > > header;
 	
-	typedef smart_ptr< message > ptr;
+	typedef smart_ref< message > ref;
 	
 public:
 
@@ -231,10 +231,10 @@ public:
 	}
 	
 	virtual void
-	send_prologue( connection_ptr conn ) const = 0;
+	send_prologue( connection_ref conn ) const = 0;
 	
 	virtual bool
-	send_body( connection_ptr conn ) const;
+	send_body( connection_ref conn ) const;
 	
 protected:
 
@@ -252,10 +252,10 @@ class NETKIT_DLL request : public message
 {
 public:
 
-	typedef smart_ptr< request > ptr;
+	typedef smart_ref< request > ref;
 
-	static request::ptr
-	create( std::uint16_t major, std::uint16_t minor, int method, const uri::ptr &uri );
+	static request::ref
+	create( std::uint16_t major, std::uint16_t minor, int method, const uri::ref &uri );
 
 	virtual ~request();
 	
@@ -295,7 +295,7 @@ public:
 		return m_method;
 	}
 	
-	inline const uri::ptr&
+	inline const uri::ref&
 	uri() const
 	{
 		return m_uri;
@@ -307,14 +307,14 @@ public:
 		return m_expect;
 	}
 	
-	inline const proxy::ptr&
+	inline const proxy::ref&
 	proxy() const
 	{
 		return m_proxy;
 	}
 	
 	inline void
-	set_proxy( const proxy::ptr &proxy )
+	set_proxy( const proxy::ref &proxy )
 	{
 		m_proxy = proxy;
 	}
@@ -344,7 +344,7 @@ public:
 	}
 		
 	virtual void
-	send_prologue( connection_ptr conn ) const;
+	send_prologue( connection_ref conn ) const;
 	
 	inline int32_t
 	tries() const
@@ -360,7 +360,7 @@ public:
 	
 protected:
 
-	request( std::uint16_t major, std::uint16_t minor, int method, const uri::ptr &uri );
+	request( std::uint16_t major, std::uint16_t minor, int method, const uri::ref &uri );
 	
 	request( const request &that );
 
@@ -370,8 +370,8 @@ protected:
 	std::string		m_peer_host;
 	std::string		m_peer_ethernet_addr;
 	int				m_method;
-	uri::ptr		m_uri;
-	proxy::ptr		m_proxy;
+	uri::ref		m_uri;
+	proxy::ref		m_proxy;
 	bool			m_redirect;
 	bool			m_secure;
 	std::string		m_host;
@@ -387,9 +387,9 @@ class NETKIT_DLL response : public message
 {
 public:
 
-	typedef smart_ptr< response > ptr;
+	typedef smart_ref< response > ref;
 
-	static response::ptr
+	static response::ref
 	create( std::uint16_t major, std::uint16_t minor, std::uint16_t status, bool keep_alive );
 
 	virtual ~response();
@@ -407,7 +407,7 @@ public:
 	}
 	
 	virtual void
-	send_prologue( connection_ptr conn ) const;
+	send_prologue( connection_ref conn ) const;
 
 protected:
 
@@ -426,16 +426,16 @@ class NETKIT_DLL connection : public sink
 {
 public:
 
-	typedef std::function< void ( http::response::ptr response, bool upgrade, bool close ) >									response_f;
-	typedef std::function< http::request::ptr ( int method, std::uint16_t major, std::uint16_t minor, const uri::ptr &uri ) >	request_will_begin_f;
-	typedef std::function< int ( http::request::ptr request, const std::uint8_t *buf, size_t len, response_f response ) >		request_body_was_received_f;
-	typedef std::function< int ( http::request::ptr request, response_f func ) >												request_f;
+	typedef std::function< void ( http::response::ref response, bool upgrade, bool close ) >									response_f;
+	typedef std::function< http::request::ref ( int method, std::uint16_t major, std::uint16_t minor, const uri::ref &uri ) >	request_will_begin_f;
+	typedef std::function< int ( http::request::ref request, const std::uint8_t *buf, size_t len, response_f response ) >		request_body_was_received_f;
+	typedef std::function< int ( http::request::ref request, response_f func ) >												request_f;
 
-	typedef smart_ptr< connection > ptr;
-	typedef std::list< ptr > list;
+	typedef smart_ref< connection > ref;
+	typedef std::list< ref > list;
 	
 	static bool
-	adopt( source::ptr source, const std::uint8_t *buf, size_t len );
+	adopt( source::ref source, const std::uint8_t *buf, size_t len );
 	
 	static void
 	bind( std::uint8_t method, const std::string &path, const std::string &type, request_f r );
@@ -447,13 +447,13 @@ public:
 	bind( std::uint8_t method, const std::string &path, const std::string &type, request_will_begin_f rwb, request_body_was_received_f rbwr, request_f r );
 	
 	static void
-	bind( std::uint8_t method, const std::string &path, sink::ptr sink );
+	bind( std::uint8_t method, const std::string &path, sink::ref sink );
 	
 	virtual bool
 	process( const std::uint8_t *buf, std::size_t len );
 	
 	bool
-	put( message::ptr message );
+	put( message::ref message );
 	
 	int
 	http_major() const;
@@ -487,8 +487,8 @@ protected:
 	{
 	public:
 	
-		typedef smart_ptr< handler > ptr;
-		typedef std::list< ptr > list;
+		typedef smart_ref< handler > ref;
+		typedef std::list< ref > list;
 		
 		handler( const std::string &path, const std::string &type, request_f r )
 		:
@@ -517,7 +517,7 @@ protected:
 		{
 		}
 		
-		handler( const std::string &path, sink::ptr sink )
+		handler( const std::string &path, sink::ref sink )
 		:
 			m_path( path ),
 			m_sink( sink )
@@ -529,7 +529,7 @@ protected:
 		request_will_begin_f		m_rwb;
 		request_body_was_received_f	m_rbwr;
 		request_f					m_r;
-		sink::ptr					m_sink;
+		sink::ref					m_sink;
 	};
 	
 	typedef std::map< std::uint8_t, handler::list > handlers;
@@ -569,7 +569,7 @@ protected:
 	message_was_received( http_parser *parser );
 	
 	static void
-	bind( std::uint8_t method, handler::ptr handler );
+	bind( std::uint8_t method, handler::ref handler );
 	
 	bool
 	resolve( http_parser *parser );
@@ -586,7 +586,7 @@ protected:
 	std::string					m_uri_value;
 	std::string					m_header_field;
 	std::string					m_header_value;
-	handler::ptr				m_handler;
+	handler::ref				m_handler;
 	time_t						m_start;
 	bool						m_okay;
 	std::vector< std::uint8_t >	m_body;
@@ -598,7 +598,7 @@ protected:
 	
 	message::header				m_header;
 	std::string					m_content_type;
-	request::ptr				m_request;
+	request::ref				m_request;
 
 	std::string					m_expect;
 	std::string					m_host;
@@ -614,27 +614,27 @@ class NETKIT_DLL client : public object
 {
 public:
 
-	typedef smart_ptr< client >													ptr;
-	typedef std::function< bool ( request::ptr &request, uint32_t status ) >	auth_f;
-	typedef std::function< void ( uint32_t error, response::ptr response ) >	response_f;
+	typedef smart_ref< client >													ref;
+	typedef std::function< bool ( request::ref &request, uint32_t status ) >	auth_f;
+	typedef std::function< void ( uint32_t error, response::ref response ) >	response_f;
 	
-	static request::ptr
-	request( int method, const uri::ptr &uri );
-	
-	static void
-	send( const request::ptr &request, response_f response_func );
+	static request::ref
+	request( int method, const uri::ref &uri );
 	
 	static void
-	send( const request::ptr &request, auth_f auth_func, response_f response_func );
+	send( const request::ref &request, response_f response_func );
+	
+	static void
+	send( const request::ref &request, auth_f auth_func, response_f response_func );
 	
 protected:
 
-	client( const request::ptr &request, auth_f auth_func, response_f response_func );
+	client( const request::ref &request, auth_f auth_func, response_f response_func );
 	
 	virtual ~client();
 	
-	request::ptr	m_request;
-	response::ptr	m_response;
+	request::ref	m_request;
+	response::ref	m_response;
 	auth_f			m_auth_func;
 	response_f		m_response_func;
 };

@@ -26,10 +26,10 @@ ShiftDown( void * arr, size_t arraySize, size_t itemSize, int index )
 }
 
 
-runloop::ptr
+runloop::ref
 runloop::instance()
 {
-    static runloop::ptr singleton = new runloop_win32;
+    static runloop::ref singleton = new runloop_win32;
 
     return singleton;
 }
@@ -325,7 +325,7 @@ exit:
 
 /*
 void
-runloop_win32::unregisterSocket( socket::ptr sock )
+runloop_win32::unregisterSocket( socket::ref sock )
 {	
 	for ( source::list::iterator it = m_sources.begin(); it != m_sources.end(); it++ )
 	{

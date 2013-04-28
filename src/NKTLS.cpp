@@ -352,10 +352,10 @@ public:
 	accept( source::accept_reply_f reply );
 		
 	virtual void
-	preflight( const uri::ptr &uri, preflight_reply_f reply );
+	preflight( const uri::ref &uri, preflight_reply_f reply );
 	
 	virtual void
-	connect( const uri::ptr &uri, const endpoint::ptr &to, connect_reply_f reply );
+	connect( const uri::ref &uri, const endpoint::ref &to, connect_reply_f reply );
 		
 	virtual void
 	send( const std::uint8_t *in_buf, std::size_t in_len, send_reply_f reply );
@@ -369,7 +369,7 @@ private:
 	accept_internal( accept_reply_f reply );
 	
 	void
-	connect_internal( const uri::ptr &uri, const endpoint::ptr &to, connect_reply_f reply );
+	connect_internal( const uri::ref &uri, const endpoint::ref &to, connect_reply_f reply );
 	
 	std::string
 	protocol_chooser( const std::vector< std::string > &protocols );
@@ -392,7 +392,7 @@ private:
 #endif
 
 
-tls::adapter::ptr
+tls::adapter::ref
 tls::adapter::create()
 {
 	return nullptr;
@@ -512,7 +512,7 @@ tls_impl::accept_internal( source::accept_reply_f reply )
 
 
 void
-tls_impl::preflight( const uri::ptr &uri, preflight_reply_f reply )
+tls_impl::preflight( const uri::ref &uri, preflight_reply_f reply )
 {
 	if ( m_next )
 	{
@@ -526,7 +526,7 @@ tls_impl::preflight( const uri::ptr &uri, preflight_reply_f reply )
 
 
 void
-tls_impl::connect( const uri::ptr &uri, const endpoint::ptr &to, connect_reply_f reply )
+tls_impl::connect( const uri::ref &uri, const endpoint::ref &to, connect_reply_f reply )
 {
 	if ( m_prev )
 	{
@@ -550,7 +550,7 @@ tls_impl::connect( const uri::ptr &uri, const endpoint::ptr &to, connect_reply_f
 
 
 void
-tls_impl::connect_internal( const uri::ptr &uri, const endpoint::ptr &to, connect_reply_f reply )
+tls_impl::connect_internal( const uri::ref &uri, const endpoint::ref &to, connect_reply_f reply )
 {
 	m_client = new TLS::Client
 					(

@@ -61,7 +61,7 @@ source::~source()
 
 	while ( adapter )
 	{
-		adapter::ptr next = adapter->m_next;
+		adapter::ref next = adapter->m_next;
 		delete adapter;
 		adapter = next;
 	}
@@ -69,7 +69,7 @@ source::~source()
 
 
 void
-source::add( adapter::ptr adapter )
+source::add( adapter::ref adapter )
 {
 	m_adapters.push_front( adapter );
 	adapter->m_source = this;
@@ -110,11 +110,11 @@ source::accept( accept_reply_f reply )
 
 
 void
-source::connect( const uri::ptr &in_uri, connect_reply_f reply )
+source::connect( const uri::ref &in_uri, connect_reply_f reply )
 {
-	endpoint::ptr to;
+	endpoint::ref to;
 	
-	m_adapters.tail()->preflight( in_uri, [=]( int status, const uri::ptr &out_uri )
+	m_adapters.tail()->preflight( in_uri, [=]( int status, const uri::ref &out_uri )
 	{
 		if ( status == 0 )
 		{
@@ -125,13 +125,13 @@ source::connect( const uri::ptr &in_uri, connect_reply_f reply )
 
 
 void
-source::connect_internal_1( const uri::ptr &uri, connect_reply_f reply )
+source::connect_internal_1( const uri::ref &uri, connect_reply_f reply )
 {
 	ip::address::resolve( uri->host(), [=]( int status, const ip::address::list &addrs )
 	{
 		for ( auto it = addrs.begin(); it != addrs.end(); it++ )
 		{
-			ip::endpoint::ptr	endpoint = new ip::endpoint( *it, uri->port() );
+			ip::endpoint::ref	endpoint = new ip::endpoint( *it, uri->port() );
 			bool				would_block;
 			int					ret;
 			
@@ -167,7 +167,7 @@ source::connect_internal_1( const uri::ptr &uri, connect_reply_f reply )
 
 
 void
-source::connect_internal_2( const uri::ptr &uri, const endpoint::ptr &to, connect_reply_f reply )
+source::connect_internal_2( const uri::ref &uri, const endpoint::ref &to, connect_reply_f reply )
 {
 	m_adapters.tail()->connect( uri, to, [=]( int status )
 	{
@@ -384,14 +384,14 @@ source::adapter::accept( accept_reply_f reply )
 
 		
 void
-source::adapter::preflight( const uri::ptr &uri, preflight_reply_f reply )
+source::adapter::preflight( const uri::ref &uri, preflight_reply_f reply )
 {
 	reply( 0, uri );
 }
 
 	
 void
-source::adapter::connect( const uri::ptr &uri, const endpoint::ptr &to, connect_reply_f reply )
+source::adapter::connect( const uri::ref &uri, const endpoint::ref &to, connect_reply_f reply )
 {
 	if ( m_prev )
 	{

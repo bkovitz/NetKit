@@ -46,12 +46,12 @@ class NETKIT_DLL source : public object
 public:
 
 	typedef std::function< void ( int status ) >							accept_reply_f;
-	typedef std::function< void ( int status, const endpoint::ptr &peer ) >	connect_reply_f;
+	typedef std::function< void ( int status, const endpoint::ref &peer ) >	connect_reply_f;
 	typedef std::function< void ( int status ) >							send_reply_f;
 	typedef std::function< void ( int status, const std::size_t len ) >		peek_reply_f;
 	typedef std::function< void ( int status, const std::size_t len ) >		recv_reply_f;
 	typedef std::function< void ( void ) >									close_f;
-	typedef smart_ptr< source >												ptr;
+	typedef smart_ref< source >												ref;
 	typedef std::vector< std::uint8_t >										buf_t;
 	
 	class adapter
@@ -61,12 +61,12 @@ public:
 		DECLARE_INTRUSIVE_LIST_OBJECT( adapter )
 		
 		typedef std::function< void ( int status ) >													accept_reply_f;
-		typedef std::function< void ( int status, const uri::ptr &out_uri ) >							preflight_reply_f;
+		typedef std::function< void ( int status, const uri::ref &out_uri ) >							preflight_reply_f;
 		typedef std::function< void ( int status ) >													connect_reply_f;
 		typedef std::function< void ( int status, const std::uint8_t *out_buf, std::size_t out_len ) >	send_reply_f;
 		typedef std::function< void ( int status, const std::uint8_t *out_buf, std::size_t out_len ) >	recv_reply_f;
 	
-		typedef adapter						*ptr;
+		typedef adapter						*ref;
 		typedef intrusive_list< adapter >	list;
 		
 		adapter();
@@ -77,10 +77,10 @@ public:
 		accept( accept_reply_f reply );
 		
 		virtual void
-		preflight( const uri::ptr &uri, preflight_reply_f reply );
+		preflight( const uri::ref &uri, preflight_reply_f reply );
 	
 		virtual void
-		connect( const uri::ptr &uri, const endpoint::ptr &to, connect_reply_f reply );
+		connect( const uri::ref &uri, const endpoint::ref &to, connect_reply_f reply );
 		
 		virtual void
 		send( const std::uint8_t *in_buf, std::size_t in_len, send_reply_f reply );
@@ -92,7 +92,7 @@ public:
 	
 		friend class source;
 		
-		source::ptr m_source;
+		source::ref m_source;
 	};
 	
 	source();
@@ -100,13 +100,13 @@ public:
 	virtual ~source();
 
 	virtual void
-	add( adapter::ptr adapter );
+	add( adapter::ref adapter );
 	
 	void
 	accept( accept_reply_f reply );
 	
 	void
-	connect( const uri::ptr &uri, connect_reply_f reply );
+	connect( const uri::ref &uri, connect_reply_f reply );
 		
 	void
 	peek( std::uint8_t *buf, std::size_t len, peek_reply_f reply );
@@ -153,7 +153,7 @@ protected:
 	
 	
 	virtual int
-	start_connect( const endpoint::ptr &peer, bool &would_block ) = 0;
+	start_connect( const endpoint::ref &peer, bool &would_block ) = 0;
 	
 	virtual int
 	finish_connect() = 0;
@@ -165,10 +165,10 @@ protected:
 	start_recv( std::uint8_t *buf, std::size_t len, bool &would_block ) = 0;
 	
 	void
-	connect_internal_1( const uri::ptr &uri, connect_reply_f reply );
+	connect_internal_1( const uri::ref &uri, connect_reply_f reply );
 	
 	void
-	connect_internal_2( const uri::ptr &uri, const endpoint::ptr &to, connect_reply_f reply );
+	connect_internal_2( const uri::ref &uri, const endpoint::ref &to, connect_reply_f reply );
 	
 	void
 	recv_internal( std::uint8_t *in_buf, std::size_t in_len, bool peek, recv_reply_f reply );

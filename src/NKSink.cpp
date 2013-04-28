@@ -39,11 +39,11 @@ sink::sink()
 }
 
 
-sink::sink( const uri::ptr &uri )
+sink::sink( const uri::ref &uri )
 {
-	ip::tcp::socket::ptr sock = new ip::tcp::socket;
+	ip::tcp::socket::ref sock = new ip::tcp::socket;
 	
-	sock->connect( uri, [=]( int status, const endpoint::ptr &endpoint )
+	sock->connect( uri, [=]( int status, const endpoint::ref &endpoint )
 	{
 		if ( status == 0 )
 		{
@@ -59,7 +59,7 @@ sink::~sink()
 
 
 void
-sink::bind( source::ptr source )
+sink::bind( source::ref source )
 {
 	m_source = source;
 
@@ -102,11 +102,11 @@ sink::cancel( cookie c )
 
 
 void
-sink::connect( const uri::ptr &uri, source::connect_reply_f reply )
+sink::connect( const uri::ref &uri, source::connect_reply_f reply )
 {
-	source::ptr source = new ip::tcp::socket;
+	source::ref source = new ip::tcp::socket;
 
-	source->connect( uri, [=]( int status, const endpoint::ptr &peer )
+	source->connect( uri, [=]( int status, const endpoint::ref &peer )
 	{
 		if ( status == 0 )
 		{

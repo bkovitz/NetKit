@@ -41,8 +41,8 @@ class NETKIT_DLL component : public object
 {
 public:
 
-	typedef smart_ptr< component >	ptr;
-	typedef std::list< ptr >		list;
+	typedef smart_ref< component >	ref;
+	typedef std::list< ref >		list;
 	
 	static bool
 	initialize();
@@ -97,7 +97,7 @@ private:
 
 #define DECLARE_COMPONENT( NAME )				\
 public:											\
-static NAME::ptr								\
+static NAME::ref								\
 instance();										\
 virtual netkit::status							\
 will_initialize();								\
@@ -108,7 +108,7 @@ will_terminate();
 
 #define DEFINE_COMPONENT1( NAME )				\
 static NAME g_instance;							\
-NAME::ptr										\
+NAME::ref										\
 NAME::instance()								\
 {												\
 	if ( g_instance.status() != netkit::status::ok )				\
@@ -121,12 +121,12 @@ NAME::instance()								\
 
 #define DEFINE_COMPONENT2( PARENT, NAME )		\
 static NAME g_instance;							\
-PARENT::ptr										\
+PARENT::ref										\
 PARENT::instance()								\
 {												\
 	return NAME::instance();					\
 }												\
-NAME::ptr										\
+NAME::ref										\
 NAME::instance()								\
 {												\
 	if ( g_instance.status() != netkit::status::ok )	\

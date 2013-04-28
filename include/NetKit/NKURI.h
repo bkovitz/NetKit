@@ -32,7 +32,7 @@
 #define _netkit_uri_h
 
 #include <NetKit/NKObject.h>
-#include <NetKit/NKSmartPtr.h>
+#include <NetKit/NKSmartRef.h>
 
 #include <string>
 
@@ -42,7 +42,7 @@ class NETKIT_DLL uri : public object
 {
 public:
 
-	typedef smart_ptr< uri > ptr;
+	typedef smart_ref< uri > ref;
 	
 	uri();
 	

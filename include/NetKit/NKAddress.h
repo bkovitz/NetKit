@@ -53,9 +53,9 @@ class NETKIT_DLL address : public object
 {
 public:
 
-	typedef smart_ptr< address > ptr;
+	typedef smart_ref< address > ref;
 	
-	static address::ptr
+	static address::ref
 	from_sockaddr( const sockaddr_storage &addr );
 
 	virtual std::string
@@ -68,8 +68,8 @@ class address : public netkit::address
 {
 public:
 
-	typedef smart_ptr< address > ptr;
-	typedef std::deque< ptr > list;
+	typedef smart_ref< address > ref;
+	typedef std::deque< ref > list;
 	typedef std::function< void ( int status, const list &addrs ) > resolve_reply_f;
 	
 	enum type

@@ -41,20 +41,20 @@ class NETKIT_DLL proxy : public object
 {
 public:
 
-	typedef smart_ptr< proxy > ptr;
+	typedef smart_ref< proxy > ref;
 
-	proxy( uri::ptr uri );
+	proxy( uri::ref uri );
 
 	virtual ~proxy();
 
-	inline const uri::ptr&
+	inline const uri::ref&
 	uri() const
 	{
 		return m_uri;
 	}
 	
 	inline void
-	set_uri( const uri::ptr &uri )
+	set_uri( const uri::ref &uri )
 	{
 		m_uri = uri;
 	}
@@ -121,7 +121,7 @@ public:
 	
 private:
 
-	uri::ptr		m_uri;
+	uri::ref		m_uri;
 	std::string		m_host;
 	std::string		m_bypass;
 	std::uint16_t	m_port;

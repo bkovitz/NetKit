@@ -44,19 +44,19 @@ class NETKIT_DLL sink : public object
 public:
 
 	typedef std::function< void ( void ) >	close_f;
-	typedef smart_ptr< sink >				ptr;
+	typedef smart_ref< sink >				ref;
 	
 	sink();
 	
-	sink( const uri::ptr &uri );
+	sink( const uri::ref &uri );
 	
 	virtual ~sink();
 	
 	virtual void
-	bind( source::ptr source );
+	bind( source::ref source );
 	
 	void
-	connect( const uri::ptr &uri, source::connect_reply_f reply );
+	connect( const uri::ref &uri, source::connect_reply_f reply );
 	
 	void
 	send( const std::uint8_t *buf, std::size_t len, source::send_reply_f reply );
@@ -84,7 +84,7 @@ protected:
 	run();
 
 	close_handlers	m_close_handlers;
-	source::ptr		m_source;
+	source::ref		m_source;
 	std::uint8_t	m_buf[ 4192 ];
 };
 

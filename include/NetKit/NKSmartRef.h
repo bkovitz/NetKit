@@ -28,8 +28,8 @@
  *
  */
  
-#ifndef _netkit_smart_ptr_h
-#define _netkit_smart_ptr_h
+#ifndef _netkit_smart_ref_h
+#define _netkit_smart_ref_h
 
 #include <functional>
 #include <assert.h>
@@ -39,20 +39,20 @@
 namespace netkit {
 
 template < class T >
-class smart_ptr
+class smart_ref
 {
 public:
 
-	typedef smart_ptr this_type;
+	typedef smart_ref this_type;
 	typedef T* this_type::*unspecified_bool_type;
         
-	inline smart_ptr()
+	inline smart_ref()
 	:
 		m_ref( NULL )
 	{
 	}
     
-	inline smart_ptr( T *ref)
+	inline smart_ref( T *ref)
 	:
 		m_ref( ref )
 	{
@@ -62,7 +62,7 @@ public:
 		}
 	}
 
-	inline smart_ptr( const smart_ptr<T> &that )
+	inline smart_ref( const smart_ref<T> &that )
 	:
 		m_ref( that.m_ref )
 	{
@@ -72,7 +72,7 @@ public:
 		}
 	}
 
-	inline ~smart_ptr()
+	inline ~smart_ref()
 	{
 		if ( m_ref )
 		{
@@ -117,8 +117,8 @@ public:
 	}
 	
     
-	inline smart_ptr<T>&
-	operator=( const smart_ptr<T> &that )
+	inline smart_ref<T>&
+	operator=( const smart_ref<T> &that )
 	{
 		if ( this != &that )
 		{
@@ -140,7 +140,7 @@ public:
 	}
 	
 	inline bool
-	operator==( const smart_ptr<T> &that )
+	operator==( const smart_ref<T> &that )
 	{
 		return ( m_ref == that.m_ref );
 	}
@@ -162,21 +162,21 @@ public:
 	}
 	
 	template< class Other >
-	operator smart_ptr< Other >()
+	operator smart_ref< Other >()
 	{
-		smart_ptr< Other > p( m_ref );
+		smart_ref< Other > p( m_ref );
 		return p;
 	}
 	
 	template< class Other >
-	operator const smart_ptr< Other >() const
+	operator const smart_ref< Other >() const
 	{
-		smart_ptr< Other > p( m_ref );
+		smart_ref< Other > p( m_ref );
 		return p;
 	}
 	
 	inline void
-	swap( smart_ptr &rhs )
+	swap( smart_ref &rhs )
 	{
 		T * tmp = m_ref;
 		m_ref = rhs.m_ref;
@@ -190,84 +190,84 @@ private:
 
 template< class T, class U >
 inline bool
-operator==( smart_ptr< T > const &a, smart_ptr< U > const &b )
+operator==( smart_ref< T > const &a, smart_ref< U > const &b )
 {
 	return a.get() == b.get();
 }
 
 template< class T, class U >
 inline bool
-operator!=( smart_ptr< T > const &a, smart_ptr< U > const &b )
+operator!=( smart_ref< T > const &a, smart_ref< U > const &b )
 {
 	return a.get() != b.get();
 }
 
 template< class T >
 inline bool
-operator==( smart_ptr< T > const &a, T *b )
+operator==( smart_ref< T > const &a, T *b )
 {
 	return a.get() == b;
 }
 
 template< class T >
 inline bool
-operator!=( smart_ptr< T > const &a, T *b )
+operator!=( smart_ref< T > const &a, T *b )
 {
 	return a.get() != b;
 }
 
 template< class T >
 inline bool
-operator==( T *a, smart_ptr< T > const &b )
+operator==( T *a, smart_ref< T > const &b )
 {
 	return a == b.get();
 }
 
 template< class T >
 inline bool
-operator!=( T *a, smart_ptr< T > const &b )
+operator!=( T *a, smart_ref< T > const &b )
 {
 	return a != b.get();
 }
 
 template< class T >
 inline bool
-operator<( smart_ptr< T > const &a, smart_ptr< T > const &b )
+operator<( smart_ref< T > const &a, smart_ref< T > const &b )
 {
 	return std::less< T* >()( a.get(), b.get() );
 }
 
 template< class T >
 void
-swap( smart_ptr< T > &lhs, smart_ptr< T > &rhs )
+swap( smart_ref< T > &lhs, smart_ref< T > &rhs )
 {
 	lhs.swap( rhs );
 }
 
 template< class T >
 T*
-get_pointer( smart_ptr< T > const &p )
+get_pointer( smart_ref< T > const &p )
 {
 	return p.get();
 }
 
 template <class T, class U >
-smart_ptr< T >
-static_pointer_cast( smart_ptr< U > const &p )
+smart_ref< T >
+static_pointer_cast( smart_ref< U > const &p )
 {
 	return static_cast< T* >( p.get() );
 }
 
 template< class T, class U >
-smart_ptr< T >
-const_pointer_cast( smart_ptr< U > const &p )
+smart_ref< T >
+const_pointer_cast( smart_ref< U > const &p )
 {
 	return const_cast< T* >( p.get() );
 }
 
 template< class T, class U >
-smart_ptr< T >
-dynamic_pointer_cast( smart_ptr< U > const &p )
+smart_ref< T >
+dynamic_pointer_cast( smart_ref< U > const &p )
 {
 	return dynamic_cast< T* >( p.get() );
 }

@@ -51,7 +51,7 @@ class NETKIT_DLL socket : public source
 {
 public:
 
-	typedef smart_ptr< socket > ptr;
+	typedef smart_ref< socket > ref;
 	
 #if defined( WIN32 )
 
@@ -120,7 +120,7 @@ protected:
 
 	socket( native fd );
 	
-	socket( native fd, const endpoint::ptr peer );
+	socket( native fd, const endpoint::ref peer );
 	
 	socket( const socket &that );	// Not implemented
 	
@@ -130,7 +130,7 @@ protected:
 	init();
 	
 	virtual int
-	start_connect( const endpoint::ptr &peer, bool &would_block );
+	start_connect( const endpoint::ref &peer, bool &would_block );
 	
 	virtual int
 	finish_connect();
@@ -142,7 +142,7 @@ protected:
 	start_recv( std::uint8_t *buf, std::size_t len, bool &would_block );
 	
 	bool			m_connected;
-	endpoint::ptr	m_peer;
+	endpoint::ref	m_peer;
 	native			m_fd;
 };
 
@@ -151,10 +151,10 @@ class NETKIT_DLL acceptor : public object
 {
 public:
 
-	typedef std::function< void ( int status, socket::ptr sock ) >	accept_reply_f;
-	typedef smart_ptr< acceptor >									ptr;
+	typedef std::function< void ( int status, socket::ref sock ) >	accept_reply_f;
+	typedef smart_ref< acceptor >									ref;
 	
-	acceptor( const endpoint::ptr &endpoint, int domain, int type );
+	acceptor( const endpoint::ref &endpoint, int domain, int type );
 	
 	acceptor( socket::native fd );
 	
@@ -166,7 +166,7 @@ public:
 	virtual void
 	accept( accept_reply_f reply ) = 0;
 	
-	inline const endpoint::ptr&
+	inline const endpoint::ref&
 	endpoint() const
 	{
 		return m_endpoint;
@@ -174,7 +174,7 @@ public:
 	
 protected:
 
-	endpoint::ptr		m_endpoint;
+	endpoint::ref		m_endpoint;
 	runloop::event		m_event;
 	socket::native		m_fd;
 	
@@ -189,7 +189,7 @@ class NETKIT_DLL socket : public netkit::socket
 {
 public:
 
-	const ip::endpoint::ptr&
+	const ip::endpoint::ref&
 	peer();
 	
 protected:
@@ -198,7 +198,7 @@ protected:
 
 	socket( native fd );
 	
-	socket( native fd, const ip::endpoint::ptr &peer );
+	socket( native fd, const ip::endpoint::ref &peer );
 	
 	socket( const socket &that );	// Not implemented
 };
@@ -207,11 +207,11 @@ class NETKIT_DLL acceptor : public netkit::acceptor
 {
 public:
 
-	acceptor( const ip::endpoint::ptr &endpoint, int type );
+	acceptor( const ip::endpoint::ref &endpoint, int type );
 	
 	acceptor( socket::native fd );
 	
-	inline ip::endpoint::ptr
+	inline ip::endpoint::ref
 	endpoint() const
 	{
 		return dynamic_pointer_cast< ip::endpoint, netkit::endpoint >( m_endpoint );
@@ -228,13 +228,13 @@ class NETKIT_DLL socket : public ip::socket
 {
 public:
 
-	typedef smart_ptr< socket > ptr;
+	typedef smart_ref< socket > ref;
 	
 	socket();
 	
 	socket( native fd );
 	
-	socket( native fd, const ip::endpoint::ptr &peer );
+	socket( native fd, const ip::endpoint::ref &peer );
 	
 	virtual ~socket();
 	
@@ -247,9 +247,9 @@ class NETKIT_DLL acceptor : public ip::acceptor
 {
 public:
 
-	typedef smart_ptr< acceptor > ptr;
+	typedef smart_ref< acceptor > ref;
 
-	acceptor( const ip::endpoint::ptr &endpoint );
+	acceptor( const ip::endpoint::ref &endpoint );
 
 	virtual ~acceptor();
 	

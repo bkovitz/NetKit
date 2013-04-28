@@ -569,7 +569,7 @@ message::write( const uint8_t *buf, size_t len )
 
 
 bool
-message::send_body( connection_ptr conn ) const
+message::send_body( connection_ref conn ) const
 {
 	std::string body = m_ostream.str();
 	
@@ -590,7 +590,7 @@ message::send_body( connection_ptr conn ) const
 #	pragma mark request implementation
 #endif
 
-request::request( std::uint16_t major, std::uint16_t minor, int method, const netkit::uri::ptr &uri )
+request::request( std::uint16_t major, std::uint16_t minor, int method, const netkit::uri::ref &uri )
 :
 	message( major, minor ),
 	m_method( method ),
@@ -668,7 +668,7 @@ request::add_to_header( const std::string &key, const std::string &val )
 
 
 void
-request::send_prologue( connection_ptr conn ) const
+request::send_prologue( connection_ref conn ) const
 {
 	*conn << m_method << " " << m_uri->path() << " HTTP/1.1" << http::endl;
 }
@@ -720,7 +720,7 @@ response::init()
 
 
 void
-response::send_prologue( connection::ptr conn ) const
+response::send_prologue( connection::ref conn ) const
 {
 	*conn << "HTTP/" << m_major << "." << m_minor << " " << m_status << " " << status::to_string( m_status ) << endl;
 }
@@ -775,7 +775,7 @@ connection::~connection()
 void
 connection::bind( std::uint8_t m, const std::string &path, const std::string &type, request_f r )
 {
-	handler::ptr h = new handler( path, type, r );
+	handler::ref h = new handler( path, type, r );
 	
 	bind( m, h );
 }
@@ -784,7 +784,7 @@ connection::bind( std::uint8_t m, const std::string &path, const std::string &ty
 void
 connection::bind( std::uint8_t m, const std::string &path, const std::string &type, request_body_was_received_f rbwr, request_f r )
 {
-	handler::ptr h = new handler( path, type, rbwr, r );
+	handler::ref h = new handler( path, type, rbwr, r );
 	
 	bind( m, h );
 }
@@ -793,23 +793,23 @@ connection::bind( std::uint8_t m, const std::string &path, const std::string &ty
 void
 connection::bind( std::uint8_t m, const std::string &path, const std::string &type, request_will_begin_f rwb, request_body_was_received_f rbwr, request_f r )
 {
-	handler::ptr h = new handler( path, type, rwb, rbwr, r );
+	handler::ref h = new handler( path, type, rwb, rbwr, r );
 	
 	bind( m, h );
 }
 
 
 void
-connection::bind( std::uint8_t m, const std::string &path, sink::ptr sink )
+connection::bind( std::uint8_t m, const std::string &path, sink::ref sink )
 {
-	handler::ptr h = new handler( path, sink );
+	handler::ref h = new handler( path, sink );
 	
 	bind( m, h );
 }
 
 
 void
-connection::bind( std::uint8_t m, handler::ptr h )
+connection::bind( std::uint8_t m, handler::ref h )
 {
 	handlers::iterator it = m_handlers.find( m );
 	
@@ -843,7 +843,7 @@ connection::http_minor() const
 
 
 bool
-connection::adopt( netkit::source::ptr source, const std::uint8_t *buf, size_t len )
+connection::adopt( netkit::source::ref source, const std::uint8_t *buf, size_t len )
 {
 	bool ok = false;
 	
@@ -853,7 +853,7 @@ connection::adopt( netkit::source::ptr source, const std::uint8_t *buf, size_t l
 	       ( std::strncasecmp( ( const char* ) buf, "opt", 3 ) == 0 ) ||
 	       ( std::strncasecmp( ( const char* ) buf, "hea", 3 ) == 0 ) ) )
 	{
-		sink::ptr conn = new connection;
+		sink::ref conn = new connection;
 		
 		conn->bind( source );
 		
@@ -865,7 +865,7 @@ connection::adopt( netkit::source::ptr source, const std::uint8_t *buf, size_t l
 
 
 bool
-connection::put( message::ptr message )
+connection::put( message::ref message )
 {
 	message->send_prologue( this );
 	
@@ -1031,7 +1031,7 @@ connection::headers_were_received( http_parser *parser )
 	
 	if ( !self->resolve( parser ) )
 	{
-		response::ptr response = http::response::create( self->http_major(), self->http_minor(), http::status::not_found, false );
+		response::ref response = http::response::create( self->http_major(), self->http_minor(), http::status::not_found, false );
 		response->add_to_header( "Connection", "Close" );
 		response->add_to_header( "Content-Type", "text/html" );
 		*response << "<html>Error 404: Content Not Found</html>";
@@ -1094,7 +1094,7 @@ connection::body_was_received( http_parser *parser, const char *buf, size_t len 
 {
 	connection *self = reinterpret_cast< connection* >( parser->data );
 	
-	return self->m_handler->m_rbwr( self->m_request, ( const uint8_t* ) buf, len, [=]( response::ptr response, bool upgrade, bool close )
+	return self->m_handler->m_rbwr( self->m_request, ( const uint8_t* ) buf, len, [=]( response::ref response, bool upgrade, bool close )
 	{
 		self->put( response.get() );
 		
@@ -1123,7 +1123,7 @@ connection::message_was_received( http_parser *parser )
 {
 	connection *self = reinterpret_cast< connection* >( parser->data );
 	
-	return self->m_handler->m_r( self->m_request, [=]( response::ptr response, bool upgrade, bool close )
+	return self->m_handler->m_r( self->m_request, [=]( response::ref response, bool upgrade, bool close )
 	{
 		self->put( response.get() );
 		
@@ -1203,7 +1203,7 @@ connection::resolve( http_parser *parser )
 	
 	if ( m_request->expect() == "100-continue" )
 	{
-		response::ptr response = http::response::create( http_major(), http_minor(), http::status::cont, false );
+		response::ref response = http::response::create( http_major(), http_minor(), http::status::cont, false );
 		put( response.get() );
 	}
 	
@@ -1255,7 +1255,7 @@ connection::regexify( const std::string &in )
 #	pragma mark client implementation
 #endif
 
-client::client( const request::ptr &request, auth_f auth_func, response_f response_func )
+client::client( const request::ref &request, auth_f auth_func, response_f response_func )
 :
 	m_request( request ),
 	m_auth_func( auth_func ),

@@ -48,10 +48,10 @@ operator==( sockaddr_storage s1, sockaddr_storage s2 )
 #	pragma mark address implementation
 #endif
 
-address::ptr
+address::ref
 address::from_sockaddr( const sockaddr_storage &addr )
 {
-	address::ptr ret;
+	address::ref ret;
 	
 	switch ( addr.ss_family )
 	{

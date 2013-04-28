@@ -32,7 +32,7 @@
 
 using namespace netkit;
 
-proxy::proxy( uri::ptr uri )
+proxy::proxy( uri::ref uri )
 :
 	m_uri( uri ),
 	m_port( 80 )

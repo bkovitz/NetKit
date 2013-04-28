@@ -203,9 +203,6 @@
     <ClInclude Include="..\..\include\NetKit\NKSink.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\NetKit\NKSmartPtr.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\include\NetKit\NKSocket.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -276,6 +273,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\NetKit\NKCookie.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\NetKit\NKSmartRef.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

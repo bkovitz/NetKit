@@ -54,12 +54,12 @@ public:
 		timer		= ( 1 << 5 )
 	};
 	
-	typedef smart_ptr< runloop > ptr;
+	typedef smart_ref< runloop > ref;
 
 	typedef std::function< void ( void ) >		dispatch_f;
 	typedef std::function< void ( event e ) >	event_f;
 
-	static runloop::ptr
+	static runloop::ref
 	instance();
 	
 	virtual event

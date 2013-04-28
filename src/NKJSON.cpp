@@ -323,7 +323,7 @@ class array_map
 {
 public:
 
-	typedef std::vector< value::ptr > container;
+	typedef std::vector< value::ref > container;
 	typedef container::value_type value_type;
 	typedef container::allocator_type allocator_type;
 	typedef container::size_type size_type;
@@ -489,7 +489,7 @@ class object_map
 {
 public:
 
-	typedef std::map<std::string, value::ptr> container;
+	typedef std::map<std::string, value::ref> container;
 	typedef container::key_type key_type;
 	typedef container::mapped_type mapped_type;
 	typedef container::value_type value_type;
@@ -1352,33 +1352,33 @@ value::escape_to_unicode(char charToescape)
 }
 
 
-value::ptr
+value::ref
 value::array()
 {
 	return new value( type::array );
 }
 
 
-value::ptr
+value::ref
 value::object()
 {
 	return new value( type::object );
 }
 
 
-const value::ptr
+const value::ref
 value::null()
 {
-	static const value::ptr v = new value;
+	static const value::ref v = new value;
 	
 	return v;
 }
 
 
-expected< value::ptr >
+expected< value::ref >
 value::load( const std::string &s )
 {
-	value::ptr v = new value;
+	value::ref v = new value;
 	
 	v->load_from_string( s );
 	
@@ -1813,14 +1813,14 @@ value::operator>=(const value &rhs) const
 }
 
 
-value::ptr
+value::ref
 value::operator[](const char *key)
 {
 	return operator[]( std::string( key ) );
 }
 
 
-value::ptr
+value::ref
 value::operator[](const object_map::key_type &key)
 {
 	if ( m_kind != type::object )
@@ -1834,7 +1834,7 @@ value::operator[](const object_map::key_type &key)
 }
 
 
-value::ptr
+value::ref
 value::operator[](array_map::size_type index)
 {
 	if (m_kind != type::array )
@@ -2101,7 +2101,7 @@ value::set_array(const array_map &newarray)
 
 
 bool
-value::append( const value::ptr &v )
+value::append( const value::ref &v )
 {
 	if ( m_kind != type::array )
 	{
@@ -2873,7 +2873,7 @@ value::output(std::ostream &output, bool indent, bool escapeAll) const
 
 
 std::ostream&
-netkit::operator<<(std::ostream &output, const value::ptr &v)
+netkit::operator<<(std::ostream &output, const value::ref &v)
 {
 	return output << *v.get();
 }
@@ -2925,7 +2925,7 @@ netkit::json::operator<<(std::ostream &output, const value &v)
 #endif
 
 connection::list			*connection::m_instances;
-connection::ptr				connection::m_active;
+connection::ref				connection::m_active;
 std::atomic< std::int32_t >	connection::m_id( 1 );
 
 connection::connection()
@@ -2946,7 +2946,7 @@ connection::~connection()
 
 
 bool
-connection::adopt( source::ptr source, const std::uint8_t *buf, size_t len )
+connection::adopt( source::ref source, const std::uint8_t *buf, size_t len )
 {
 	unsigned	index = 0;
 	bool		ok = false;
@@ -2978,7 +2978,7 @@ connection::adopt( source::ptr source, const std::uint8_t *buf, size_t len )
 
 	try
 	{
-		sink::ptr conn = new connection;
+		sink::ref conn = new connection;
 		conn->bind( source );
 		ok = true;
 	}
@@ -3018,7 +3018,7 @@ connection::process( const std::uint8_t *buf, std::size_t len )
 
 
 bool
-connection::send_notification( value::ptr request )
+connection::send_notification( value::ref request )
 {
 	request[ "jsonrpc" ] = "2.0";
 	
@@ -3027,7 +3027,7 @@ connection::send_notification( value::ptr request )
 
 
 bool
-connection::send_request( value::ptr request, reply_f reply )
+connection::send_request( value::ref request, reply_f reply )
 {
 	int64_t id = ++m_id;
 	bool	ok = false;
@@ -3051,7 +3051,7 @@ exit:
 
 
 bool
-connection::send( value::ptr request )
+connection::send( value::ref request )
 {
 	std::string msg;
 	
@@ -3079,8 +3079,8 @@ connection::encode( const std::string &msg )
 bool
 connection::really_process()
 {
-	value::ptr		root;
-	value::ptr		error;
+	value::ref		root;
+	value::ref		error;
     unsigned long	len = 0;
 	size_t			index = 0;
 	size_t			i = 0;
@@ -3174,7 +3174,7 @@ connection::really_process()
 				{
 					m_active = this;
 					
-					server::route_request( root, [=]( value::ptr reply, bool upgrade, bool close ) mutable
+					server::route_request( root, [=]( value::ref reply, bool upgrade, bool close ) mutable
 					{
 						m_active = NULL;
 	
@@ -3217,12 +3217,12 @@ exit:
 
 
 bool
-connection::validate( const value::ptr &root, value::ptr error)
+connection::validate( const value::ref &root, value::ref error)
 {
-	value::ptr	err;
+	value::ref	err;
 	bool		ok = true;
       
-	if ( !root->is_object() || !root->is_member( "jsonrpc" ) || ( root[ "jsonrpc" ] != value::ptr( "2.0" ) ) )
+	if ( !root->is_object() || !root->is_member( "jsonrpc" ) || ( root[ "jsonrpc" ] != value::ref( "2.0" ) ) )
 	{
         err[ "code" ]		= status::invalid_request;
         err[ "message" ]	= "Invalid JSON-RPC request.";
@@ -3263,8 +3263,8 @@ connection::validate( const value::ptr &root, value::ptr error)
 void
 connection::shutdown()
 {
-	value::ptr reply;
-	value::ptr error;
+	value::ref reply;
+	value::ref error;
 	
 	m_source->close();
 	
@@ -3282,7 +3282,7 @@ connection::shutdown()
 #	pragma mark server implementation
 #endif
 
-server::preflight_f				server::m_preflight_handler = []( json::value::ptr request ){ return netkit::status::ok; };
+server::preflight_f				server::m_preflight_handler = []( json::value::ref request ){ return netkit::status::ok; };
 server::notification_handlers	*server::m_notification_handlers;
 server::request_handlers		*server::m_request_handlers;
 
@@ -3308,7 +3308,7 @@ server::bind( const std::string &method, size_t num_params, request_f func )
 
 
 void
-server::route_notification( const value::ptr &notification )
+server::route_notification( const value::ref &notification )
 {
 	auto it = m_notification_handlers->find( notification[ "method" ]->as_string() );
 				
@@ -3325,7 +3325,7 @@ server::route_notification( const value::ptr &notification )
 
 
 void
-server::route_request( const value::ptr &request, reply_f r )
+server::route_request( const value::ref &request, reply_f r )
 {
 	netkit::status status = m_preflight_handler( request );
 	
@@ -3343,8 +3343,8 @@ server::route_request( const value::ptr &request, reply_f r )
 			}
 			else
 			{
-				value::ptr reply;
-				value::ptr error;
+				value::ref reply;
+				value::ref error;
 							
 				error[ "code" ]			= status::invalid_params;
 				error[ "message" ]		= "Invalid Paramaters.";
@@ -3355,8 +3355,8 @@ server::route_request( const value::ptr &request, reply_f r )
 		}
 		else
 		{
-			value::ptr reply;
-			value::ptr error;
+			value::ref reply;
+			value::ref error;
 							
 			error[ "code" ]		= status::method_not_found;
 			error[ "message" ]	= "Method not found.";
@@ -3367,8 +3367,8 @@ server::route_request( const value::ptr &request, reply_f r )
 	}
 	else
 	{
-		value::ptr reply;
-		value::ptr error;
+		value::ref reply;
+		value::ref error;
 							
 		error[ "code" ]		= status;
 		error[ "message" ]	= status_to_string( status );
@@ -3382,8 +3382,8 @@ server::route_request( const value::ptr &request, reply_f r )
 void
 server::reply_with_error( reply_f r, netkit::status status, bool upgrade, bool close )
 {
-	value::ptr reply;
-	value::ptr error;
+	value::ref reply;
+	value::ref error;
 					
 	error[ "code" ]		= status;
 	error[ "message" ]	= status_to_string( status );
@@ -3404,7 +3404,7 @@ client::client()
 }
 
 
-client::client( const connection::ptr &conn )
+client::client( const connection::ref &conn )
 :
 	m_connection( conn )
 {
@@ -3412,7 +3412,7 @@ client::client( const connection::ptr &conn )
 
 
 void
-client::connect( const uri::ptr &uri, source::connect_reply_f reply )
+client::connect( const uri::ref &uri, source::connect_reply_f reply )
 {
 	m_connection->connect( uri, reply );
 }
@@ -3433,9 +3433,9 @@ client::close()
 
 
 bool
-client::send_notification( const std::string &method, value::ptr params )
+client::send_notification( const std::string &method, value::ref params )
 {
-	json::value::ptr request;
+	json::value::ref request;
 	
 	request[ "method" ] = method;
 	request[ "params" ] = params;
@@ -3445,18 +3445,18 @@ client::send_notification( const std::string &method, value::ptr params )
 
 	
 bool
-client::send_request( const std::string &method, value::ptr params, reply_f reply )
+client::send_request( const std::string &method, value::ref params, reply_f reply )
 {
-	json::value::ptr request;
+	json::value::ref request;
 	
 	request[ "method" ] = method;
 	request[ "params" ] = params;
 	
-	return m_connection->send_request( request, [=]( value::ptr response )
+	return m_connection->send_request( request, [=]( value::ref response )
 	{
 		netkit::status	error_code = netkit::status::ok;
 		std::string		error_message;
-		value::ptr		result;
+		value::ref		result;
 	
 		if ( response[ "error" ]->is_null() )
 		{

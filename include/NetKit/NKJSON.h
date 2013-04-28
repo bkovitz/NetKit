@@ -53,7 +53,7 @@
 #define _netkit_json_h
 
 #include <NetKit/NKObject.h>
-#include <NetKit/NKSmartPtr.h>
+#include <NetKit/NKSmartRef.h>
 #include <NetKit/NKError.h>
 #include <NetKit/NKExpected.h>
 #include <NetKit/NKSink.h>
@@ -77,7 +77,7 @@ class NETKIT_DLL value : public netkit::object
 {
 public:
 
-	typedef smart_ptr< value >			ptr;
+	typedef smart_ref< value >			ref;
 	typedef std::vector<std::string>	keys;
 
 	friend std::ostream &operator<<(std::ostream &output, const value &v);
@@ -109,16 +109,16 @@ public:
 	static const std::string
 	escape_to_unicode(char charToEscape);
 	
-	static value::ptr
+	static value::ref
 	array();
 	
-	static value::ptr
+	static value::ref
 	object();
 	
-	static const value::ptr
+	static const value::ref
 	null();
 	
-	static expected< value::ptr >
+	static expected< value::ref >
 	load( const std::string& s );
 	
 	value();
@@ -181,13 +181,13 @@ public:
 	bool
 	operator>=(const value &rhs) const;
 
-	value::ptr
+	value::ref
 	operator[](const char *key);
 
-	value::ptr
+	value::ref
 	operator[](const std::string &key);
 
-	value::ptr
+	value::ref
 	operator[](size_t index);
 
 	type
@@ -281,7 +281,7 @@ public:
 	set_null();
 	
 	bool
-	append( const value::ptr &v );
+	append( const value::ref &v );
 	
 	size_t
 	size() const;
@@ -383,18 +383,18 @@ class NETKIT_DLL connection : public sink
 {
 public:
 
-	typedef std::function< void ( json::value::ptr reply ) >	reply_f;
-	typedef smart_ptr< connection >								ptr;
-	typedef std::list< ptr >									list;
+	typedef std::function< void ( json::value::ref reply ) >	reply_f;
+	typedef smart_ref< connection >								ref;
+	typedef std::list< ref >									list;
 	
 	connection();
 	
 	virtual ~connection();
 
 	static bool
-	adopt( source::ptr source, const std::uint8_t *buf, size_t len );
+	adopt( source::ref source, const std::uint8_t *buf, size_t len );
 	
-	inline static connection::ptr
+	inline static connection::ref
 	active()
 	{
 		return m_active;
@@ -413,10 +413,10 @@ public:
 	}
 	
 	bool
-	send_notification( value::ptr request );
+	send_notification( value::ref request );
 	
 	bool
-	send_request( value::ptr request, reply_f reply );
+	send_request( value::ref request, reply_f reply );
 	
 	virtual bool
 	process( const std::uint8_t *buf, std::size_t len );
@@ -426,7 +426,7 @@ protected:
 	typedef std::map< std::uint64_t, reply_f > reply_handlers;
 	
 	virtual bool
-	send( value::ptr request );
+	send( value::ref request );
 	
 	inline size_t
     num_bytes_used()
@@ -481,7 +481,7 @@ protected:
 	really_process();
 	
 	bool
-	validate( const value::ptr &root, value::ptr error );
+	validate( const value::ref &root, value::ref error );
 	
 	void
 	shutdown();
@@ -489,7 +489,7 @@ protected:
 	friend void							netkit::initialize();
 		
 	static connection::list				*m_instances;
-	static connection::ptr				m_active;
+	static connection::ref				m_active;
 	reply_handlers						m_reply_handlers;
 	static std::atomic< std::int32_t >	m_id;
 	
@@ -503,10 +503,10 @@ class NETKIT_DLL server
 {
 public:
 
-	typedef std::function< netkit::status ( value::ptr params ) >					preflight_f;
-	typedef std::function< void ( value::ptr result, bool upgrade, bool close ) >	reply_f;
-	typedef std::function< void ( value::ptr params ) >								notification_f;
-	typedef std::function< void ( value::ptr params, reply_f func ) >				request_f;
+	typedef std::function< netkit::status ( value::ref params ) >					preflight_f;
+	typedef std::function< void ( value::ref result, bool upgrade, bool close ) >	reply_f;
+	typedef std::function< void ( value::ref params ) >								notification_f;
+	typedef std::function< void ( value::ref params, reply_f func ) >				request_f;
 	
 	static void
 	preflight( preflight_f func );
@@ -518,10 +518,10 @@ public:
 	bind( const std::string &method, size_t num_params, request_f func );
 	
 	static void
-	route_notification( const value::ptr &request );
+	route_notification( const value::ref &request );
 	
 	static void
-	route_request( const value::ptr &request, reply_f func );
+	route_request( const value::ref &request, reply_f func );
 	
 	static void
 	reply_with_error( reply_f reply, netkit::status status, bool upgrade, bool close );
@@ -545,18 +545,18 @@ class NETKIT_DLL client : public object
 {
 public:
 
-	typedef std::function< void ( netkit::status error_code, const std::string &error_message, json::value::ptr result ) >	reply_f;
-	typedef smart_ptr< client >																								ptr;
+	typedef std::function< void ( netkit::status error_code, const std::string &error_message, json::value::ref result ) >	reply_f;
+	typedef smart_ref< client >																								ref;
 
 	client();
 	
-	client( const connection::ptr &conn );
+	client( const connection::ref &conn );
 	
 	bool
 	is_open() const;
 	
 	void
-	connect( const uri::ptr &uri, source::connect_reply_f reply );
+	connect( const uri::ref &uri, source::connect_reply_f reply );
 	
 	void
 	close();
@@ -567,14 +567,14 @@ protected:
 	process( const std::uint8_t *buf, std::size_t len );
 	
 	bool
-	send_notification( const std::string &method, value::ptr params );
+	send_notification( const std::string &method, value::ref params );
 	
 	bool
-	send_request( const std::string &method, value::ptr params, reply_f reply );
+	send_request( const std::string &method, value::ref params, reply_f reply );
 	
 protected:
 
-	connection::ptr m_connection;
+	connection::ref m_connection;
 };
 
 std::ostream& NETKIT_DLL
@@ -584,136 +584,136 @@ std::ostream& NETKIT_DLL
 operator<<(std::ostream& output, const object_map& o);
 
 std::ostream& NETKIT_DLL
-operator<<( std::ostream &os, const std::vector< json::value::ptr > &a );
+operator<<( std::ostream &os, const std::vector< json::value::ref > &a );
 
 std::ostream& NETKIT_DLL
-operator<<( std::ostream &os, const std::map< std::string, json::value::ptr > &m );
+operator<<( std::ostream &os, const std::map< std::string, json::value::ref > &m );
 
 }
 
 template <>
-class smart_ptr< json::value >
+class smart_ref< json::value >
 {
 public:
 
-	typedef smart_ptr this_type;
+	typedef smart_ref this_type;
 	typedef json::value* this_type::*unspecified_bool_type;
         
-	friend std::ostream &operator<<(std::ostream &output, const smart_ptr &v);
+	friend std::ostream &operator<<(std::ostream &output, const smart_ref &v);
 	
-	inline smart_ptr()
+	inline smart_ref()
 	:
 		m_ref( new json::value() )
 	{
 		m_ref->retain();
 	}
     
-	inline smart_ptr( bool v )
+	inline smart_ref( bool v )
 	:
 		m_ref( new json::value( v ) )
 	{
 		m_ref->retain();
 	}
 	
-	inline smart_ptr( std::int8_t v )
+	inline smart_ref( std::int8_t v )
 	:
 		m_ref( new json::value( v ) )
 	{
 		m_ref->retain();
 	}
 	
-	inline smart_ptr( std::uint8_t v )
+	inline smart_ref( std::uint8_t v )
 	:
 		m_ref( new json::value( v ) )
 	{
 		m_ref->retain();
 	}
 	
-	inline smart_ptr( std::int16_t v )
+	inline smart_ref( std::int16_t v )
 	:
 		m_ref( new json::value( v ) )
 	{
 		m_ref->retain();
 	}
 	
-	inline smart_ptr( std::uint16_t v )
+	inline smart_ref( std::uint16_t v )
 	:
 		m_ref( new json::value( v ) )
 	{
 		m_ref->retain();
 	}
 	
-	inline smart_ptr( std::int32_t v )
+	inline smart_ref( std::int32_t v )
 	:
 		m_ref( new json::value( v ) )
 	{
 		m_ref->retain();
 	}
 	
-	inline smart_ptr( std::uint32_t v )
+	inline smart_ref( std::uint32_t v )
 	:
 		m_ref( new json::value( v ) )
 	{
 		m_ref->retain();
 	}
 	
-	inline smart_ptr( std::int64_t v )
+	inline smart_ref( std::int64_t v )
 	:
 		m_ref( new json::value( v ) )
 	{
 		m_ref->retain();
 	}
 	
-	inline smart_ptr( std::uint64_t v )
+	inline smart_ref( std::uint64_t v )
 	:
 		m_ref( new json::value( v ) )
 	{
 		m_ref->retain();
 	}
 	
-	inline smart_ptr( netkit::status v )
+	inline smart_ref( netkit::status v )
 	:
 		m_ref( new json::value( v ) )
 	{
 		m_ref->retain();
 	}
 	
-	inline smart_ptr( double v )
+	inline smart_ref( double v )
 	:
 		m_ref( new json::value( v ) )
 	{
 		m_ref->retain();
 	}
 	
-	inline smart_ptr( const char *v )
+	inline smart_ref( const char *v )
 	:
 		m_ref( new json::value( v ) )
 	{
 		m_ref->retain();
 	}
 	
-	inline smart_ptr( const std::string &v )
+	inline smart_ref( const std::string &v )
 	:
 		m_ref( new json::value( v ) )
 	{
 		m_ref->retain();
 	}
 	
-	inline smart_ptr( json::value *ref)
+	inline smart_ref( json::value *ref)
 	:
 		m_ref( ref )
 	{
 		m_ref->retain();
 	}
 
-	inline smart_ptr( const smart_ptr<json::value> &that )
+	inline smart_ref( const smart_ref<json::value> &that )
 	:
 		m_ref( that.m_ref )
 	{
 		m_ref->retain();
 	}
 
-	inline ~smart_ptr()
+	inline ~smart_ref()
 	{
 		m_ref->release();
 	}
@@ -742,8 +742,8 @@ public:
 		return m_ref;
 	}
     
-	inline smart_ptr<json::value>&
-	operator=( const smart_ptr<json::value> &that )
+	inline smart_ref<json::value>&
+	operator=( const smart_ref<json::value> &that )
 	{
 		m_ref->assign( *that.m_ref );
 		
@@ -751,14 +751,14 @@ public:
 	}
 	
 	inline bool
-	operator==( const smart_ptr<json::value> &that )
+	operator==( const smart_ref<json::value> &that )
 	{
 		fprintf( stderr, "comparing %d to %d\n", m_ref->kind(), that.m_ref->kind() );
 		return ( *m_ref == *that.m_ref );
 	}
 
 	inline bool
-	operator!=( const smart_ptr<json::value> &that )
+	operator!=( const smart_ref<json::value> &that )
 	{
 		return ( *m_ref != *that.m_ref );
 	}
@@ -779,58 +779,58 @@ public:
 		return ( m_ref->is_null() );
 	}
 	
-	inline smart_ptr< json::value >
+	inline smart_ref< json::value >
 	operator[]( size_t index )
 	{
 		return ( *m_ref )[ index ];
 	}
 	
-	inline const smart_ptr< json::value >
+	inline const smart_ref< json::value >
 	operator[]( size_t index ) const
 	{
 		return ( *m_ref )[ index ];
 	}
 
-	inline smart_ptr< json::value >
+	inline smart_ref< json::value >
 	operator[]( const char *key )
 	{
 		return ( *m_ref )[ key ];
 	}
 	
-	inline const smart_ptr< json::value >
+	inline const smart_ref< json::value >
 	operator[]( const char *key ) const
 	{
 		return ( *m_ref )[ key ];
 	}
 	
-	inline smart_ptr< json::value >
+	inline smart_ref< json::value >
 	operator[]( const std::string &key )
 	{
 		return ( *m_ref )[ key ];
 	}
 	
-	inline const smart_ptr< json::value >
+	inline const smart_ref< json::value >
 	operator[]( const std::string &key ) const
 	{
 		return ( *m_ref )[ key ];
 	}
 	
 	template< class Other >
-	operator smart_ptr< Other >()
+	operator smart_ref< Other >()
 	{
-		smart_ptr< Other > p( m_ref );
+		smart_ref< Other > p( m_ref );
 		return p;
 	}
 	
 	template< class Other >
-	operator const smart_ptr< Other >() const
+	operator const smart_ref< Other >() const
 	{
-		smart_ptr< Other > p( m_ref );
+		smart_ref< Other > p( m_ref );
 		return p;
 	}
 	
 	inline void
-	swap( smart_ptr &rhs )
+	swap( smart_ref &rhs )
 	{
 		json::value * tmp = m_ref;
 		m_ref = rhs.m_ref;
@@ -844,28 +844,28 @@ private:
 
 template<>
 inline bool
-operator==( smart_ptr< json::value > const &a, smart_ptr< json::value > const &b )
+operator==( smart_ref< json::value > const &a, smart_ref< json::value > const &b )
 {
 	return ( a->equal( *b.get() ) );
 }
 
 template<>
 inline bool
-operator!=( smart_ptr< json::value > const &a, smart_ptr< json::value > const &b )
+operator!=( smart_ref< json::value > const &a, smart_ref< json::value > const &b )
 {
 	return ( *a.get() != *b.get() );
 }
 
 template<>
 inline bool
-operator==( smart_ptr< json::value > const &a, json::value *b )
+operator==( smart_ref< json::value > const &a, json::value *b )
 {
 	return ( *a.get() == *b );
 }
 
 template<>
 inline bool
-operator!=( smart_ptr< json::value > const &a, json::value *b )
+operator!=( smart_ref< json::value > const &a, json::value *b )
 {
 	return ( *a.get() != *b );
 }

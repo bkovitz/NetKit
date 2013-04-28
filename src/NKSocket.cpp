@@ -67,7 +67,7 @@ socket::socket( native fd )
 }
 
 
-socket::socket( native fd, const endpoint::ptr peer )
+socket::socket( native fd, const endpoint::ref peer )
 :
 	m_peer( peer ),
 	m_fd( fd )
@@ -93,7 +93,7 @@ socket::init()
 
 
 int
-socket::start_connect( const endpoint::ptr &peer, bool &would_block )
+socket::start_connect( const endpoint::ref &peer, bool &would_block )
 {
 	sockaddr_storage	addr;
 	std::size_t			len;
@@ -207,7 +207,7 @@ socket::is_open() const
 #	pragma mark acceptor implementation
 #endif
 
-acceptor::acceptor( const endpoint::ptr &endpoint, int domain, int type )
+acceptor::acceptor( const endpoint::ref &endpoint, int domain, int type )
 :
 	m_endpoint( endpoint )
 {
@@ -289,7 +289,7 @@ ip::socket::socket( native fd )
 }
 
 
-ip::socket::socket( native fd, const ip::endpoint::ptr &peer )
+ip::socket::socket( native fd, const ip::endpoint::ref &peer )
 :
 	netkit::socket( fd )
 {
@@ -300,7 +300,7 @@ ip::socket::socket( native fd, const ip::endpoint::ptr &peer )
 #	pragma mark ip::acceptor implementation
 #endif
 
-ip::acceptor::acceptor( const ip::endpoint::ptr &endpoint, int type )
+ip::acceptor::acceptor( const ip::endpoint::ref &endpoint, int type )
 :
 	netkit::acceptor( endpoint, endpoint->addr()->is_v4() ? AF_INET : AF_INET6, type )
 {
@@ -332,7 +332,7 @@ ip::tcp::socket::socket( native fd )
 }
 
 
-ip::tcp::socket::socket( native fd, const ip::endpoint::ptr &peer )
+ip::tcp::socket::socket( native fd, const ip::endpoint::ref &peer )
 :
 	ip::socket( fd, peer )
 {
@@ -364,7 +364,7 @@ ip::tcp::socket::close()
 #	pragma mark adapter implementation
 #endif
 
-ip::tcp::acceptor::acceptor( const ip::endpoint::ptr &endpoint )
+ip::tcp::acceptor::acceptor( const ip::endpoint::ref &endpoint )
 :
 	ip::acceptor( endpoint, SOCK_STREAM ),
 	m_event( nullptr )
@@ -395,7 +395,7 @@ ip::tcp::acceptor::accept( accept_reply_f reply )
 			socket::native			new_fd;
 			struct sockaddr_storage	addr;
 			socklen_t				addr_len = sizeof( addr );
-			socket::ptr				new_sock;
+			socket::ref				new_sock;
 			
 			runloop::instance()->cancel( m_event );
 			m_event = nullptr;
