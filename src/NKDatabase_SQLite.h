@@ -86,11 +86,11 @@ public:
 	virtual bool
 	is_connected() const;
 	
-	virtual tag
-	add_observer( const std::string &tableName, observer_reply_f reply );
+	virtual cookie
+	on_change( const std::string &tableName, observer_reply_f reply );
 	
 	virtual void
-	remove_observer( const std::string &tableName, tag t );
+	cancel( cookie t );
 
 	virtual netkit::status
 	exec( const std::string &str );
@@ -109,15 +109,43 @@ public:
 
 private:
 
-	typedef std::list< std::pair< tag, observer_reply_f > >	list;
-	typedef std::map< std::string, list >					map;
+	class observer
+	{
+	public:
+
+		observer( const std::string &table_name, observer_reply_f reply )
+		:
+			m_table_name( table_name ),
+			m_reply( reply )
+		{
+		}
+
+		inline const std::string&
+		table_name() const
+		{
+			return m_table_name;
+		}
+
+		inline observer_reply_f&
+		reply()
+		{
+			return m_reply;
+		}
+
+	private:
+
+		std::string			m_table_name;
+		observer_reply_f	m_reply;
+	};
+		
+	typedef std::list< observer* >			list;
+	typedef std::map< std::string, list >	map;
 	
 	static void
 	database_was_changed( void* impl, int, const char* db_name, const char* table_name, sqlite_int64 );
-	
-	std::int32_t	m_tags;
-	map				m_omap;
-	sqlite3			*m_db;
+
+	map		m_omap;
+	sqlite3	*m_db;
 };
 
 }

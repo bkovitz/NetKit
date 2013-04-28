@@ -76,24 +76,24 @@ source::add( adapter::ptr adapter )
 }
 
 
-tag
-source::bind( close_f c )
+cookie
+source::on_close( close_f c )
 {
-	static int	tags	= 0;
-	tag			t		= reinterpret_cast< tag >( ++tags );
+	static int		tags	= 0;
+	std::uint32_t	t		= ++tags;
 	
 	m_close_handlers.push_back( std::make_pair( t, c ) );
 	
-	return t;
+	return reinterpret_cast< void* >( t );
 }
 
 
 void
-source::unbind( tag t )
+source::cancel( cookie c )
 {
 	for ( auto it = m_close_handlers.begin(); it != m_close_handlers.end(); it++ )
 	{
-		if ( it->first == t )
+		if ( it->first == reinterpret_cast< std::uint32_t >( c.get() ) )
 		{
 			m_close_handlers.erase( it );
 			break;

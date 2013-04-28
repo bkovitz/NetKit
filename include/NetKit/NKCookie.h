@@ -28,64 +28,66 @@
  *
  */
  
-#ifndef _netkit_sink_h
-#define _netkit_sink_h
+#ifndef _netkit_cookie_h
+#define _netkit_cookie_h
 
-#include <NetKit/NKSource.h>
-#include <NetKit/NKCookie.h>
-#include <NetKit/NKURI.h>
-#include <string>
-#include <ios>
+#include <NetKit/NKPlatform.h>
 
 namespace netkit {
 
-class NETKIT_DLL sink : public object
+class cookie
 {
 public:
 
-	typedef std::function< void ( void ) >	close_f;
-	typedef smart_ptr< sink >				ptr;
-	
-	sink();
-	
-	sink( const uri::ptr &uri );
-	
-	virtual ~sink();
-	
-	virtual void
-	bind( source::ptr source );
-	
-	void
-	connect( const uri::ptr &uri, source::connect_reply_f reply );
-	
-	void
-	send( const std::uint8_t *buf, std::size_t len, source::send_reply_f reply );
-	
-	bool
-	is_open() const;
-	
-	void
-	close();
-	
-	virtual cookie
-	on_close( close_f func );
-	
-	virtual void
-	cancel( cookie c );
-	
-protected:
+	cookie()
+	:
+		m_val( nullptr )
+	{
+	}
 
-	typedef std::list< std::pair< std::uint32_t, close_f > > close_handlers;
+	cookie( void *val )
+	:
+		m_val( val )
+	{
+	}
 
-	virtual bool
-	process( const std::uint8_t *buf, std::size_t len ) = 0;
-	
-	void
-	run();
+	cookie( const cookie &that )
+	:
+		m_val( that.m_val )
+	{
+	}
 
-	close_handlers	m_close_handlers;
-	source::ptr		m_source;
-	std::uint8_t	m_buf[ 4192 ];
+	~cookie()
+	{
+	}
+
+	inline cookie&
+	operator=( const cookie &that )
+	{
+		m_val = that.m_val;
+		return *this;
+	}
+
+	inline operator void* ()
+	{
+		return m_val;
+	}
+
+	inline void*
+	get()
+	{
+		return m_val;
+	}
+
+	inline const void*
+	get() const
+	{
+		return m_val;
+	}
+
+private:
+
+	void *m_val;
 };
 
 }

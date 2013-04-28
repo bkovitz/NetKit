@@ -48,7 +48,6 @@ manager::instance()
 
 manager_impl::manager_impl( sqlite3 * db )
 :
-	m_tags( 1 ),
 	m_db( db )
 {
 	sqlite3_update_hook( m_db, database_was_changed, this );
@@ -126,21 +125,22 @@ exit:
 }
 
 
-database::manager::tag
-database::manager_impl::add_observer( const std::string &tableName, observer_reply_f reply )
+netkit::cookie
+database::manager_impl::on_change( const std::string &tableName, observer_reply_f reply )
 {
-	auto	it	= m_omap.find( tableName );
-	tag		t	= reinterpret_cast< tag >( ++m_tags );
+	auto		it	= m_omap.find( tableName );
+	observer	*o	= new observer( tableName, reply );
+	oids		oids;
 	
 	if ( it != m_omap.end() )
 	{
-		it->second.push_back( std::make_pair( t, reply ) );
+		it->second.push_back( o );
 	}
 	else
 	{
 		list l;
 
-		l.push_back( std::make_pair( t, reply ) );
+		l.push_back( o );
 		
 		m_omap[ tableName ] = l;
 	}
@@ -149,27 +149,39 @@ database::manager_impl::add_observer( const std::string &tableName, observer_rep
 		
 	while ( stmt->step() )
 	{
-		reply( database::manager::observer_flags::update, stmt->int64_at_column( 0 ) );
+		oids.push_back( stmt->int64_at_column( 0 ) );
 	}
 
-	return t;
+	if ( oids.size() )
+	{
+		reply( database::action::update, oids );
+	}
+
+	return o;
 }
 		
 
 void
-database::manager_impl::remove_observer( const std::string &tableName, tag t )
+database::manager_impl::cancel( cookie c )
 {
-	auto it1 = m_omap.find( tableName );
-	
-	if ( it1 != m_omap.end() )
+	observer *o = reinterpret_cast< observer* >( c.get() );
+
+	if ( o )
 	{
-		for ( auto it2 = it1->second.begin(); it2 != it1->second.end(); it2++ )
+		auto it1 = m_omap.find( o->table_name() );
+	
+		if ( it1 != m_omap.end() )
 		{
-			if ( it2->first == t )
+			for ( auto it2 = it1->second.begin(); it2 != it1->second.end(); it2++ )
 			{
-				it1->second.erase( it2 );
-			}
-		} 
+				if ( *it2 == c.get() )
+				{
+					it1->second.erase( it2 );
+				}
+			} 
+		}
+
+		delete o;
 	}
 }
 
@@ -179,6 +191,9 @@ database::manager_impl::database_was_changed( void* context, int action, const c
 {
 	database::manager_impl	*self	= ( database::manager_impl* ) context;
 	map::iterator			it1		= self->m_omap.find( table_name );
+	oids					oids;
+
+	oids.push_back( oid );
 
 	if ( it1 != self->m_omap.end() )
 	{
@@ -189,13 +204,13 @@ database::manager_impl::database_was_changed( void* context, int action, const c
 				 case SQLITE_INSERT:
 				 case SQLITE_UPDATE:
 				 {
-					it2->second( observer_flags::update, oid );
+					( *it2 )->reply()( action::update, oids );
 				 }
 				 break;
 				 
 				 case SQLITE_DELETE:
 				 {
-					it2->second( observer_flags::delet, oid );
+					( *it2 )->reply()( action::delet, oids );
 				 }
 				 break;
 			}

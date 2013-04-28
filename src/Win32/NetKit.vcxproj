@@ -241,6 +241,7 @@ IF EXIST ..\..\ThirdParty\uriparser GOTO DONE
     <ClInclude Include="..\..\include\NetKit\NKBase64.h" />
     <ClInclude Include="..\..\include\NetKit\NKComponent.h" />
     <ClInclude Include="..\..\include\NetKit\NKConcurrent.h" />
+    <ClInclude Include="..\..\include\NetKit\NKCookie.h" />
     <ClInclude Include="..\..\include\NetKit\NKDatabase.h" />
     <ClInclude Include="..\..\include\NetKit\NKEndpoint.h" />
     <ClInclude Include="..\..\include\NetKit\NKError.h" />

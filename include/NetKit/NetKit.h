@@ -33,6 +33,7 @@
 
 #include <NetKit/NKObject.h>
 #include <NetKit/NKURI.h>
+#include <NetKit/NKCookie.h>
 #include <NetKit/NKEndpoint.h>
 #include <NetKit/NKConcurrent.h>
 #include <NetKit/NKSocket.h>

@@ -275,6 +275,9 @@
     <ClInclude Include="..\..\ThirdParty\uriparser\include\uriparser\UriIp4.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\NetKit\NKCookie.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include=".\EventLog.rc">

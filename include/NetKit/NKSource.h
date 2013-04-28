@@ -34,6 +34,7 @@
 #include <NetKit/NKRunLoop.h>
 #include <NetKit/NKEndpoint.h>
 #include <NetKit/NKIntrusiveList.h>
+#include <NetKit/NKCookie.h>
 #include <queue>
 #include <list>
 #include <ios>
@@ -101,12 +102,6 @@ public:
 	virtual void
 	add( adapter::ptr adapter );
 	
-	virtual tag
-	bind( close_f func );
-	
-	virtual void
-	unbind( tag t );
-	
 	void
 	accept( accept_reply_f reply );
 	
@@ -131,9 +126,15 @@ public:
 	virtual void
 	close();
 	
+	virtual cookie
+	on_close( close_f func );
+	
+	virtual void
+	cancel( cookie c );
+	
 protected:
 
-	typedef std::list< std::pair< tag, close_f > > close_handlers;
+	typedef std::list< std::pair< std::uint32_t, close_f > > close_handlers;
 	
 	struct send_info
 	{

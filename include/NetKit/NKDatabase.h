@@ -2,6 +2,7 @@
 #define _netkit_database_h
 
 #include <NetKit/NKSmartPtr.h>
+#include <NetKit/NKCookie.h>
 #include <NetKit/NKComponent.h>
 #include <NetKit/NKURI.h>
 #include <NetKit/NKError.h>
@@ -55,8 +56,19 @@ virtual bool save() const;
 
 
 namespace netkit {
+
 namespace database {
 
+typedef std::list< std::uint64_t > oids;
+
+struct action
+{
+	enum
+	{
+		update,
+		delet
+	};
+};
 
 extern std::string
 sanitize( const std::string &str );
@@ -159,18 +171,8 @@ private:
 class NETKIT_DLL manager : public object {
 public:
 
-	struct observer_flags
-	{
-		enum
-		{
-			update,
-			delet
-		};
-	};
-
-	typedef std::function< void ( std::int32_t flags, std::uint64_t oid ) > observer_reply_f;
-	typedef smart_ptr< manager > ptr;
-	typedef void*				tag;
+	typedef std::function< void ( std::int32_t action, const oids &oids ) > observer_reply_f;
+	typedef smart_ptr< manager >											ptr;
 	
 	static bool
 	create( const uri::ptr &uri );
@@ -181,11 +183,11 @@ public:
 	virtual bool
 	is_connected() const = 0;
 
-	virtual tag
-	add_observer( const std::string &table_name, observer_reply_f reply ) = 0;
+	virtual cookie
+	on_change( const std::string &table_name, observer_reply_f reply ) = 0;
 	
 	virtual void
-	remove_observer( const std::string &table_name, tag t ) = 0;
+	cancel( cookie c ) = 0;
 
 	virtual netkit::status
 	exec( const std::string &str ) = 0;

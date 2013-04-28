@@ -62,28 +62,41 @@ void
 sink::bind( source::ptr source )
 {
 	m_source = source;
+
+	m_source->on_close( [=]()
+	{
+		for ( auto it = m_close_handlers.begin(); it != m_close_handlers.end(); it++ )
+		{
+			it->second();
+		}
+	} );
 	
 	run();
 }
 
 
-tag
-sink::bind( close_f c )
+cookie
+sink::on_close( close_f c )
 {
-	return m_source->bind( c );
+	static int		tags	= 0;
+	std::uint32_t	t		= ++tags;
+	
+	m_close_handlers.push_back( std::make_pair( t, c ) );
+	
+	return reinterpret_cast< void* >( t );
 }
 
 	
 void
-sink::unbind( tag t )
+sink::cancel( cookie c )
 {
-	if ( m_source.get() == t )
+	for ( auto it = m_close_handlers.begin(); it != m_close_handlers.end(); it++ )
 	{
-		m_source = nullptr;
-	}
-	else
-	{
-		m_source->unbind( t );
+		if ( it->first == reinterpret_cast< std::uint32_t >( c.get() ) )
+		{
+			m_close_handlers.erase( it );
+			break;
+		}
 	}
 }
 
