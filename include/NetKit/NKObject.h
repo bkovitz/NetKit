@@ -84,16 +84,58 @@ public:
 	json::value_ref
 	json() const;
 
-	virtual expected< std::uint64_t >
-	int_for_key( const std::string &key ) const;
+	expected< std::int8_t >
+	int8_for_key( const std::string &key ) const;
 
-	virtual expected< std::string >
+	expected< std::uint8_t >
+	uint8_for_key( const std::string &key ) const;
+
+	expected< std::int16_t >
+	int16_for_key( const std::string &key ) const;
+
+	expected< std::uint16_t >
+	uint16_for_key( const std::string &key ) const;
+
+	expected< std::int32_t >
+	int32_for_key( const std::string &key ) const;
+
+	expected< std::uint32_t >
+	uint32_for_key( const std::string &key ) const;
+
+	expected< std::int64_t >
+	int64_for_key( const std::string &key ) const;
+
+	expected< std::uint64_t >
+	uint64_for_key( const std::string &key ) const;
+
+	expected< std::string >
 	string_for_key( const std::string &key ) const;
 
-	virtual void
+	void
+	set_value_for_key( const std::string &key, std::int8_t val );
+
+	void
+	set_value_for_key( const std::string &key, std::uint8_t val );
+	
+	void
+	set_value_for_key( const std::string &key, std::int16_t val );
+
+	void
+	set_value_for_key( const std::string &key, std::uint16_t val );
+	
+	void
+	set_value_for_key( const std::string &key, std::int32_t val );
+
+	void
+	set_value_for_key( const std::string &key, std::uint32_t val );
+	
+	void
+	set_value_for_key( const std::string &key, std::int64_t val );
+
+	void
 	set_value_for_key( const std::string &key, std::uint64_t val );
 	
-	virtual void
+	void
 	set_value_for_key( const std::string &key, const std::string &val );
 	
 	inline attrs::iterator

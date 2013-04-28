@@ -106,8 +106,118 @@ object::inflate( const json::value_ref &root )
 }
 
 
+expected< std::int8_t >
+object::int8_for_key( const std::string &key ) const
+{
+	auto it = m_attrs.find( key );
+
+	if ( it != m_attrs.end() )
+	{
+		return ( it->second.length() > 0 ) ? std::stoi( it->second ) : 0;
+	}
+	else
+	{
+		return std::runtime_error( "key not found" );
+	}
+}
+
+
+expected< std::uint8_t >
+object::uint8_for_key( const std::string &key ) const
+{
+	auto it = m_attrs.find( key );
+
+	if ( it != m_attrs.end() )
+	{
+		return ( it->second.length() > 0 ) ? std::stoi( it->second ) : 0;
+	}
+	else
+	{
+		return std::runtime_error( "key not found" );
+	}
+}
+
+expected< std::int16_t >
+object::int16_for_key( const std::string &key ) const
+{
+	auto it = m_attrs.find( key );
+
+	if ( it != m_attrs.end() )
+	{
+		return ( it->second.length() > 0 ) ? std::stoi( it->second ) : 0;
+	}
+	else
+	{
+		return std::runtime_error( "key not found" );
+	}
+}
+
+
+expected< std::uint16_t >
+object::uint16_for_key( const std::string &key ) const
+{
+	auto it = m_attrs.find( key );
+
+	if ( it != m_attrs.end() )
+	{
+		return ( it->second.length() > 0 ) ? std::stoi( it->second ) : 0;
+	}
+	else
+	{
+		return std::runtime_error( "key not found" );
+	}
+}
+
+expected< std::int32_t >
+object::int32_for_key( const std::string &key ) const
+{
+	auto it = m_attrs.find( key );
+
+	if ( it != m_attrs.end() )
+	{
+		return ( it->second.length() > 0 ) ? std::stol( it->second ) : 0;
+	}
+	else
+	{
+		return std::runtime_error( "key not found" );
+	}
+}
+
+
+expected< std::uint32_t >
+object::uint32_for_key( const std::string &key ) const
+{
+	auto it = m_attrs.find( key );
+
+	if ( it != m_attrs.end() )
+	{
+		return ( it->second.length() > 0 ) ? std::stoul( it->second ) : 0;
+	}
+	else
+	{
+		return std::runtime_error( "key not found" );
+	}
+}
+
+
+expected< std::int64_t >
+object::int64_for_key( const std::string &key ) const
+{
+	auto it = m_attrs.find( key );
+
+	if ( it != m_attrs.end() )
+	{
+		return ( it->second.length() > 0 ) ? std::stoll( it->second ) : 0;
+	}
+	else
+	{
+		return std::runtime_error( "key not found" );
+	}
+}
+
+
 expected< std::uint64_t >
-object::int_for_key( const std::string &key ) const
+object::uint64_for_key( const std::string &key ) const
 {
 	auto it = m_attrs.find( key );
 
@@ -135,6 +245,55 @@ object::string_for_key( const std::string &key ) const
 	{
 		return std::runtime_error( "key not found" );
 	}
+}
+
+
+void
+object::set_value_for_key( const std::string &key, std::int8_t val )
+{
+	m_attrs[ key ] = std::to_string( val );
+}
+
+
+void
+object::set_value_for_key( const std::string &key, std::uint8_t val )
+{
+	m_attrs[ key ] = std::to_string( val );
+}
+
+
+void
+object::set_value_for_key( const std::string &key, std::int16_t val )
+{
+	m_attrs[ key ] = std::to_string( val );
+}
+
+
+void
+object::set_value_for_key( const std::string &key, std::uint16_t val )
+{
+	m_attrs[ key ] = std::to_string( val );
+}
+
+
+void
+object::set_value_for_key( const std::string &key, std::int32_t val )
+{
+	m_attrs[ key ] = std::to_string( val );
+}
+
+
+void
+object::set_value_for_key( const std::string &key, std::uint32_t val )
+{
+	m_attrs[ key ] = std::to_string( val );
+}
+
+
+void
+object::set_value_for_key( const std::string &key, std::int64_t val )
+{
+	m_attrs[ key ] = std::to_string( val );
 }
 
 
