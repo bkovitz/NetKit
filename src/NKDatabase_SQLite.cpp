@@ -1,4 +1,5 @@
 #include "NKDatabase_SQLite.h"
+#include <NetKit/NKUnicode.h>
 #include <NetKit/NKLog.h>
 #include <sstream>
 
@@ -17,12 +18,20 @@ using namespace netkit::database;
 static manager::ref g_manager;
 
 bool
-manager::create( const uri::ref &uri )
+#if defined( UNICODE )
+manager::create( const std::wstring &s )
+#else
+manager::create( const std::string &s )
+#endif
 {
 	sqlite3	*db;
 	int		err;
 	
-	err = sqlite3_open( uri->path().c_str(), &db );
+#if defined( UNICODE )
+	err = sqlite3_open16( s.c_str(), &db );
+#else
+	err = sqlite3_open( s.c_str(), &db );
+#endif
 
 	if ( err == SQLITE_OK )
 	{

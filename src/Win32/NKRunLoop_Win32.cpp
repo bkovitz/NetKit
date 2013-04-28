@@ -179,7 +179,7 @@ runloop_win32::create( HANDLE handle )
 
 exit:
 
-	return s;
+	return a;
 }
 
 

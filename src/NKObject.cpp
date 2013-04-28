@@ -29,6 +29,7 @@
  */
  
 #include <NetKit/NKObject.h>
+#include <NetKit/NKJSON.h>
 #include <exception>
 #include <sstream>
 #include <assert.h>
@@ -49,20 +50,70 @@ object::object()
 }
 
 
-object::~object()
+object::object( const json::value_ref &root )
 {
-	//assert( m_refs == 0 );
+	inflate( root );
 }
 
 
-expected< std::int32_t >
+object::~object()
+{
+}
+
+
+void
+object::flatten( json::value_ref &root ) const
+{
+	json::value::ref attrs;
+
+	for ( auto it = attrs_begin(); it != attrs_end(); it++ )
+	{
+		attrs[ it->first ] = it->second;
+	}
+
+	root[ "___attrs" ]	= attrs;
+}
+
+
+json::value_ref
+object::json() const
+{
+	json::value::ref root;
+
+	flatten( root );
+
+	return root;
+}
+
+
+void
+object::inflate( const json::value_ref &root )
+{
+	json::value::ref attrs = root[ "___attrs" ];
+
+	if ( !attrs->is_null() )
+	{
+		json::value::keys members = attrs->all_keys();
+
+		for ( size_t i = 0; i < members.size(); i++ )
+		{
+			std::string key = members[ i ];
+			std::string val = attrs[ key ]->as_string();
+
+			netkit::object::set_value_for_key( key, val );
+		}
+	}
+}
+
+
+expected< std::uint64_t >
 object::int_for_key( const std::string &key ) const
 {
-	auto it = m_map.find( key );
+	auto it = m_attrs.find( key );
 
-	if ( it != m_map.end() )
+	if ( it != m_attrs.end() )
 	{
-		return ( it->second.length() > 0 ) ? atoi( it->second.c_str() ) : 0;
+		return ( it->second.length() > 0 ) ? std::stoull( it->second ) : 0;
 	}
 	else
 	{
@@ -74,9 +125,9 @@ object::int_for_key( const std::string &key ) const
 expected< std::string >
 object::string_for_key( const std::string &key ) const
 {
-	auto it = m_map.find( key );
+	auto it = m_attrs.find( key );
 
-	if ( it != m_map.end() )
+	if ( it != m_attrs.end() )
 	{
 		return it->second;
 	}
@@ -88,20 +139,16 @@ object::string_for_key( const std::string &key ) const
 
 
 void
-object::set_value_for_key( const std::string &key, std::int32_t val )
+object::set_value_for_key( const std::string &key, std::uint64_t val )
 {
-	std::ostringstream os;
-	
-	os << val;
-	
-	m_map[ key ] = os.str();
+	m_attrs[ key ] = std::to_string( val );
 }
 
 
 void
 object::set_value_for_key( const std::string &key, const std::string &value )
 {
-	m_map[ key ] = value;
+	m_attrs[ key ] = value;
 }
 
 
@@ -109,4 +156,11 @@ bool
 object::equals( const object &that ) const
 {
 	return ( this == &that );
+}
+
+
+object&
+object::assign( const object &that )
+{
+	return *this;
 }

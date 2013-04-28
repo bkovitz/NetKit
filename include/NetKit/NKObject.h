@@ -43,8 +43,9 @@
 #   define NETKIT_STDCALL __stdcall
 #   if defined( NETKIT_SDK_EXPORTS )
 #       define NETKIT_DLL __declspec( dllexport )
+#	elif defined( NETKIT_SDK_IMPORTS )
+#       define NETKIT_DLL __declspec( dllimport )
 #   else
-//#       define NETKIT_DLL __declspec( dllimport )
 #		define NETKIT_DLL
 #   endif
 #else
@@ -54,51 +55,69 @@
 
 namespace netkit {
 
-extern void initialize();
-typedef void *tag;
+// Forward declaration value
+
+namespace json {
+
+class value;
+typedef smart_ref< value > value_ref;
+
+}
 
 class object
 {
 public:
 
-	typedef std::map< std::string, std::string > keyvals;
+	typedef std::map< std::string, std::string > attrs;
 	typedef smart_ref< object > ref;
 	typedef std::list< ref > list;
 
-	virtual expected< std::int32_t >
+	object();
+
+	object( const json::value_ref &root );
+
+	virtual ~object() = 0;
+
+	virtual void
+	flatten( json::value_ref &root ) const;
+
+	json::value_ref
+	json() const;
+
+	virtual expected< std::uint64_t >
 	int_for_key( const std::string &key ) const;
 
 	virtual expected< std::string >
 	string_for_key( const std::string &key ) const;
 
 	virtual void
-	set_value_for_key( const std::string &key, std::int32_t val );
+	set_value_for_key( const std::string &key, std::uint64_t val );
 	
 	virtual void
 	set_value_for_key( const std::string &key, const std::string &val );
 	
-	inline keyvals::iterator
-	keyvals_begin()
+	inline attrs::iterator
+	attrs_begin()
 	{
-		return m_map.begin();
+		return m_attrs.begin();
 	}
 	
-	inline keyvals::iterator
-	keyvals_end()
+	inline attrs::iterator
+	attrs_end()
 	{
-		return m_map.end();
+		return m_attrs.end();
 	}
 	
-	inline keyvals::const_iterator
-	keyvals_begin() const
+	inline attrs::const_iterator
+	attrs_begin() const
 	{
-		return m_map.begin();
+		return m_attrs.begin();
 	}
 	
-	inline keyvals::const_iterator
-	keyvals_end() const
+	inline attrs::const_iterator
+	attrs_end() const
 	{
-		return m_map.end();
+		return m_attrs.end();
 	}
 	
 	inline void
@@ -128,17 +147,21 @@ public:
 	
 	virtual bool
 	equals( const object &that ) const;
+
+	virtual object&
+	assign( const object &that );
 	
 protected:
 
-	object();
-
-	virtual ~object() = 0;
+	void
+	inflate( const json::value_ref &root );
 
 	typedef std::atomic< int >	atomic_int_t;
-	keyvals						m_map;
+	attrs						m_attrs;
 	mutable atomic_int_t		m_refs;
 };
+
+extern void initialize();
 
 }
 

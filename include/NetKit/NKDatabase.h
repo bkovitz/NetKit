@@ -4,6 +4,7 @@
 #include <NetKit/NKSmartRef.h>
 #include <NetKit/NKCookie.h>
 #include <NetKit/NKComponent.h>
+#include <NetKit/NKJSON.h>
 #include <NetKit/NKURI.h>
 #include <NetKit/NKError.h>
 #include <memory>
@@ -39,11 +40,6 @@ find( int64_t oid )									\
 {													\
 	return netkit::database::object::find<NAME, ref>( oid );	\
 }													\
-static ref											\
-find( const std::string &uuid )						\
-{													\
-	return netkit::database::object::find<NAME, ref>( uuid );	\
-}													\
 template <class T>									\
 static iterator										\
 find( const std::string &key, T val )				\
@@ -54,6 +50,13 @@ NAME( const netkit::database::statement::ref &stmt );\
 static bool initialize();							\
 virtual bool save() const;
 
+#if 0
+static ref											\
+find( const std::string &uuid )						\
+{													\
+	return netkit::database::object::find<NAME, ref>( uuid );	\
+}
+#endif
 
 namespace netkit {
 
@@ -175,7 +178,11 @@ public:
 	typedef smart_ref< manager >											ref;
 	
 	static bool
-	create( const uri::ref &uri );
+#if defined( UNICODE )
+	create( const std::wstring &s );
+#else
+	create( const std::string &s );
+#endif
 	
 	static manager::ref
 	instance();
@@ -208,7 +215,7 @@ class NETKIT_DLL object : public netkit::object
 public:
 
 	typedef smart_ref< object > ref;
-	typedef int64_t oid_t;
+	typedef std::uint64_t		oid_t;
 
 	object()
 	:
@@ -217,10 +224,17 @@ public:
 	{
 	}
 
+	object( const json::value::ref &root )
+	:
+		netkit::object( root ),
+		m_dirty( false )
+	{
+		inflate( root );
+	}
+
 	object( const database::statement::ref &stmt )
 	:
 		m_oid( stmt->int64_at_column( 0 ) ),
-		m_uuid( stmt->text_at_column( 1 ) ),
 		m_dirty( false )
 	{
 	}
@@ -229,10 +243,22 @@ public:
 	{
 	}
 
+	virtual void
+	flatten( json::value::ref &root ) const
+	{
+		root[ "oid" ] = m_oid;
+	}
+
+	void
+	inflate( const json::value::ref &root )
+	{
+		m_oid = root[ "oid" ]->as_uint64();
+	}
+
 	inline bool
 	operator==( const object &obj )
 	{
-		return ( m_uuid == obj.m_uuid );
+		return ( m_oid == obj.m_oid );
 	}
 	
 	template <class Type>
@@ -292,6 +318,7 @@ public:
 		return t;
 	}
 
+	/*
 	template <class Type, class Ptr>
 	static Ptr
 	find( const std::string &uuid )
@@ -315,6 +342,7 @@ public:
 		
 		return t;
 	}
+	*/
 
 	template <class Type, class Ptr>
 	static iterator< Type, Ptr >
@@ -331,7 +359,7 @@ public:
 
 	template <class Type, class Ptr>
 	static iterator< Type, Ptr >
-	find( const std::string &key, int val )
+	find( const std::string &key, std::uint64_t val )
 	{
 		std::ostringstream os;
 
@@ -386,18 +414,6 @@ public:
 		}
 	}
 
-	inline const std::string&
-	uuid() const
-	{
-		return m_uuid;
-	}
-
-	inline void
-	set_uuid( const std::string &uuid )
-	{
-		m_uuid = uuid;
-	}
-	
 	inline oid_t
 	oid() const
 	{
@@ -413,7 +429,6 @@ public:
 protected:
 
 	mutable oid_t		m_oid;
-	mutable std::string	m_uuid;
 	mutable bool		m_dirty;
 };
 
