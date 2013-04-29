@@ -155,6 +155,10 @@ source::connect_internal_1( const uri::ref &uri, connect_reply_f reply )
 					{
 						connect_internal_2( uri, endpoint.get(), reply );
 					}
+					else
+					{
+						reply( ret, endpoint.get() );
+					}
 				} );
 			}
 			else

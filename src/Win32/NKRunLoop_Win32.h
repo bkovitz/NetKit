@@ -9,6 +9,7 @@
 #include	<mswsock.h>
 #include	<functional>
 #include	<utility>
+#include	<queue>
 #include	<mutex>
 #include	<list>
 
@@ -62,7 +63,15 @@ private:
 	{
 		typedef std::list< atom* > list;
 
+		static inline bool
+		compare( atom *lhs, atom *rhs )
+		{
+			return lhs->m_absolute_time < rhs->m_absolute_time;
+		}
+
 		long			m_network_events;
+		std::time_t		m_relative_time;
+		std::time_t		m_absolute_time;
 		bool			m_scheduled;
 		source			*m_source;
 		event_f			m_func;
@@ -98,6 +107,12 @@ private:
 			return ( m_socket == INVALID_SOCKET ) ? true : false;
 		}
 
+		inline bool
+		is_timer() const
+		{
+			return ( ( m_socket == INVALID_SOCKET ) && ( m_handle == WSA_INVALID_EVENT ) );
+		}
+
 		inline long
 		network_events()
 		{
@@ -120,8 +135,9 @@ private:
 
 	struct worker
 	{
-		typedef netkit::concurrent::queue< std::pair< void*, dispatch_f > > queue;
-		typedef std::list< worker* >			list;
+		typedef std::list< atom* >												timers;
+		typedef netkit::concurrent::queue< std::pair< void*, dispatch_f > >		queue;
+		typedef std::list< worker* >											list;
 
 		HANDLE		m_thread;
 		unsigned	m_id;			// 0 for main worker
@@ -129,6 +145,7 @@ private:
 		HANDLE		m_wakeup;	// NULL for main worker
 		BOOL		m_done;		// Not used for main worker
 
+		timers		m_timers;
 		DWORD		m_num_sources;
 		source		*m_sources[ MAXIMUM_WAIT_OBJECTS ];
 		HANDLE		m_handles[ MAXIMUM_WAIT_OBJECTS ];

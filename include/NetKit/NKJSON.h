@@ -182,13 +182,13 @@ public:
 	operator>=(const value &rhs) const;
 
 	value::ref
-	operator[](const char *key);
+	operator[]( const char *key );
 
 	value::ref
-	operator[](const std::string &key);
+	operator[]( const std::string &key );
 
 	value::ref
-	operator[](size_t index);
+	operator[]( std::uint32_t index );
 
 	type
 	kind() const;
@@ -283,7 +283,7 @@ public:
 	bool
 	append( const value::ref &v );
 	
-	size_t
+	std::size_t
 	size() const;
 
 	void
@@ -392,7 +392,7 @@ public:
 	virtual ~connection();
 
 	static bool
-	adopt( source::ref source, const std::uint8_t *buf, size_t len );
+	adopt( source::ref source, const std::uint8_t *buf, std::size_t len );
 	
 	inline static connection::ref
 	active()
@@ -428,30 +428,30 @@ protected:
 	virtual bool
 	send( value::ref request );
 	
-	inline size_t
+	inline std::size_t
     num_bytes_used()
     {
 		return m_eptr - m_base;
     }
 	
-	inline size_t
+	inline std::size_t
 	num_bytes_unused()
 	{
 		return m_end - m_eptr;
 	}
 
-    inline size_t
+    inline std::size_t
     size()
     {
         return m_end - m_base;
     }
 
     inline void
-    add( size_t numBytes )
+    add( std::size_t numBytes )
     {
-        size_t bytesUsed = num_bytes_used();
-        size_t oldSize = size();
-        size_t newSize = oldSize + numBytes;
+        std::size_t bytesUsed = num_bytes_used();
+        std::size_t oldSize = size();
+        std::size_t newSize = oldSize + numBytes;
 
         m_base = ( unsigned char* ) realloc( m_base, newSize );
 
@@ -460,7 +460,7 @@ protected:
     }
 
     inline void
-    shift( size_t index )
+    shift( std::size_t index )
     {
         if ( ( m_base + index ) < m_eptr )
         {
@@ -512,10 +512,10 @@ public:
 	preflight( preflight_f func );
 	
 	static void
-	bind( const std::string &method, size_t num_params, notification_f func );
+	bind( const std::string &method, std::size_t num_params, notification_f func );
 	
 	static void
-	bind( const std::string &method, size_t num_params, request_f func );
+	bind( const std::string &method, std::size_t num_params, request_f func );
 	
 	static void
 	route_notification( const value::ref &request );
@@ -530,9 +530,9 @@ private:
 
 	friend void												netkit::initialize();
 	
-	typedef std::pair< size_t, notification_f >				notification_target;
+	typedef std::pair< std::size_t, notification_f >		notification_target;
 	typedef std::map< std::string, notification_target >	notification_handlers;
-	typedef std::pair< size_t, request_f >					request_target;
+	typedef std::pair< std::size_t, request_f >				request_target;
 	typedef std::map< std::string, request_target >			request_handlers;
 	
 	static preflight_f										m_preflight_handler;
@@ -559,8 +559,11 @@ public:
 	connect( const uri::ref &uri, source::connect_reply_f reply );
 	
 	void
+	on_close( sink::close_f reply );
+
+	void
 	close();
-	
+
 protected:
 
 	void
@@ -780,13 +783,13 @@ public:
 	}
 	
 	inline smart_ref< json::value >
-	operator[]( size_t index )
+	operator[]( std::uint32_t index )
 	{
 		return ( *m_ref )[ index ];
 	}
 	
 	inline const smart_ref< json::value >
-	operator[]( size_t index ) const
+	operator[]( std::uint32_t index ) const
 	{
 		return ( *m_ref )[ index ];
 	}

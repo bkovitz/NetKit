@@ -186,7 +186,33 @@ exit:
 runloop::event
 runloop_win32::create( std::time_t msec )
 {
-	return nullptr;
+	source	*s = nullptr;
+	atom	*a = nullptr;
+	
+	try
+	{
+		s = new source;
+		a = new atom;
+	}
+	catch ( ... )
+	{
+		s = nullptr;
+		a = nullptr;
+	}
+
+	if ( !s || !a )
+	{
+		goto exit;
+	}
+
+	a->m_source			= s;
+	a->m_relative_time	= msec;
+
+	s->m_atoms.push_back( a );
+
+exit:
+
+	return a;
 }
 
 
@@ -234,82 +260,90 @@ runloop_win32::schedule( event e, event_f func )
 	a->m_scheduled	= true;
 	a->m_func		= func;
 
-	if ( s->is_socket() )
+	if ( s->is_timer() )
 	{
-		err = WSAEventSelect( s->m_socket, s->m_handle, s->network_events() );
-
-		if ( err )
-		{
-			nklog( log::error, "WSAEventSelect() failed with error code: %d", ::GetLastError() );
-			a->m_scheduled = false;
-			goto exit;
-		}
+		a->m_absolute_time = ( time( NULL ) * 1000 ) + a->m_relative_time;
+		m_main.schedule( s );
 	}
-
-	if ( !s->m_scheduled )
+	else
 	{
-		if ( m_sources.size() < MAXIMUM_WAIT_OBJECTS )
+		if ( s->is_socket() )
 		{
-			m_main.schedule( s );
-		}
-		else
-		{
-			BOOL registered = FALSE;
-	
-			// Try to find a thread to use that we've already created
-	
-			for ( worker::list::iterator it = m_workers.begin(); it != m_workers.end(); it++ )
-			{
-				if ( ( *it )->m_num_sources < MAXIMUM_WAIT_OBJECTS )
-				{
-					worker *w = *it;
+			err = WSAEventSelect( s->m_socket, s->m_handle, s->network_events() );
 
-					w->push( s, [=]()
-					{
-						w->schedule( s );
-					} );
-	
-					registered = TRUE;
-					break;
-				}
+			if ( err )
+			{
+				nklog( log::error, "WSAEventSelect() failed with error code: %d", ::GetLastError() );
+				a->m_scheduled = false;
+				goto exit;
 			}
-	
-			// If not, then create a Worker and make a thread to run it in
-			
-			if ( !registered )
-			{
-				try
-				{
-					w = new worker;
-				}
-				catch ( ... )
-				{
-					w = nullptr;
-				}
-	
-				if ( !w )
-				{
-					err = -1;
-					goto exit;
-				}
-	
-				if ( !w->init() )
-				{
-					err = -1;
-					goto exit;
-				}
-			
-				w->schedule( s );
-	
-				w->m_thread = ( HANDLE ) _beginthreadex( nullptr, 0, worker::main, w, 0, nullptr );
+		}
 
-				if ( w->m_thread == nullptr )
+		if ( !s->m_scheduled )
+		{
+			if ( m_main.m_num_sources < MAXIMUM_WAIT_OBJECTS )
+			{
+				m_main.schedule( s );
+			}
+			else
+			{
+				BOOL registered = FALSE;
+	
+				// Try to find a thread to use that we've already created
+	
+				for ( worker::list::iterator it = m_workers.begin(); it != m_workers.end(); it++ )
 				{
-					err = GetLastError();
-					goto exit;
+					if ( ( *it )->m_num_sources < MAXIMUM_WAIT_OBJECTS )
+					{
+						worker *w = *it;
+
+						w->push( s, [=]()
+						{
+							w->schedule( s );
+						} );
+	
+						registered = TRUE;
+						break;
+					}
 				}
 	
-				m_workers.push_back( w );
+				// If not, then create a Worker and make a thread to run it in
+			
+				if ( !registered )
+				{
+					try
+					{
+						w = new worker;
+					}
+					catch ( ... )
+					{
+						w = nullptr;
+					}
+	
+					if ( !w )
+					{
+						err = -1;
+						goto exit;
+					}
+	
+					if ( !w->init() )
+					{
+						err = -1;
+						goto exit;
+					}
+			
+					w->schedule( s );
+	
+					w->m_thread = ( HANDLE ) _beginthreadex( nullptr, 0, worker::main, w, 0, nullptr );
+
+					if ( w->m_thread == nullptr )
+					{
+						err = GetLastError();
+						goto exit;
+					}
+	
+					m_workers.push_back( w );
+				}
 			}
 		}
 	}
@@ -523,11 +557,12 @@ runloop_win32::source::dispatch()
 {
 	atom *a = nullptr;
 
-	assert( m_scheduled );
 	assert( m_atoms.size() > 0 );
 
 	if ( is_socket() )
 	{
+		assert( m_scheduled );
+
 		WSANETWORKEVENTS network_events;
 
 		if ( WSAEnumNetworkEvents( m_socket, m_handle, &network_events ) == 0 )
@@ -575,6 +610,8 @@ runloop_win32::source::dispatch()
 runloop_win32::atom::atom()
 :
 	m_network_events( 0 ),
+	m_relative_time( 0 ),
+	m_absolute_time( 0 ),
 	m_scheduled( false ),
 	m_source( nullptr )
 {
@@ -677,16 +714,26 @@ exit:
 }
 
 
+
 void
 runloop_win32::worker::schedule( source *s )
 {
 	s->m_scheduled	= true;
 	s->m_owner		= this;
 
-	m_sources[ m_num_sources ] = s;
-	m_handles[ m_num_sources ] = s->m_handle;
+	if ( !s->is_timer() )
+	{
+		m_sources[ m_num_sources ] = s;
+		m_handles[ m_num_sources ] = s->m_handle;
 
-	m_num_sources++;
+		m_num_sources++;
+	}
+	else
+	{
+		m_timers.push_back( s->m_atoms.front() );
+
+		m_timers.sort( &atom::compare );
+	}
 }
 
 
@@ -715,26 +762,33 @@ runloop_win32::worker::source_to_index( source *s )
 void
 runloop_win32::worker::suspend( source *s )
 {
-	int		source_index = source_to_index( s );
-	DWORD	delta;
-
-	if ( source_index == -1 )
+	if ( !s->is_timer() )
 	{
-		nklog( log::error, "source not found in list" );
-		goto exit;
-	}
+		int		source_index = source_to_index( s );
+		DWORD	delta;
 
-	delta = ( m_num_sources - source_index - 1 );
+		if ( source_index == -1 )
+		{
+			nklog( log::error, "source not found in list" );
+			goto exit;
+		}
 
-	// If this Source is not at the end of the list, then move memory
+		delta = ( m_num_sources - source_index - 1 );
 
-	if ( delta > 0 )
-	{
-		ShiftDown( m_sources, m_num_sources, sizeof( m_sources[ 0 ] ), source_index + 1 );
-		ShiftDown( m_handles, m_num_sources, sizeof( m_handles[ 0 ] ), source_index + 1 );
-	}
+		// If this Source is not at the end of the list, then move memory
+
+		if ( delta > 0 )
+		{
+			ShiftDown( m_sources, m_num_sources, sizeof( m_sources[ 0 ] ), source_index + 1 );
+			ShiftDown( m_handles, m_num_sources, sizeof( m_handles[ 0 ] ), source_index + 1 );
+		}
 		         
-	m_num_sources--;
+		m_num_sources--;
+	}
+	else
+	{
+		m_timers.remove( s->m_atoms.front() );
+	}
 
 	s->m_scheduled = false;
 
@@ -747,10 +801,34 @@ exit:
 void
 runloop_win32::worker::run( int32_t msec )
 {
-	DWORD result;
-	DWORD err = 0;
+	DWORD		result;
+	DWORD		err		= 0;
+	DWORD		timeout = INFINITE;
 
-	result = WaitForMultipleObjects( m_num_sources, m_handles, FALSE, INFINITE );
+	if ( m_timers.size() > 0 )
+	{
+		std::time_t now = ( time( NULL ) * 1000 );
+
+		while ( m_timers.size() )
+		{
+			atom *a = m_timers.front();
+
+			if ( now < a->m_absolute_time )
+			{
+				timeout = ( DWORD ) ( a->m_absolute_time - now );
+				break;
+			}
+			else
+			{
+				m_timers.pop_front();
+				a->m_scheduled				= false;
+				a->m_source->m_scheduled	= false;
+				a->m_source->dispatch();
+			}
+		}
+	}
+
+	result = WaitForMultipleObjects( m_num_sources, m_handles, FALSE, timeout );
 
 	if ( result == WAIT_FAILED )
 	{
@@ -765,7 +843,11 @@ runloop_win32::worker::run( int32_t msec )
 
 	if ( result == WAIT_TIMEOUT )
 	{
-		nklog( log::verbose, "timeout" );
+		auto a = m_timers.front();
+		m_timers.pop_front();
+		a->m_scheduled				= false;
+		a->m_source->m_scheduled	= false;
+		a->m_source->dispatch();
 	}
 	else
 	{

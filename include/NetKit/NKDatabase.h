@@ -428,8 +428,8 @@ public:
 
 protected:
 
-	mutable oid_t		m_oid;
-	mutable bool		m_dirty;
+	mutable oid_t	m_oid;
+	mutable bool	m_dirty;
 };
 
 }

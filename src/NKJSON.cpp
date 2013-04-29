@@ -1835,7 +1835,7 @@ value::operator[](const object_map::key_type &key)
 
 
 value::ref
-value::operator[](array_map::size_type index)
+value::operator[]( std::uint32_t index )
 {
 	if (m_kind != type::array )
 	{
@@ -2115,7 +2115,7 @@ value::append( const value::ref &v )
 }
 
 
-size_t
+std::size_t
 value::size() const
 {
 	if ( m_kind == type::array )
@@ -2946,7 +2946,7 @@ connection::~connection()
 
 
 bool
-connection::adopt( source::ref source, const std::uint8_t *buf, size_t len )
+connection::adopt( source::ref source, const std::uint8_t *buf, std::size_t len )
 {
 	unsigned	index = 0;
 	bool		ok = false;
@@ -3082,8 +3082,8 @@ connection::really_process()
 	value::ref		root;
 	value::ref		error;
     unsigned long	len = 0;
-	size_t			index = 0;
-	size_t			i = 0;
+	std::size_t		index = 0;
+	std::size_t		i = 0;
 	std::uint8_t	*colon;
 	std::string		msg;
 	bool			ok = true;
@@ -3294,14 +3294,14 @@ server::preflight( preflight_f func )
 
 
 void
-server::bind( const std::string &method, size_t num_params, notification_f func )
+server::bind( const std::string &method, std::size_t num_params, notification_f func )
 {
 	( *m_notification_handlers )[ method ] = std::make_pair( num_params, func );
 }
 
 
 void
-server::bind( const std::string &method, size_t num_params, request_f func )
+server::bind( const std::string &method, std::size_t num_params, request_f func )
 {
 	( *m_request_handlers )[ method ] = std::make_pair( num_params, func );
 }
@@ -3422,6 +3422,13 @@ bool
 client::is_open() const
 {
 	return m_connection->is_open();
+}
+
+
+void
+client::on_close( sink::close_f reply )
+{
+	m_connection->on_close( reply );
 }
 
 
