@@ -108,12 +108,18 @@ public:
 	void
 	on_event( runloop::event_mask mask, runloop::event_f func );
 	
+	inline endpoint::ref
+	peer() const
+	{
+		return m_peer;
+	}
+	
 	inline native
 	fd() const
 	{
 		return m_fd;
 	}
-	
+
 protected:
 
 	socket( int domain, int type );

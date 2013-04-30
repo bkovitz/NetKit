@@ -906,13 +906,6 @@ connection::flush()
 }
 
 
-void
-connection::close()
-{
-	m_source->close();
-}
-
-
 bool
 connection::process( const std::uint8_t *buf, size_t len )
 {
@@ -923,7 +916,6 @@ connection::process( const std::uint8_t *buf, size_t len )
 	{
 		nklog( log::error, "http_parser_execute() failed: bytes read = %ld, processed = %ld", len, processed );
 		ok = false;
-		close();
 	}
 	
 	if ( m_parser->upgrade )

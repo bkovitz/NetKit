@@ -156,7 +156,6 @@ ip::endpoint::to_string() const
 {
 	char				buf[ 1024 ];
 	sockaddr_storage	addr;
-	std::ostringstream	os;
 
 	to_sockaddr( addr );
 	
@@ -176,8 +175,6 @@ ip::endpoint::to_string() const
 			nklog( log::error, "error converting IPv4 addr to string: %d", platform::error() );
 			goto exit;
 		}
-		
-		os << buf << ":" << m_port;
 	}
 	else if ( m_addr->is_v6() )
 	{
@@ -195,13 +192,11 @@ ip::endpoint::to_string() const
 			nklog( log::error, "error converting IPv6 addr to string: %d", platform::error() );
 			goto exit;
 		}
-		
-		os << "[" << buf << "]:" << m_port;
 	}
 	
 exit:
 
-	return os.str();
+	return buf;
 }
 
 

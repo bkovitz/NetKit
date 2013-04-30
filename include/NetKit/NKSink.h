@@ -64,7 +64,7 @@ public:
 	bool
 	is_open() const;
 	
-	void
+	virtual void
 	close();
 	
 	virtual cookie

@@ -31,6 +31,7 @@
 #include <NetKit/NKSink.h>
 #include <NetKit/NKSource.h>
 #include <NetKit/NKSocket.h>
+#include <NetKit/NKLog.h>
 
 using namespace netkit;
 
@@ -144,12 +145,25 @@ sink::run()
 {
 	m_source->recv( m_buf, sizeof( m_buf ), [=]( int status, std::size_t len )
 	{
-		if ( len > 0 )
+		if ( status == 0 )
 		{
-			if ( process( m_buf, len ) )
+			if ( len > 0 )
 			{
-				run();
+				if ( process( m_buf, len ) )
+				{
+					run();
+				}
+				else
+				{
+					nklog( log::verbose, "process() returned an error...closing connection", status );
+					close();
+				}
 			}
+		}
+		else
+		{
+			nklog( log::verbose, "source::recv() returned an error...closing connection", status );
+			close();
 		}
 	} );
 }

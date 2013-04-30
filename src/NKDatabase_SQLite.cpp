@@ -43,6 +43,10 @@ manager::create( const std::string &s )
 
 		g_manager = new manager_impl( db );
 	}
+	else
+	{
+		nklog( log::error, "sqlite3_open() failed: code = %d, message = %s", err, sqlite3_errstr( err ) );
+	}
 	
 	return ( err == 0 ) ? true : false;
 }
@@ -186,6 +190,7 @@ database::manager_impl::cancel( cookie c )
 				if ( *it2 == c.get() )
 				{
 					it1->second.erase( it2 );
+					break;
 				}
 			} 
 		}

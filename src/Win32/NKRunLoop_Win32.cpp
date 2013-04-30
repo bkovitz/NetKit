@@ -29,15 +29,19 @@ ShiftDown( void * arr, size_t arraySize, size_t itemSize, int index )
 runloop::ref
 runloop::instance()
 {
-    static runloop::ref singleton = new runloop_win32;
-
-    return singleton;
+	return runloop_win32::instance();
 }
 
 
 runloop_win32*
 runloop_win32::instance()
 {
+	if ( !g_instance )
+	{
+		g_instance = new runloop_win32;
+		g_instance->retain();
+	}
+
 	return g_instance;
 }
 
@@ -46,10 +50,6 @@ runloop_win32::runloop_win32()
 :
 	m_running( FALSE )
 {
-	// We should check the retrn value of this
-
-	g_instance = this;
-
 	m_main.init();
 }
 

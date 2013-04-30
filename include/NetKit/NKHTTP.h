@@ -478,9 +478,6 @@ public:
 	bool
 	flush();
 	
-	void
-	close();
-	
 protected:
 
 	class handler : public object

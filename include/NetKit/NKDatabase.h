@@ -48,15 +48,7 @@ find( const std::string &key, T val )				\
 }													\
 NAME( const netkit::database::statement::ref &stmt );\
 static bool initialize();							\
-virtual bool save() const;
-
-#if 0
-static ref											\
-find( const std::string &uuid )						\
-{													\
-	return netkit::database::object::find<NAME, ref>( uuid );	\
-}
-#endif
+virtual bool save( bool force = false ) const;
 
 namespace netkit {
 
@@ -318,32 +310,6 @@ public:
 		return t;
 	}
 
-	/*
-	template <class Type, class Ptr>
-	static Ptr
-	find( const std::string &uuid )
-	{
-		std::ostringstream	os;
-		statement::ref		stmt;
-		Type			*	t;
-		
-		os << "SELECT * FROM " << Type::table_name() << " WHERE uuid LIKE '" << sanitize( uuid ) << "';";
-		
-		stmt = manager::instance()->select( os.str() );
-		
-		if ( stmt->step() )
-		{
-			t = new Type( stmt );
-		}
-		else
-		{
-			t = NULL;
-		}
-		
-		return t;
-	}
-	*/
-
 	template <class Type, class Ptr>
 	static iterator< Type, Ptr >
 	find( const std::string &key, bool val )
@@ -399,7 +365,7 @@ public:
 	virtual const std::string&
 	table_name_v() const = 0;
 	
-	virtual bool save() const = 0;
+	virtual bool save( bool force = false ) const = 0;
 	
 	inline void
 	remove() const
