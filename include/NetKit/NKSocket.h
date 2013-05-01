@@ -108,11 +108,8 @@ public:
 	void
 	on_event( runloop::event_mask mask, runloop::event_f func );
 	
-	inline endpoint::ref
-	peer() const
-	{
-		return m_peer;
-	}
+	virtual endpoint::ref
+	peer() const;
 	
 	inline native
 	fd() const

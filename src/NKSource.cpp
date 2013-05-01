@@ -367,6 +367,13 @@ source::close()
 }
 
 
+endpoint::ref
+source::peer() const
+{
+	return nullptr;
+}
+
+
 source::adapter::adapter()
 :
 	m_prev( nullptr ),

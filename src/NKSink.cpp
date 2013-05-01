@@ -167,3 +167,10 @@ sink::run()
 		}
 	} );
 }
+
+
+endpoint::ref
+sink::peer() const
+{
+	return m_source->peer();
+}

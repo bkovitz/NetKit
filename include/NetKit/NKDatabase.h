@@ -238,6 +238,7 @@ public:
 	virtual void
 	flatten( json::value::ref &root ) const
 	{
+		netkit::object::flatten( root );
 		root[ "oid" ] = m_oid;
 	}
 

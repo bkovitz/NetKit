@@ -203,6 +203,14 @@ socket::is_open() const
 	return ( m_fd != null ) ? true : false;
 }
 
+
+endpoint::ref
+socket::peer() const
+{
+	return m_peer;
+}
+
+
 #if defined( __APPLE__ )
 #	pragma mark acceptor implementation
 #endif

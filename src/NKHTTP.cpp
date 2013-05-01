@@ -730,8 +730,9 @@ response::send_prologue( connection::ref conn ) const
 #	pragma mark connection implementation
 #endif
 
-connection::list	*connection::m_instances;
-connection::handlers connection::m_handlers;
+connection::list		*connection::m_instances;
+connection::handlers	connection::m_handlers;
+connection::ref			connection::m_active;
 
 connection::connection()
 :
@@ -909,6 +910,8 @@ connection::flush()
 bool
 connection::process( const std::uint8_t *buf, size_t len )
 {
+	m_active = this;
+
 	std::streamsize processed	= http_parser_execute( m_parser, m_settings, ( const char* ) buf, len );
 	bool			ok			= true;
 
@@ -921,6 +924,8 @@ connection::process( const std::uint8_t *buf, size_t len )
 	if ( m_parser->upgrade )
 	{
 	}
+
+	m_active = nullptr;
 
 	return ok;
 }
@@ -1154,7 +1159,7 @@ connection::resolve( http_parser *parser )
 		{
 			try
 			{
-				std::regex regex1( ( *it2 )->m_path );
+				std::regex regex1( regexify( ( *it2 )->m_path ) );
 				std::regex regex2( regexify( ( *it2 )->m_type ) );
 			
 				if ( std::regex_search( m_uri_value, regex1 ) && std::regex_search( m_content_type, regex2 ) )

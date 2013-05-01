@@ -436,6 +436,12 @@ public:
 	
 	static bool
 	adopt( source::ref source, const std::uint8_t *buf, size_t len );
+
+	inline static connection::ref
+	active()
+	{
+		return m_active;
+	}
 	
 	static void
 	bind( std::uint8_t method, const std::string &path, const std::string &type, request_f r );
@@ -578,6 +584,8 @@ protected:
 	
 	static connection::list		*m_instances;
 	static handlers				m_handlers;
+
+	static connection::ref		m_active;
 	
 	std::uint8_t				m_method;
 	std::string					m_uri_value;

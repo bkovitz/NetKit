@@ -321,5 +321,6 @@ object::equals( const object &that ) const
 object&
 object::assign( const object &that )
 {
+	m_attrs = that.m_attrs;
 	return *this;
 }

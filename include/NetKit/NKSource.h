@@ -131,6 +131,9 @@ public:
 	
 	virtual void
 	cancel( cookie c );
+
+	virtual endpoint::ref
+	peer() const;
 	
 protected:
 
