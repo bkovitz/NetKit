@@ -49,12 +49,12 @@ source::~source()
 {
 	if ( m_send_event )
 	{
-		runloop::instance()->cancel( m_send_event );
+		runloop::main()->cancel( m_send_event );
 	}
 
 	if ( m_recv_event )
 	{
-		runloop::instance()->cancel( m_recv_event );
+		runloop::main()->cancel( m_recv_event );
 	}
 
 	auto adapter = m_adapters.head();
@@ -143,11 +143,11 @@ source::connect_internal_1( const uri::ref &uri, connect_reply_f reply )
 			}
 			else if ( would_block )
 			{
-				runloop::instance()->schedule( m_send_event, [=]( runloop::event event )
+				runloop::main()->schedule( m_send_event, [=]( runloop::event event )
 				{
 					int ret;
 
-					runloop::instance()->suspend( event );
+					runloop::main()->suspend( event );
 					
 					ret = finish_connect();
 					
@@ -233,7 +233,7 @@ source::send_internal()
 	}
 	else if ( would_block )
 	{
-		runloop::instance()->schedule( m_send_event, [=]( runloop::event event )
+		runloop::main()->schedule( m_send_event, [=]( runloop::event event )
 		{
 			send_internal();
 		} );
@@ -337,9 +337,9 @@ source::recv_internal( std::uint8_t *in_buf, std::size_t in_len, bool peek, recv
 	}
 	else if ( would_block )
 	{
-		runloop::instance()->schedule( m_recv_event, [=]( runloop::event event )
+		runloop::main()->schedule( m_recv_event, [=]( runloop::event event )
 		{
-			runloop::instance()->suspend( event );
+			runloop::main()->suspend( event );
 			recv_internal( in_buf, in_len, peek, reply );
 		} );
 	}
@@ -355,13 +355,13 @@ source::close()
 {
 	if ( m_send_event )
 	{
-		runloop::instance()->cancel( m_send_event );
+		runloop::main()->cancel( m_send_event );
 		m_send_event = nullptr;
 	}
 
 	if ( m_recv_event )
 	{
-		runloop::instance()->cancel( m_recv_event );
+		runloop::main()->cancel( m_recv_event );
 		m_recv_event = nullptr;
 	}
 }

@@ -302,7 +302,7 @@ public:
 	write_to_file(const std::string &filePath, bool indent = true, bool escapeAll = false) const;
 	
 	std::string
-	flatten( output_flags flags = output_flags::none ) const;
+	to_string( output_flags flags = output_flags::none ) const;
 	
 	void
 	assign( const value &v );

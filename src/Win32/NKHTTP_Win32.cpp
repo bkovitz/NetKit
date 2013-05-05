@@ -133,7 +133,7 @@ client_win32::callback( HINTERNET handle, DWORD_PTR context, DWORD code, void* i
 		{
 			case WINHTTP_CALLBACK_STATUS_SENDREQUEST_COMPLETE:
 			{
-				runloop::instance()->dispatch_on_main_thread( [=]()
+				runloop::main()->dispatch( [=]()
 				{
 					self->on_send_request_complete();
 				} );
@@ -144,7 +144,7 @@ client_win32::callback( HINTERNET handle, DWORD_PTR context, DWORD code, void* i
 	
 			case WINHTTP_CALLBACK_STATUS_HEADERS_AVAILABLE:
 			{
-				runloop::instance()->dispatch_on_main_thread( [=]()
+				runloop::main()->dispatch( [=]()
 				{
 					self->on_headers_are_available();
 				} );
@@ -155,7 +155,7 @@ client_win32::callback( HINTERNET handle, DWORD_PTR context, DWORD code, void* i
 
 			case WINHTTP_CALLBACK_STATUS_READ_COMPLETE:
 			{
-				runloop::instance()->dispatch_on_main_thread( [=]()
+				runloop::main()->dispatch( [=]()
 				{
 					self->on_read( length );
 				} );
@@ -168,7 +168,7 @@ client_win32::callback( HINTERNET handle, DWORD_PTR context, DWORD code, void* i
 			{
 				self->m_mutex.unlock();
 
-				runloop::instance()->dispatch_on_main_thread( [=]()
+				runloop::main()->dispatch( [=]()
 				{
 					self->on_closing( handle );
 				} );
@@ -182,7 +182,7 @@ client_win32::callback( HINTERNET handle, DWORD_PTR context, DWORD code, void* i
 
 				self->m_mutex.unlock();
 
-				runloop::instance()->dispatch_on_main_thread( [=]()
+				runloop::main()->dispatch( [=]()
 				{
 					self->on_error( handle, error );
 				} );

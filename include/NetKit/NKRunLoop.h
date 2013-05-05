@@ -53,14 +53,23 @@ public:
 		oob			= ( 1 << 4 ),
 		timer		= ( 1 << 5 )
 	};
-	
+
+	enum class mode
+	{
+		normal			= 0,
+		once			= 1,
+#if defined( WIN32 )
+		input_events	= 2,
+#endif
+	};
+
 	typedef smart_ref< runloop > ref;
 
 	typedef std::function< void ( void ) >		dispatch_f;
 	typedef std::function< void ( event e ) >	event_f;
 
 	static runloop::ref
-	instance();
+	main();
 	
 	virtual event
 	create( int fd, event_mask m ) = 0;
@@ -88,10 +97,10 @@ public:
 	cancel( event e ) = 0;
 	
 	virtual void
-	dispatch_on_main_thread( dispatch_f f ) = 0;
+	dispatch( dispatch_f f ) = 0;
 
 	virtual void
-	run() = 0;
+	run( mode how = mode::normal ) = 0;
 	
 	virtual void
 	stop() = 0;

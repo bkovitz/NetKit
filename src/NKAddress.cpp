@@ -180,7 +180,7 @@ ip::address::resolve( std::string host, resolve_reply_f reply )
 			nklog( log::error, "error in getaddrinfo: %s", gai_strerror( err ) );
 		}
 		
-		runloop::instance()->dispatch_on_main_thread( [=]()
+		runloop::main()->dispatch( [=]()
 		{
 			reply( err, addrs );
 		} );

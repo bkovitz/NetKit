@@ -2395,7 +2395,7 @@ value::write_to_file(const std::string &filePath, bool indent, bool escapeAll) c
 
 
 std::string
-value::flatten( output_flags flags ) const
+value::to_string( output_flags flags ) const
 {
 	std::ostringstream os;
 	
@@ -3055,7 +3055,7 @@ connection::send( value::ref request )
 {
 	std::string msg;
 	
-	msg = request->flatten();
+	msg = request->to_string();
     msg = encode( msg );
     
 	sink::send( ( const std::uint8_t* ) msg.c_str(), msg.size(), [=]( int status )

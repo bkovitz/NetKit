@@ -27,14 +27,14 @@ ShiftDown( void * arr, size_t arraySize, size_t itemSize, int index )
 
 
 runloop::ref
-runloop::instance()
+runloop::main()
 {
-	return runloop_win32::instance();
+	return runloop_win32::main();
 }
 
 
 runloop_win32*
-runloop_win32::instance()
+runloop_win32::main()
 {
 	if ( !g_instance )
 	{
@@ -485,7 +485,7 @@ runloop_win32::cancel( event e )
 	//
 	// We'll perform a "neat" trick of delaying the delete until later...
 
-	dispatch_on_main_thread( [=]() mutable
+	dispatch( [=]() mutable
 	{
 		delete a;
 
@@ -503,21 +503,33 @@ exit:
 
 	
 void
-runloop_win32::dispatch_on_main_thread( dispatch_f f )
+runloop_win32::dispatch( dispatch_f f )
 {
 	m_main.push( f );
 }
 
 
 void
-runloop_win32::run()
+runloop_win32::run( mode how )
 {
 	m_running = TRUE;
 
-	while ( m_running )
+	do
 	{
-		m_main.run( INFINITE );
+		bool input_event;
+
+		m_main.run( how, input_event );
+
+		if ( how == mode::once )
+		{
+			m_running = false;
+		}
+		else if ( input_event )
+		{
+			m_running = false;
+		}
 	}
+	while ( m_running );
 }
 
 
@@ -630,7 +642,7 @@ runloop_win32::worker::main( void * arg )
 
 	while ( self->running() )
 	{
-		self->run( INFINITE );
+		self->run( mode::normal );
 	}
 
 	return 0;
@@ -640,7 +652,7 @@ runloop_win32::worker::main( void * arg )
 runloop_win32::worker*
 runloop_win32::worker::get_main_worker()
 {
-	return &runloop_win32::instance()->m_main;
+	return &runloop_win32::main()->m_main;
 }
 
 
@@ -799,11 +811,13 @@ exit:
 
 
 void
-runloop_win32::worker::run( int32_t msec )
+runloop_win32::worker::run( mode how, bool &input_event )
 {
 	DWORD		result;
 	DWORD		err		= 0;
 	DWORD		timeout = INFINITE;
+
+	input_event = false;
 
 	if ( m_timers.size() > 0 )
 	{
@@ -828,7 +842,7 @@ runloop_win32::worker::run( int32_t msec )
 		}
 	}
 
-	result = WaitForMultipleObjects( m_num_sources, m_handles, FALSE, timeout );
+	result = MsgWaitForMultipleObjects( m_num_sources, m_handles, FALSE, timeout, ( how == mode::input_events ) ? QS_ALLEVENTS : 0 );
 
 	if ( result == WAIT_FAILED )
 	{
@@ -848,6 +862,10 @@ runloop_win32::worker::run( int32_t msec )
 		a->m_scheduled				= false;
 		a->m_source->m_scheduled	= false;
 		a->m_source->dispatch();
+	}
+	else if ( result == WAIT_OBJECT_0 + m_num_sources )
+	{
+		input_event = true;
 	}
 	else
 	{

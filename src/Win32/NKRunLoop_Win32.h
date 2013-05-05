@@ -18,7 +18,7 @@ class runloop_win32 : public netkit::runloop
 public:
 
 	static runloop_win32*
-	instance();
+	main();
 
 	runloop_win32();
 
@@ -46,10 +46,10 @@ public:
 	cancel( event e );
 	
 	virtual void
-	dispatch_on_main_thread( dispatch_f f );
+	dispatch( dispatch_f f );
 
 	virtual void
-	run();
+	run( mode how = mode::normal );
 
 	virtual void
 	stop();
@@ -204,8 +204,16 @@ private:
 		void
 		suspend( source *s );
 
+		inline void
+		run( mode how )
+		{
+			bool dummy;
+
+			run( how, dummy );
+		}
+
 		void
-		run( int32_t msec );
+		run( mode how, bool &input_event );
 	};
 
 	BOOL			m_setup;

@@ -87,8 +87,8 @@ socket::init()
 {
 	set_blocking( m_fd, false );
 	
-	m_send_event	= runloop::instance()->create( m_fd, runloop::event_mask::write );
-	m_recv_event	= runloop::instance()->create( m_fd, runloop::event_mask::read );
+	m_send_event	= runloop::main()->create( m_fd, runloop::event_mask::write );
+	m_recv_event	= runloop::main()->create( m_fd, runloop::event_mask::read );
 }
 
 
@@ -384,7 +384,7 @@ ip::tcp::acceptor::~acceptor()
 {
 	if ( m_event )
 	{
-		runloop::instance()->cancel( m_event );
+		runloop::main()->cancel( m_event );
 	}
 }
 
@@ -396,16 +396,16 @@ ip::tcp::acceptor::accept( accept_reply_f reply )
 
 	if ( !m_event )
 	{
-		m_event = runloop::instance()->create( m_fd, runloop::event_mask::read );
+		m_event = runloop::main()->create( m_fd, runloop::event_mask::read );
 	
-		runloop::instance()->schedule( m_event, [=]( runloop::event event )
+		runloop::main()->schedule( m_event, [=]( runloop::event event )
 		{
 			socket::native			new_fd;
 			struct sockaddr_storage	addr;
 			socklen_t				addr_len = sizeof( addr );
 			socket::ref				new_sock;
 			
-			runloop::instance()->cancel( m_event );
+			runloop::main()->cancel( m_event );
 			m_event = nullptr;
 		
 			new_fd = ::accept( m_fd, ( struct sockaddr* ) &addr, &addr_len );
