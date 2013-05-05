@@ -38,13 +38,13 @@ static std::uint8_t g_buf[ 64 ];
 		
 TEST_CASE( "NetKit/http/server/1", "http server tests" )
 {
-	ip::tcp::acceptor::ptr	acceptor	= new ip::tcp::acceptor( new ip::endpoint( 0 ) );
-	http::request::ptr		request;
+	ip::tcp::acceptor::ref	acceptor	= new ip::tcp::acceptor( new ip::endpoint( 0 ) );
+	http::request::ref		request;
 	std::ostringstream		os;
 	
 	acceptor->listen( 5 );
 	
-	acceptor->accept( [=]( int status, socket::ptr sock )
+	acceptor->accept( [=]( int status, socket::ref sock )
 	{
 		REQUIRE( status == 0 );
 		
@@ -56,9 +56,9 @@ TEST_CASE( "NetKit/http/server/1", "http server tests" )
 		} );
 	} );
 	
-	http::connection::bind( http::method::get, "/found", "*", [=]( http::request::ptr request, http::connection::response_f reply )
+	http::connection::bind( http::method::get, "/found", "*", [=]( http::request::ref request, http::connection::response_f reply )
 	{
-		http::response::ptr response = http::response::create( request->major(), request->minor(), 200, false );
+		http::response::ref response = http::response::create( request->major(), request->minor(), 200, false );
 		
 		response->add_to_header( "Content-Type", "text/plain" );
 		response->add_to_header( "Content-Length", 5 );
@@ -74,7 +74,7 @@ TEST_CASE( "NetKit/http/server/1", "http server tests" )
 	
 	request	= http::request::create( 1, 1, http::method::get, new uri( os.str() ) );
 	
-	http::client::send( request, [=]( int32_t error, const http::response::ptr &response )
+	http::client::send( request, [=]( int32_t error, const http::response::ref &response )
 	{
 		REQUIRE( response->status() == 200 );
 		
@@ -87,13 +87,13 @@ TEST_CASE( "NetKit/http/server/1", "http server tests" )
 
 TEST_CASE( "NetKit/http/server/2", "http server tests" )
 {
-	ip::tcp::acceptor::ptr	acceptor	= new ip::tcp::acceptor( new ip::endpoint( 0 ) );
-	http::request::ptr		request;
+	ip::tcp::acceptor::ref	acceptor	= new ip::tcp::acceptor( new ip::endpoint( 0 ) );
+	http::request::ref		request;
 	std::ostringstream		os;
 	
 	acceptor->listen( 5 );
 	
-	acceptor->accept( [=]( int status, socket::ptr sock )
+	acceptor->accept( [=]( int status, socket::ref sock )
 	{
 		REQUIRE( status == 0 );
 		
@@ -105,9 +105,9 @@ TEST_CASE( "NetKit/http/server/2", "http server tests" )
 		} );
 	} );
 	
-	http::connection::bind( http::method::get, "/found", "*", [=]( http::request::ptr request, http::connection::response_f func )
+	http::connection::bind( http::method::get, "/found", "*", [=]( http::request::ref request, http::connection::response_f func )
 	{
-		http::response::ptr response = http::response::create( request->major(), request->minor(), 200, false );
+		http::response::ref response = http::response::create( request->major(), request->minor(), 200, false );
 		
 		func( response, false, false );
 		
@@ -118,7 +118,7 @@ TEST_CASE( "NetKit/http/server/2", "http server tests" )
 	
 	request	= http::request::create( 1, 1, http::method::get, new uri( os.str() ) );
 	
-	http::client::send( request, [&]( int32_t error, const http::response::ptr &response )
+	http::client::send( request, [&]( int32_t error, const http::response::ref &response )
 	{
 		REQUIRE( response->status() == 404 );
 		runloop::instance()->stop();

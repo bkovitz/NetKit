@@ -119,6 +119,40 @@ public:
 
 protected:
 
+	class adapter : public source::adapter
+	{
+	public:
+	
+	
+		typedef adapter						*ref;
+		typedef intrusive_list< adapter >	list;
+		
+		adapter();
+		
+		virtual ~adapter();
+		
+		virtual void
+		accept( accept_reply_f reply );
+		
+		virtual void
+		preflight( const uri::ref &uri, preflight_reply_f reply );
+	
+		virtual void
+		connect( const uri::ref &uri, const endpoint::ref &to, connect_reply_f reply );
+		
+		virtual void
+		send( const std::uint8_t *in_buf, std::size_t in_len, send_reply_f reply );
+		
+		virtual void
+		recv( const std::uint8_t *in_buf, std::size_t in_len, recv_reply_f reply );
+	
+	protected:
+	
+		friend class source;
+		
+		source::ref m_source;
+	};
+
 	socket( int domain, int type );
 
 	socket( native fd );

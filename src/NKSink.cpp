@@ -79,8 +79,8 @@ sink::bind( source::ref source )
 cookie
 sink::on_close( close_f c )
 {
-	static int		tags	= 0;
-	std::uint32_t	t		= ++tags;
+	static std::uint32_t	tags	= 0;
+	std::uint32_t			t		= ++tags;
 	
 	m_close_handlers.push_back( std::make_pair( t, c ) );
 	
@@ -93,7 +93,7 @@ sink::cancel( cookie c )
 {
 	for ( auto it = m_close_handlers.begin(); it != m_close_handlers.end(); it++ )
 	{
-		if ( it->first == reinterpret_cast< std::uint32_t >( c.get() ) )
+		if ( it->first == ( std::uint64_t ) c.get() )
 		{
 			m_close_handlers.erase( it );
 			break;

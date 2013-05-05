@@ -134,6 +134,7 @@ socket::start_send( const std::uint8_t *buf, std::size_t len, bool &would_block 
 	num			= ::send( m_fd, reinterpret_cast< const_buf_t >( buf ), len, 0 );
 	would_block = ( num < 0 ) && ( platform::error() == ( int ) socket::error::would_block ) ? true : false;
 
+fprintf( stderr, "start_send: num = %d, would_block = %s\n", num, would_block ? "true" : "false" );
 	if ( ( num < 0 ) && ( !would_block ) )
 	{
 		nklog( log::error, "send returned %d", platform::error() );
@@ -151,6 +152,7 @@ socket::start_recv( std::uint8_t *buf, std::size_t len, bool &would_block )
 	num			= ::recv( m_fd, reinterpret_cast< buf_t >( buf ), len, 0 );
 	would_block = ( num < 0 ) && ( platform::error() == ( int ) socket::error::would_block ) ? true : false;
 	
+	fprintf( stderr, "start_recv: num = %d, would_block = %s\n", num, would_block ? "true" : "false" );
 	if ( ( num < 0 ) && ( !would_block ) )
 	{
 		nklog( log::error, "recv returned %d", platform::error() );
@@ -369,7 +371,7 @@ ip::tcp::socket::close()
 
 	
 #if defined( __APPLE__ )
-#	pragma mark adapter implementation
+#	pragma mark ip::tcp::acceptor implementation
 #endif
 
 ip::tcp::acceptor::acceptor( const ip::endpoint::ref &endpoint )

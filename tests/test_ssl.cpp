@@ -33,35 +33,35 @@
 
 using namespace netkit;
 
+
 static const char* g_message = "GET /index.html HTTP/1.1\r\nHost: www.collobos.com\r\n\r\n";
 
 TEST_CASE( "NetKit/ssl/1", "ssl client" )
 {
 	SECTION( "constructors", "socket constructors" )
 	{
-		source::ptr	sock = new netkit::ip::tcp::socket;
+		std::uint8_t *buf = new std::uint8_t[ 4192 ];
+		source::ref	sock = new netkit::ip::tcp::socket;
 		REQUIRE( sock );
 		
 		sock->add( tls::adapter::create() );
 		
 		fprintf( stderr, "connecting ssl socket\n" );
-		sock->connect( new uri( "https://www.collobos.com/index.html"), [=]( int status, const endpoint::ptr &peer ) mutable
+		sock->connect( new uri( "https://www.collobos.com/index.html"), [=]( int status, const endpoint::ref &peer ) mutable
 		{
 			REQUIRE( status == 0 );
-			char buf[ 4192 ];
 			
 			sock->send( ( const std::uint8_t* ) g_message, strlen( g_message ), [=]( int status )
 			{
 				REQUIRE( status == 0 );
 			} );
 			
-			sock->recv( ( std::uint8_t* ) buf, sizeof( buf ), [=]( int status, std::size_t len )
+			sock->recv( buf, 4192, [=]( int status, std::size_t len )
 			{
 				REQUIRE( status == 0 );
-			
-				fprintf( stderr, "read %lu bytes: %s\n", len, buf );
-			
-				netkit::runloop::instance()->stop();
+				REQUIRE( strstr( ( const char* ) buf, "HTTP/1.1 200 OK" ) != NULL );
+				
+				runloop::instance()->stop();
 			} );
 		} );
 		
@@ -69,20 +69,20 @@ TEST_CASE( "NetKit/ssl/1", "ssl client" )
 	}
 }
 
-
 TEST_CASE( "NetKit/ssl/2", "ssl server" )
 {
 	SECTION( "constructors", "socket constructors" )
 	{
-		ip::tcp::acceptor::ptr	acceptor = new ip::tcp::acceptor( new ip::endpoint( 0) );
+		std::uint8_t *sbuf = new std::uint8_t[ 4192 ];
+		std::uint8_t *cbuf = new std::uint8_t[ 4192 ];
+	
+		ip::tcp::acceptor::ref	acceptor = new ip::tcp::acceptor( new ip::endpoint( 0 ) );
 		REQUIRE( acceptor );
 		
 		acceptor->listen( 5 );
 	
-		acceptor->accept( [=]( int status, socket::ptr sock ) mutable
+		acceptor->accept( [=]( int status, socket::ref sock ) mutable
 		{
-			std::uint8_t buf[ 64 ];
-	
 			REQUIRE( status == 0 );
 			
 			sock->add( tls::adapter::create() );
@@ -92,24 +92,23 @@ TEST_CASE( "NetKit/ssl/2", "ssl server" )
 				REQUIRE( status == 0 );
 			} );
 		
-			sock->recv( buf, sizeof( buf ), [=]( int status, std::size_t len ) mutable
+			sock->recv( sbuf, 4192, [=]( int status, std::size_t len ) mutable
 			{
 				REQUIRE( status == 0 );
-				sock->send( buf, len, [=]( int status )
+				
+				sock->send( sbuf, len, [=]( int status )
 				{
 				} );
 			} );
 		} );
 		
-		ip::tcp::socket::ptr	sock = new ip::tcp::socket;
+		ip::tcp::socket::ref	sock = new ip::tcp::socket;
 		REQUIRE( sock );
 		
 		sock->add( tls::adapter::create() );
 		
-		sock->connect( new uri( "echo", "127.0.0.1", acceptor->endpoint()->port() ), [=]( int status, const endpoint::ptr &peer ) mutable
+		sock->connect( new uri( "echo", "127.0.0.1", acceptor->endpoint()->port() ), [=]( int status, const endpoint::ref &peer ) mutable
 		{
-			std::uint8_t buf[ 64 ];
-			
 			REQUIRE( status == 0 );
 			
 			sock->send( ( const std::uint8_t* ) "Hello", 5, [=]( int status )
@@ -117,20 +116,19 @@ TEST_CASE( "NetKit/ssl/2", "ssl server" )
 				REQUIRE( status == 0 );
 			} );
 			
-			sock->recv( buf, sizeof( buf ), [=]( int status, std::size_t len )
+			sock->recv( cbuf, 4192, [=]( int status, std::size_t len )
 			{
 				REQUIRE( status == 0 );
 				REQUIRE( len == 5 );
-				REQUIRE( buf[ 0 ] == 'H' );
-				REQUIRE( buf[ 1 ] == 'e' );
-				REQUIRE( buf[ 2 ] == 'l' );
-				REQUIRE( buf[ 3 ] == 'l' );
-				REQUIRE( buf[ 4 ] == 'o' );
+				REQUIRE( cbuf[ 0 ] == 'H' );
+				REQUIRE( cbuf[ 1 ] == 'e' );
+				REQUIRE( cbuf[ 2 ] == 'l' );
+				REQUIRE( cbuf[ 3 ] == 'l' );
+				REQUIRE( cbuf[ 4 ] == 'o' );
 				
 				netkit::runloop::instance()->stop();
 			} );
 		} );
-		
 		
 		netkit::runloop::instance()->run();
 	}

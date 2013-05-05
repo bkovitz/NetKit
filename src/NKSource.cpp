@@ -29,6 +29,7 @@
  */
  
 #include <NetKit/NKSource.h>
+#include <NetKit/NKLog.h>
 
 using namespace netkit;
 
@@ -71,8 +72,18 @@ source::~source()
 void
 source::add( adapter::ref adapter )
 {
+	if ( !adapter )
+	{
+		nklog( log::warning, "attempting to add a null adapter" );
+		goto exit;
+	}
+	
 	m_adapters.push_front( adapter );
 	adapter->m_source = this;
+	
+exit:
+
+	return;
 }
 
 
@@ -93,7 +104,7 @@ source::cancel( cookie c )
 {
 	for ( auto it = m_close_handlers.begin(); it != m_close_handlers.end(); it++ )
 	{
-		if ( it->first == reinterpret_cast< std::uint32_t >( c.get() ) )
+		if ( it->first == reinterpret_cast< std::uint64_t >( c.get() ) )
 		{
 			m_close_handlers.erase( it );
 			break;
@@ -307,7 +318,9 @@ source::recv_internal( std::uint8_t *in_buf, std::size_t in_len, bool peek, recv
 				
 				if ( out_len )
 				{
+				
 					memcpy( in_buf, out_buf, min );
+				fprintf( stderr, "copying %d bytes into in_buf: %c %c %c\n", min, in_buf[ 0 ], in_buf[ 1 ], in_buf[ 2 ] );
 				
 					if ( peek )
 					{
@@ -321,9 +334,13 @@ source::recv_internal( std::uint8_t *in_buf, std::size_t in_len, bool peek, recv
 						m_recv_buf.resize( old + ( out_len - in_len ) );
 						memcpy( &m_recv_buf[ old ], out_buf + in_len, out_len - in_len );
 					}
+					
+					reply( 0, min );
 				}
-				
-				reply( 0, min );
+				else
+				{
+					recv( in_buf, in_len, reply );
+				}
 			}
 			else
 			{

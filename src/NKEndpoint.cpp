@@ -130,6 +130,7 @@ ip::endpoint::to_sockaddr( sockaddr_storage &addr ) const
 	{
 		struct sockaddr_in *v4_addr = ( struct sockaddr_in* ) &addr;
 		
+		fprintf( stderr, "port = %d\n", m_port );
 		v4_addr->sin_family		= AF_INET;
 		v4_addr->sin_addr		= m_addr->to_v4().get();
 		v4_addr->sin_port		= htons( m_port );

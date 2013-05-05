@@ -39,11 +39,35 @@ namespace netkit {
 
 namespace http {
 
+class request_mac : public request
+{
+public:
+
+	request_mac( std::uint16_t major, std::uint16_t minor, int method, const uri::ref &uri )
+	:
+		request( major, minor, method, uri )
+	{
+	}
+};
+
+
+class response_mac : public response
+{
+public:
+
+	response_mac( std::uint16_t major, std::uint16_t minor, std::uint16_t status, bool keep_alive )
+	:
+		response( major, minor, status, keep_alive )
+	{
+	}
+};
+
+
 class client_mac : public client
 {
 public:
 
-	client_mac( const request::ptr &request, auth_f auth_func, response_f response_func );
+	client_mac( const request::ref &request, auth_f auth_func, response_f response_func );
 	
 	virtual ~client_mac();
 	

@@ -39,16 +39,16 @@ static std::uint8_t g_buf[ 64 ];
 		
 TEST_CASE( "NetKit/json/1", "json decoding tests" )
 {
-	netkit::json::value::ptr child;
+	netkit::json::value::ref child;
 	
-	netkit::expected< netkit::json::value::ptr > ret = netkit::json::value::load( g_json );
+	netkit::expected< netkit::json::value::ref > ret = netkit::json::value::load( g_json );
 	REQUIRE( ret.is_valid() );
 	
-	netkit::json::value::ptr root = ret.get();
+	netkit::json::value::ref root = ret.get();
 	REQUIRE( root->is_object() );
 	REQUIRE( root->is_member( "firstName" ) );
 	
-	netkit::json::value::ptr val = root[ "firstName" ];
+	netkit::json::value::ref val = root[ "firstName" ];
 	REQUIRE( val->is_string() );
 	REQUIRE( val->as_string() == "John" );
 	REQUIRE( *val != "James" );
@@ -106,10 +106,10 @@ TEST_CASE( "NetKit/json/1", "json decoding tests" )
 
 TEST_CASE( "NetKit/json/2", "json encoding tests" )
 {
-	netkit::json::value::ptr	val;
-	netkit::json::value::ptr	val2;
-	netkit::json::value::ptr	arr;
-	netkit::json::value::ptr	obj;
+	netkit::json::value::ref	val;
+	netkit::json::value::ref	val2;
+	netkit::json::value::ref	arr;
+	netkit::json::value::ref	obj;
 	bool						ok;
 	
 	REQUIRE( !val[ "not_there" ]->is_string() );
@@ -155,7 +155,7 @@ class echo : public json::client
 public:
 
 	typedef std::function< void ( netkit::status, const std::string&, int, double, const std::string& ) >	func_reply_f;
-	typedef smart_ptr< echo >																				ptr;
+	typedef smart_ref< echo >																				ref;
 
 	echo()
 	{
@@ -164,13 +164,13 @@ public:
 	void
 	func( int i, double d, const std::string & s, func_reply_f reply )
 	{
-		json::value::ptr params;
+		json::value::ref params;
 		
 		params[ "i" ] = i;
 		params[ "d" ] = d;
 		params[ "s" ] = s;
 		
-		send_request( "func", params, [=]( netkit::status error_code, const std::string &error_message, json::value::ptr result )
+		send_request( "func", params, [=]( netkit::status error_code, const std::string &error_message, json::value::ref result )
 		{
 			int			i	= 0;
 			double		d	= 0;
@@ -191,12 +191,12 @@ public:
 
 TEST_CASE( "NetKit/json/3", "json rpc" )
 {
-	ip::tcp::acceptor::ptr	acceptor	= new ip::tcp::acceptor( new ip::endpoint( 0 ) );
-	echo::ptr				e			= new echo;
+	ip::tcp::acceptor::ref	acceptor	= new ip::tcp::acceptor( new ip::endpoint( 0 ) );
+	echo::ref				e			= new echo;
 	
 	acceptor->listen( 5 );
 	
-	acceptor->accept( [=]( int status, socket::ptr sock )
+	acceptor->accept( [=]( int status, socket::ref sock )
 	{
 		REQUIRE( status == 0 );
 		
@@ -206,13 +206,13 @@ TEST_CASE( "NetKit/json/3", "json rpc" )
 		} );
 	} );
 
-	json::server::bind( "func", 3, ( netkit::json::server::request_f ) [=]( json::value::ptr params, json::server::reply_f reply )
+	json::server::bind( "func", 3, ( netkit::json::server::request_f ) [=]( json::value::ref params, json::server::reply_f reply )
 	{
 		int					i = params[ "i" ]->as_int32();
 		double				d = params[ "d" ]->as_real();
 		std::string			s = params[ "s" ]->as_string();
-		json::value::ptr	response;
-		json::value::ptr	result;
+		json::value::ref	response;
+		json::value::ref	result;
 		
 		result[ "i" ] = i;
 		result[ "d" ] = d;
@@ -223,7 +223,7 @@ TEST_CASE( "NetKit/json/3", "json rpc" )
 		reply( response, false, false );
 	} );
 	
-	e->connect( new uri( "json", "127.0.0.1", acceptor->endpoint()->port() ), [=]( int status, const endpoint::ptr &peer ) mutable
+	e->connect( new uri( "json", "127.0.0.1", acceptor->endpoint()->port() ), [=]( int status, const endpoint::ref &peer ) mutable
 	{
 		REQUIRE( status == 0 );
 		
