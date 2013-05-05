@@ -84,7 +84,7 @@ protected:
 	virtual
 	~component();
 	
-	enum class status m_status;
+	netkit::status m_status;
 	
 private:
 

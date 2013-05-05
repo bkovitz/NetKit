@@ -33,7 +33,7 @@
 
 TEST_CASE( "NetKit/uri/1", "netkit::uri tests" )
 {
-	netkit::uri::ptr uri = new netkit::uri( "http://www.google.com:8080" );
+	netkit::uri::ref uri = new netkit::uri( "http://www.google.com:8080" );
 
 	REQUIRE( uri->scheme() == "http" );
 	REQUIRE( uri->host() == "www.google.com" );
@@ -44,7 +44,7 @@ TEST_CASE( "NetKit/uri/1", "netkit::uri tests" )
 
 TEST_CASE( "NetKit/uri/2", "netkit::uri tests" )
 {
-	netkit::uri::ptr uri = new netkit::uri( "/path?test=1" );
+	netkit::uri::ref uri = new netkit::uri( "/path?test=1" );
 
 	REQUIRE( uri->scheme().size() == 0 );
 	REQUIRE( uri->host().size() == 0 );
@@ -55,7 +55,7 @@ TEST_CASE( "NetKit/uri/2", "netkit::uri tests" )
 
 TEST_CASE( "NetKit/uri/3", "netkit::uri tests" )
 {
-	netkit::uri::ptr uri = new netkit::uri( "http://www.google.com/a%20space" );
+	netkit::uri::ref uri = new netkit::uri( "http://www.google.com/a%20space" );
 
 	REQUIRE( uri->scheme() == "http" );
 	REQUIRE( uri->host() == "www.google.com" );
@@ -65,7 +65,7 @@ TEST_CASE( "NetKit/uri/3", "netkit::uri tests" )
 
 TEST_CASE( "NetKit/uri/4", "netkit::uri tests" )
 {
-	netkit::uri::ptr	uri = new netkit::uri( "http://www.google.com/path" );
+	netkit::uri::ref	uri = new netkit::uri( "http://www.google.com/path" );
 	std::string		str = uri->recompose();
 
 	REQUIRE( str == "http://www.google.com:80/path" );

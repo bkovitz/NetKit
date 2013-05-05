@@ -35,7 +35,7 @@ TEST_CASE( "NetKit/socket", "socket tests" )
 {
 	SECTION( "constructors", "socket constructors" )
 	{
-		netkit::ip::tcp::socket::ptr sock = new netkit::ip::tcp::socket;
+		netkit::ip::tcp::socket::ref sock = new netkit::ip::tcp::socket;
 		REQUIRE( sock );
 		
 		//sock->connect( new netkit::ip::endpoint( "http://www."), <#connect_reply_f reply#>)

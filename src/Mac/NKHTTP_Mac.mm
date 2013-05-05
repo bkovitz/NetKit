@@ -33,16 +33,30 @@
 
 using namespace netkit::http;
 
+request::ref
+request::create( std::uint16_t major, std::uint16_t minor, int method, const uri::ref &uri )
+{
+	return new request_mac( major, minor, method, uri );
+}
+
+
+response::ref
+response::create( std::uint16_t major, std::uint16_t minor, std::uint16_t status, bool keep_alive )
+{
+	return new response_mac( major, minor, status, keep_alive );
+}
+
+
 #if defined( __APPLE__ )
 #	pragma mark client_mac implementation
 #endif
 
-client_mac::client_mac( const request::ptr &request, auth_f auth_func, response_f response_func )
+client_mac::client_mac( const request::ref &request, auth_f auth_func, response_f response_func )
 :
 	client( request, auth_func, response_func ),
 	m_stream( NULL )
 {
-	m_response = new http::response( request->major(), request->minor(), http::status::ok, request->keep_alive() );
+	m_response = new response_mac( request->major(), request->minor(), http::status::ok, request->keep_alive() );
 }
 
 
@@ -53,9 +67,9 @@ client_mac::~client_mac()
 
 
 void
-client::send( const request::ptr &request, response_f response_func )
+client::send( const request::ref &request, response_f response_func )
 {
-	client_mac *self = new client_mac( request, [=]( request::ptr &request, uint32_t status )
+	client_mac *self = new client_mac( request, [=]( request::ref &request, uint32_t status )
 	{
 		return false;
 	}, response_func );
@@ -66,7 +80,7 @@ client::send( const request::ptr &request, response_f response_func )
 
 
 void
-client::send( const request::ptr &request, auth_f auth_func, response_f response_func )
+client::send( const request::ref &request, auth_f auth_func, response_f response_func )
 {
 	client_mac *self = new client_mac( request, auth_func, response_func );
 

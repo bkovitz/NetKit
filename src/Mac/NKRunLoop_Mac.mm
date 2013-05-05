@@ -27,7 +27,7 @@
  * either expressed or implied, of the FreeBSD Project.
  *
  */
- 
+
 #include "NKRunLoop_Mac.h"
 #include <CoreFoundation/CoreFoundation.h>
 #include <NetKit/NKSocket.h>
@@ -35,10 +35,10 @@
 
 using namespace netkit;
 
-runloop::ptr
+runloop::ref
 runloop::instance()
 {
-	static runloop::ptr singleton = new runloop_mac;
+	static runloop::ref singleton = new runloop_mac;
 	
 	return singleton;
 }
@@ -68,11 +68,11 @@ runloop_mac::create( int fd, event_mask m )
 {
 	dispatch_source_t event = nullptr;
 	
-	if ( ( m == event_mask::connect ) || ( m == event_mask::write ) )
+	if ( m == event_mask::write )
 	{
 		event = dispatch_source_create( DISPATCH_SOURCE_TYPE_WRITE, fd, 0, dispatch_get_main_queue() );
 	}
-	else if ( ( m == event_mask::accept ) || ( m == event_mask::read ) )
+	else if ( m == event_mask::read )
 	{
 		event = dispatch_source_create( DISPATCH_SOURCE_TYPE_READ, fd, 0, dispatch_get_main_queue() );
 	}
@@ -131,7 +131,11 @@ runloop_mac::cancel( event e )
 {
 	auto event = reinterpret_cast< dispatch_source_t >( e );
 	dispatch_source_cancel( event );
-	dispatch_release( event );
+	
+	dispatch_on_main_thread( ^()
+	{
+	//	dispatch_release( event );
+	} );
 }
 
 

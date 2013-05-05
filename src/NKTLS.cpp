@@ -33,313 +33,28 @@
 #include <NetKit/NKLog.h>
 #include <NetKit/NKPlatform.h>
 #include <NetKit/NKError.h>
-#if 0
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+#include <openssl/conf.h>
+#include <openssl/x509v3.h>
+#ifndef OPENSSL_NO_ENGINE
+#include <openssl/engine.h>
+#endif
+#include <assert.h>
+#include <algorithm>
+#include <stdio.h>
 #include <sys/socket.h>
-#include <botan_all.h>
+#include <string>
+#include <sys/socket.h>
 #include <iostream>
 #include <fstream>
 #include <memory>
 #include <thread>
-#endif
 
 
 using namespace netkit;
-//using namespace Botan;
 
 
-#if 0
-
-bool value_exists(const std::vector<std::string>& vec,
-                  const std::string& val)
-   {
-   for(size_t i = 0; i != vec.size(); ++i)
-      if(vec[i] == val)
-         return true;
-   return false;
-   }
-
-class Credentials_Manager_Simple : public Botan::Credentials_Manager
-{
-public:
-
-	Credentials_Manager_Simple( Botan::RandomNumberGenerator &rng )
-	:
-		rng( rng )
-	{
-	}
-
-	inline std::string
-	srp_identifier( const std::string& type, const std::string& hostname )
-	{
-		if ( type == "tls-client" && hostname == "srp-host" )
-		{
-			return "user";
-		}
-		
-		return "";
-	}
-
-	inline bool
-	attempt_srp( const std::string& type, const std::string& hostname )
-	{
-		if ( hostname == "srp-host" )
-		{
-			return true;
-		}
-
-		return false;
-	}
-
-	inline std::vector< Botan::Certificate_Store* >
-	trusted_certificate_authorities( const std::string& type, const std::string& hostname )
-	{
-		std::vector<Botan::Certificate_Store*> certs;
-
-		if ( type == "tls-client" && hostname == "twitter.com" )
-		{
-			Botan::X509_Certificate verisign("/usr/share/ca-certificates/mozilla/VeriSign_Class_3_Public_Primary_Certification_Authority_-_G5.crt");
-
-			auto store = new Botan::Certificate_Store_In_Memory;
-			store->add_certificate(verisign);
-			certs.push_back(store);
-		}
-
-		return certs;
-	}
-
-      void verify_certificate_chain(
-         const std::string& type,
-         const std::string& purported_hostname,
-         const std::vector<Botan::X509_Certificate>& cert_chain)
-         {
-         try
-            {
-            Botan::Credentials_Manager::verify_certificate_chain(type,
-                                                                 purported_hostname,
-                                                                 cert_chain);
-            }
-         catch(std::exception& e)
-            {
-            std::cout << "Certificate verification failed - " << e.what() << " - but will ignore\n";
-            }
-         }
-
-      std::string srp_password(const std::string& type,
-                               const std::string& hostname,
-                               const std::string& identifier)
-         {
-         if(type == "tls-client" && hostname == "localhost" && identifier == "user")
-            return "password";
-
-         return "";
-         }
-
-      bool srp_verifier(const std::string& type,
-                        const std::string& context,
-                        const std::string& identifier,
-                        std::string& group_id,
-                        Botan::BigInt& verifier,
-                        std::vector<Botan::byte>& salt,
-                        bool generate_fake_on_unknown)
-         {
-
-         std::string pass = srp_password("tls-client", context, identifier);
-         if(pass == "")
-            {
-            if(!generate_fake_on_unknown)
-               return false;
-
-            pass.resize(16);
-            Botan::global_state().global_rng().randomize((Botan::byte*)&pass[0], pass.size());
-            }
-
-         group_id = "modp/srp/2048";
-
-         salt.resize(16);
-         Botan::global_state().global_rng().randomize(&salt[0], salt.size());
-
-         verifier = Botan::generate_srp6_verifier(identifier,
-                                                  pass,
-                                                  salt,
-                                                  group_id,
-                                                  "SHA-1");
-
-         return true;
-         }
-
-      std::string psk_identity_hint(const std::string&,
-                                    const std::string&)
-         {
-         return "";
-         }
-
-      std::string psk_identity(const std::string&, const std::string&,
-                               const std::string& identity_hint)
-         {
-         //return "lloyd";
-         return "Client_identity";
-         }
-
-      Botan::SymmetricKey psk(const std::string& type, const std::string& context,
-                              const std::string& identity)
-         {
-         if(type == "tls-server" && context == "session-ticket")
-            {
-            if(session_ticket_key.length() == 0)
-               session_ticket_key = Botan::SymmetricKey(rng, 32);
-            return session_ticket_key;
-            }
-
-         if(identity == "Client_identity")
-            return Botan::SymmetricKey("b5a72e1387552e6dc10766dc0eda12961f5b21e17f98ef4c41e6572e53bd7527");
-         if(identity == "lloyd")
-            return Botan::SymmetricKey("85b3c1b7dc62b507636ac767999c9630");
-
-         throw Botan::Internal_Error("No PSK set for " + identity);
-         }
-
-      std::pair<Botan::X509_Certificate,Botan::Private_Key*>
-      load_or_make_cert(const std::string& hostname,
-                        const std::string& key_type,
-                        Botan::RandomNumberGenerator& rng)
-         {
-         using namespace Botan;
-
-         const std::string key_fsname_prefix = hostname + "." + key_type + ".";
-         const std::string key_file_name = key_fsname_prefix + "key";
-         const std::string cert_file_name = key_fsname_prefix + "crt";
-
-         try
-            {
-            X509_Certificate cert(cert_file_name);
-            Private_Key* key = PKCS8::load_key(key_file_name, rng);
-
-            //std::cout << "Loaded existing key/cert from " << cert_file_name << " and " << key_file_name << "\n";
-
-            return std::make_pair(cert, key);
-            }
-         catch(...) {}
-
-         // Failed. Instead, make a new one
-
-         std::cout << "Creating new certificate for identifier '" << hostname << "'\n";
-
-         X509_Cert_Options opts;
-
-         opts.common_name = hostname;
-         opts.country = "US";
-         opts.email = "root@" + hostname;
-         opts.dns = hostname;
-
-         std::auto_ptr<Private_Key> key;
-         if(key_type == "rsa")
-            key.reset(new RSA_PrivateKey(rng, 1024));
-         else if(key_type == "dsa")
-            key.reset(new DSA_PrivateKey(rng, DL_Group("dsa/jce/1024")));
-         else if(key_type == "ecdsa")
-            key.reset(new ECDSA_PrivateKey(rng, EC_Group("secp256r1")));
-         else
-            throw std::runtime_error("Don't know what to do about key type '" + key_type + "'");
-
-         X509_Certificate cert =
-            X509::create_self_signed_cert(opts, *key, "SHA-1", rng);
-
-         // Now save both
-
-         std::cout << "Saving new " << key_type << " key to " << key_file_name << "\n";
-         std::ofstream key_file(key_file_name.c_str());
-         key_file << PKCS8::PEM_encode(*key, rng, "");
-         key_file.close();
-
-         std::cout << "Saving new " << key_type << " cert to " << key_file_name << "\n";
-         std::ofstream cert_file(cert_file_name.c_str());
-         cert_file << cert.PEM_encode() << "\n";
-         cert_file.close();
-
-         return std::make_pair(cert, key.release());
-         }
-
-      std::vector<Botan::X509_Certificate> cert_chain(
-         const std::vector<std::string>& cert_key_types,
-         const std::string& type,
-         const std::string& context)
-         {
-         using namespace Botan;
-
-         std::vector<X509_Certificate> certs;
-
-         try
-            {
-            if(type == "tls-server")
-               {
-               const std::string hostname = (context == "" ? "localhost" : context);
-
-               if(hostname == "nosuchname")
-                  return std::vector<Botan::X509_Certificate>();
-
-               for(auto i : certs_and_keys)
-                  {
-                  if(hostname != "" && !i.first.matches_dns_name(hostname))
-                     continue;
-
-                  if(!value_exists(cert_key_types, i.second->algo_name()))
-                     continue;
-
-                  certs.push_back(i.first);
-                  }
-
-               if(!certs.empty())
-                  return certs;
-
-               std::string key_name = "";
-
-               if(value_exists(cert_key_types, "RSA"))
-                  key_name = "rsa";
-               else if(value_exists(cert_key_types, "DSA"))
-                  key_name = "dsa";
-               else if(value_exists(cert_key_types, "ECDSA"))
-                  key_name = "ecdsa";
-
-               std::pair<X509_Certificate, Private_Key*> cert_and_key =
-                  load_or_make_cert(hostname, key_name, rng);
-
-               certs_and_keys[cert_and_key.first] = cert_and_key.second;
-               certs.push_back(cert_and_key.first);
-               }
-            else if(type == "tls-client")
-               {
-               X509_Certificate cert("user-rsa.crt");
-               Private_Key* key = PKCS8::load_key("user-rsa.key", rng);
-
-               certs_and_keys[cert] = key;
-               certs.push_back(cert);
-               }
-            }
-         catch(std::exception& e)
-            {
-            std::cout << e.what() << "\n";
-            }
-
-         return certs;
-         }
-
-      Botan::Private_Key* private_key_for(const Botan::X509_Certificate& cert,
-                                          const std::string& type,
-                                          const std::string& context)
-         {
-         return certs_and_keys[cert];
-         }
-
-   private:
-      Botan::RandomNumberGenerator& rng;
-
-      Botan::SymmetricKey session_ticket_key;
-
-      std::map<Botan::X509_Certificate, Botan::Private_Key*> certs_and_keys;
-};
-#endif
-
-#if 0
 class tls_impl : public netkit::tls::adapter
 {
 public:
@@ -365,62 +80,161 @@ public:
 	
 private:
 	
-	void
-	accept_internal( accept_reply_f reply );
-	
-	void
-	connect_internal( const uri::ref &uri, const endpoint::ref &to, connect_reply_f reply );
-	
 	std::string
 	protocol_chooser( const std::vector< std::string > &protocols );
 	
 	void
 	wait_for_connect_handshake( connect_reply_f reply );
 	
+	bool
+	make_cert( X509 **x509p, EVP_PKEY **pkeyp, int bits, int serial, int days );
+	
+	int
+	add( X509 *cert, int nid, const char *value );
+	
+	static void
+	callback(int p, int n, void *arg);
+	
 	bool							m_handshake;
-	TLS::Client						*m_client;
-	TLS::Server						*m_server;
 	std::uint8_t					m_buffer[ 4192 ];
 	std::vector< std::uint8_t >		m_send_data;
 	bool							m_sending;
 	std::vector< std::uint8_t >		m_recv_data;
-	AutoSeeded_RNG					m_rng;
-	TLS::Policy						m_policy;
-	TLS::Session_Manager_In_Memory	m_session;
-	Credentials_Manager_Simple		m_creds;
+	static X509						*m_cert;
+	static EVP_PKEY					*m_pkey;
+	
+protected:
+
+	void
+	process();
+
+	std::streamsize
+	data_to_write( std::uint8_t *data, size_t len );
+
+	std::streamsize
+	data_to_read( std::uint8_t *data, size_t len );
+
+protected:
+
+	struct buffer
+	{
+		std::vector< std::uint8_t > m_data;
+
+		inline buffer( const std::uint8_t *data, std::size_t len )
+		:
+			m_data( data, data + len )
+		{
+		}
+	};
+	
+	inline void
+	was_consumed( std::queue< buffer* > &queue, buffer *buf, std::size_t used )
+	{
+		if ( buf->m_data.size() == used )
+		{
+			queue.pop();
+			delete buf;
+		}
+		else if ( used > 0 )
+		{
+			std::rotate( buf->m_data.begin(), buf->m_data.begin() + used, buf->m_data.end() );
+			buf->m_data.resize( buf->m_data.size() - used );
+		}
+	}
+	
+//	virtual void
+//	OnDataToWrite( std::uint8_t *data, size_t len) = 0;
+
+//	virtual void
+//	OnDataToRead( std::uint8_t *data, size_t len) = 0;
+
+	void
+	send_pending_data();
+
+	void
+	handle_error( int result);
+
+	std::queue< buffer* >	m_pending_write_list;
+	std::queue< buffer* >	m_pending_read_list;
+	bool					m_accept;
+	bool					m_read_required;
+	bool					m_error;
+	SSL_CTX					*m_ssl_context;
+	SSL						*m_ssl;
+	BIO						*m_out;
+	BIO						*m_in;
 };
-#endif
+
+
+X509        *tls_impl::m_cert	= NULL;
+EVP_PKEY    *tls_impl::m_pkey	= NULL;
 
 
 tls::adapter::ref
 tls::adapter::create()
 {
-	return nullptr;
+	return new tls_impl;
 }
 
-#if 0
 
 tls_impl::tls_impl()
 :
-	m_client( nullptr ),
-	m_server( nullptr ),
+	m_read_required( false ),
 	m_handshake( false ),
 	m_sending( false ),
-	m_creds( m_rng )
+	m_error( false ),
+	m_ssl_context( nullptr ),
+	m_ssl( nullptr ),
+	m_out( nullptr ),
+	m_in( nullptr )
 {
+	static bool init = false;
+	
+	if ( !init )
+	{
+		CRYPTO_malloc_init();
+		SSL_load_error_strings();
+		OpenSSL_add_all_algorithms();
+		SSL_library_init();
+		ENGINE_load_builtin_engines();
+		
+		auto ok = make_cert( &m_cert, &m_pkey, 512, 0, 3650 );
+		
+		if ( !ok )
+		{
+			nklog( log::error, "unable to make certificate" );
+		}
+	
+#ifndef OPENSSL_NO_ENGINE
+		ENGINE_cleanup();
+#endif
+		CRYPTO_cleanup_all_ex_data();
+		
+		init = true;
+	}
 }
 
 
 tls_impl::~tls_impl()
 {
-	if ( m_client )
+	if ( m_out )
 	{
-		delete m_client;
+		BIO_free( m_out );
 	}
 	
-	if ( m_server )
+	if ( m_in )
 	{
-		delete m_server;
+		BIO_free( m_in );
+	}
+	
+	if ( m_ssl )
+	{
+		SSL_free( m_ssl );
+	}
+	
+	if ( m_ssl_context )
+	{
+		SSL_CTX_free( m_ssl_context );
 	}
 }
 
@@ -428,86 +242,31 @@ tls_impl::~tls_impl()
 void
 tls_impl::accept( source::accept_reply_f reply )
 {
+	m_ssl_context	= SSL_CTX_new( SSLv23_server_method() );
+	SSL_CTX_set_options( m_ssl_context, SSL_OP_NO_SSLv2 );
+	SSL_CTX_use_PrivateKey( m_ssl_context, m_pkey );
+	SSL_CTX_use_certificate( m_ssl_context, m_cert );
+	
+	m_ssl			= SSL_new( m_ssl_context );
+	m_in			= BIO_new( BIO_s_mem() );
+	m_out			= BIO_new( BIO_s_mem() );
+	
+	SSL_set_bio( m_ssl, m_in, m_out );
+	SSL_set_accept_state( m_ssl );
+	
+	m_accept = true;
+	
 	if ( m_next )
 	{
 		m_next->accept( [=]( int status )
 		{
-			if ( status == 0 )
-			{
-				accept_internal( reply );
-			}
-			else
-			{
-				reply( status );
-			}
+			reply( status );
 		} );
 	}
 	else
 	{
-		accept_internal( reply );
+		reply( 0 );
 	}
-}
-
-
-void
-tls_impl::accept_internal( source::accept_reply_f reply )
-{
-	m_server = new TLS::Server
-					(
-					[=]( const byte *buf, std::size_t len ) mutable
-					{
-						// We need to make sure this send completes
-						
-						if ( m_sending )
-						{
-							auto old_size = m_send_data.size();
-							m_send_data.resize( m_send_data.size() + len );
-							memcpy( &m_send_data[ old_size ], buf, len );
-						}
-						else
-						{
-							fprintf( stderr, "trying to send buffer of length: %d\n", len );
-							m_source->send( m_next, buf, len, [=]( int status )
-							{
-								// We need to make sure this send completes
-							
-								if ( status != 0 )
-								{
-								}
-							} );
-						}
-					},
-								
-					[=]( const byte *buf, std::size_t len, TLS::Alert alert )
-					{
-						if ( alert.is_valid() )
-						{
-							nklog( log::info, "tls alert: %s", alert.type_string().c_str() );
-						}
-									
-						auto old_size = m_recv_data.size();
-						m_recv_data.resize( m_recv_data.size() + len );
-						memcpy( &m_recv_data[ old_size ], buf, len );
-					},
-								
-					[=]( const TLS::Session &session )
-					{
-						// Don't reply right now, because Botan won't finish initializing this
-						// connection until we've returned true.
-									
-						runloop::instance()->dispatch_on_main_thread( [=]()
-						{
-							reply( 0 );
-						} );
-									
-						return true;
-					},
-								
-					m_session,
-					m_creds,
-					m_policy,
-					m_rng
-					);
 }
 
 
@@ -528,129 +287,52 @@ tls_impl::preflight( const uri::ref &uri, preflight_reply_f reply )
 void
 tls_impl::connect( const uri::ref &uri, const endpoint::ref &to, connect_reply_f reply )
 {
+	m_ssl_context	= SSL_CTX_new( SSLv23_client_method() );
+	SSL_CTX_set_options( m_ssl_context, SSL_OP_NO_SSLv2 );
+	
+	m_ssl			= SSL_new( m_ssl_context );
+	m_in			= BIO_new( BIO_s_mem() );
+	m_out			= BIO_new( BIO_s_mem() );
+	
+	SSL_set_bio( m_ssl, m_in, m_out );
+	SSL_set_connect_state( m_ssl );
+	
+	m_accept = false;
+	
 	if ( m_prev )
 	{
 		m_prev->connect( uri, to, [=]( int status ) mutable
 		{
-			if ( status == 0 )
-			{
-				connect_internal( uri, to, reply );
-			}
-			else
-			{
-				reply( status );
-			}
+			reply( status );
 		} );
 	}
 	else
 	{
-		connect_internal( uri, to, reply );
+		reply( 0 );
 	}
 }
 
 
 void
-tls_impl::connect_internal( const uri::ref &uri, const endpoint::ref &to, connect_reply_f reply )
+tls_impl::send( const std::uint8_t *data, std::size_t len, send_reply_f reply )
 {
-	m_client = new TLS::Client
-					(
-					[=]( const byte *buf, std::size_t len ) mutable
-					{
-						// This can be called when we're not in the context of a send
-						
-						if ( m_sending )
-						{
-							auto old_size = m_send_data.size();
-							m_send_data.resize( m_send_data.size() + len );
-							memcpy( &m_send_data[ old_size ], buf, len );
-						}
-						else
-						{
-							fprintf( stderr, "sending %d bytes of handshake info\n", len );
-							
-							m_source->send( m_next, buf, len, [=]( int status )
-							{
-								// We need to make sure this send completes
-							
-								if ( status != 0 )
-								{
-									reply( status );
-								}
-							} );
-						}
-					},
-								
-					[=]( const byte *buf, std::size_t len, TLS::Alert alert )
-					{
-						if ( alert.is_valid() )
-						{
-							nklog( log::info, "tls alert: %s", alert.type_string().c_str() );
-						}
-						auto old_size = m_recv_data.size();
-fprintf( stderr, "read %d bytes of data, old size = %d\n", len, old_size );
-						m_recv_data.resize( m_recv_data.size() + len );
-						memcpy( &m_recv_data[ old_size ], buf, len );
-					},
-								
-					[=]( const TLS::Session &session )
-					{
-						// Don't reply right now, because Botan won't finish initializing this
-						// connection until we've returned true.
-									
-						m_handshake = true;
-					fprintf( stderr, "got handshake!!!!\n" );
-						runloop::instance()->dispatch_on_main_thread( [=]()
-						{
-							reply( 0 );
-						} );
-									
-						return true;
-					},
-								
-					m_session,
-					m_creds,
-					m_policy,
-					m_rng,
-					TLS::Server_Information( uri->host(), uri->port() ),
-					TLS::Protocol_Version::latest_tls_version(),
-					std::bind( &tls_impl::protocol_chooser, this, std::placeholders::_1 )
-					);
-				
-	wait_for_connect_handshake( reply );
-}
+	buffer *buf = new buffer( data, len );
 
-
-void
-tls_impl::send( const std::uint8_t *buf, std::size_t len, send_reply_f reply )
-{
-	fprintf( stderr, "trying to encrypt of len %d: %s\n", len, buf );
-	m_send_data.clear();
-	
+	m_pending_write_list.push( buf );
 	
 	m_sending = true;
-	
-	try
-	{
-		if ( m_client )
-		{
-			m_client->send( buf, len );
-		}
-		else if ( m_server )
-		{
-			m_server->send( buf, len );
-		}
-	}
-	catch ( ... )
-	{
-		nklog( log::error, "caught exception when sending tls data" );
-		len = -1;
-	}
+
+	process();
 	
 	m_sending = false;
 	
 	if ( m_send_data.size() > 0 )
 	{
 		m_next->send( &m_send_data[ 0 ], m_send_data.size(), reply );
+	}
+	else if ( m_error )
+	{
+		reply( -1, nullptr, 0 );
 	}
 	else
 	{
@@ -664,67 +346,388 @@ tls_impl::recv( const std::uint8_t *in_buf, std::size_t in_len, recv_reply_f rep
 {
 	m_next->recv( in_buf, in_len, [=]( int status, const std::uint8_t *out_buf, std::size_t out_len )
 	{
-		m_recv_data.clear();
+		if ( status == 0 )
+		{
+			m_recv_data.clear();
+			
+			if ( out_len )
+			{
+				buffer *buf = new buffer( out_buf, out_len );
+
+				m_pending_read_list.push( buf );
+
+				process();
+			}
 		
-		try
-		{
-fprintf( stderr, "calling m_client->received data with buffer len = %d\n", out_len );
-			if ( m_client )
+			if ( m_recv_data.size() > 0 )
 			{
-				m_client->received_data( out_buf, out_len );
+			fprintf( stderr, "calling callback with size %d: %c %c %c\n", m_recv_data.size(), m_recv_data[ 0 ], m_recv_data[ 1 ], m_recv_data[ 2 ] );
+				reply( 0, &m_recv_data[ 0 ], m_recv_data.size() );
 			}
-			else if ( m_server )
+			else if ( m_error )
 			{
-				m_server->received_data( out_buf, out_len );
+				reply( -1, nullptr, 0 );
 			}
-		}
-		catch ( ... )
-		{
-			fprintf( stderr, "caught exception while receiving data\n" );
-		}
-	
-	fprintf( stderr, "recv data size = %d\n", m_recv_data.size() );
-		if ( m_recv_data.size() > 0 )
-		{
-			reply( 0, &m_recv_data[ 0 ], m_recv_data.size() );
+			else
+			{
+				reply( 0, nullptr, 0 );
+			}
 		}
 		else
 		{
-			reply( 0, nullptr, 0 );
+			reply( status, nullptr, 0 );
 		}
 	} );
 }
 
 
-std::string
-tls_impl::protocol_chooser( const std::vector< std::string > &protocols )
+void
+tls_impl::process()
 {
-	for ( auto it = protocols.begin(); it != protocols.end(); it++ )
+   fprintf( stderr, "%s process\n", m_accept ? "(server)" : "(client)" );
+   
+	while ( ( !m_read_required && ( m_pending_write_list.size() > 0 ) ) || ( m_pending_read_list.size() > 0 ) )
 	{
-		fprintf( stderr, "protocol: %s\n", ( *it ).c_str() );
+		if ( SSL_in_init( m_ssl ) )
+		{
+         fprintf( stderr, "waiting for handshake: ");
+         fprintf( stderr, "%s\n", SSL_state_string_long(m_ssl));
+         fprintf( stderr, "\n");
+		}
+		else if ( !m_handshake )
+		{
+			fprintf( stderr, "got handshake\n" );
+			m_handshake = true;
+		}
+
+		if ( m_pending_read_list.size() > 0 )
+		{
+			buffer			*buf = m_pending_read_list.front();
+			
+			std::streamsize used = data_to_read( &buf->m_data[ 0 ], buf->m_data.size() );
+			
+			if ( used > 0 )
+			{
+				was_consumed( m_pending_read_list, buf, used );
+			}
+			else if ( used < 0 )
+			{
+				break;
+			}
+		}
+
+		if ( !m_read_required && ( m_pending_write_list.size() > 0 ) )
+		{
+			buffer			*buf = m_pending_write_list.front();
+			
+			fprintf( stderr, "calling data_to_write\n" );
+			std::streamsize used = data_to_write( &buf->m_data[ 0 ], buf->m_data.size() );
+			fprintf( stderr, "returned %d\n", used );
+			
+			if ( used > 0 )
+			{
+				was_consumed( m_pending_write_list, buf, used );
+			}
+			else if ( used < 0 )
+			{
+				break;
+			}
+		}
+
+fprintf( stderr, "m_read_required = %s\n", m_read_required ? "true" : "false" );
+fprintf( stderr, "checking BIO_ctrl_pending...\n" );
+		if ( BIO_ctrl_pending( m_out ) )
+		{
+fprintf( stderr, "sending pending data \n" );
+			send_pending_data();
+		}
 	}
+}
+
+
+std::streamsize
+tls_impl::data_to_write( std::uint8_t *data, std::size_t len )
+{
+	std::streamsize bytes_used	= 0;
+	std::streamsize result		= SSL_write( m_ssl, data, ( int ) len );
+
+	if ( result < 0 )
+	{
+		handle_error( result );
+	}
+	else
+	{
+		bytes_used = result;
+	}
+
+	if ( SSL_want_read( m_ssl ) )
+	{
+      fprintf( stderr, "SSL_want_read\n");
+
+		m_read_required = true;
+	}
+
+	return bytes_used;
+}
+
+
+std::streamsize
+tls_impl::data_to_read( std::uint8_t *data, std::size_t len )
+{
+	std::uint8_t	buf[ 4192 ];
+	std::size_t		bytes_used	= BIO_write( m_in, data, ( int ) len );
+	int				bytes_out	= 0;
+   
+	m_read_required = false;
 	
-	return "http/1.1";
+	do
+	{
+		bytes_out = SSL_read( m_ssl, ( void* ) buf, sizeof( buf ) );
+
+		if ( bytes_out > 0 )
+		{
+			auto old_size = m_recv_data.size();
+fprintf( stderr, "read %d bytes of data, old size = %d\n", bytes_out, old_size );
+			m_recv_data.resize( m_recv_data.size() + bytes_out );
+			memcpy( &m_recv_data[ old_size ], buf, bytes_out );
+			fprintf( stderr, "read %d bytes of data: %c %c %c\n", m_recv_data.size(), m_recv_data[ 0 ], m_recv_data[ 1 ], m_recv_data[ 2] );
+			
+			
+//			OnDataToRead( buf, bytes_out);
+		}
+      
+		if ( bytes_out < 0 )
+		{
+			handle_error( bytes_out );
+		}
+	}
+	while ( bytes_out > 0 );
+
+	return bytes_used;
 }
 
 
 void
-tls_impl::wait_for_connect_handshake( connect_reply_f reply )
+tls_impl::send_pending_data()
 {
-	if ( !m_handshake )
+	std::uint8_t	buf[ 4192 ];
+	std::size_t		pending;
+
+	fprintf( stderr, "Send pending data\n");
+
+	while ( ( pending = BIO_ctrl_pending( m_out ) ) > 0 )
 	{
-		m_source->recv( m_buffer, sizeof( m_buffer ), [=]( int status, size_t len )
+		int bytes_to_send = BIO_read( m_out, ( void* ) buf, sizeof( buf ) );
+
+		if ( bytes_to_send > 0 )
 		{
-			if ( status == 0 )
+//			OnDataToWrite( buf, bytes_to_send );
+
+			if ( !m_sending )
 			{
-				wait_for_connect_handshake( reply );
+				m_source->send( m_next, buf, bytes_to_send, [=]( int status )
+				{
+				} );
 			}
 			else
 			{
-				fprintf( stderr, "error while waiting for handshake\n" );
-				reply( status );
+				auto old_size = m_send_data.size();
+				m_send_data.resize( m_send_data.size() + bytes_to_send );
+				memcpy( &m_send_data[ old_size ], buf, bytes_to_send );
 			}
-		} );
+			
+			fprintf( stderr, "Sent %d bytes\n", bytes_to_send);
+		}
+
+		if ( bytes_to_send <= 0 )
+		{
+			if ( !BIO_should_retry( m_out ) )
+			{
+				handle_error(bytes_to_send);
+			}
+		}
 	}
 }
-#endif
+
+
+void
+tls_impl::handle_error( int result )
+{
+	if ( result <= 0 )
+	{
+		int error = SSL_get_error(m_ssl, result);
+
+		switch ( error )
+		{
+			case SSL_ERROR_ZERO_RETURN:
+			case SSL_ERROR_NONE:
+			case SSL_ERROR_WANT_READ:
+			{
+			}
+			break;
+
+			default :
+			{
+				char buffer[256];
+
+				while (error != 0)
+				{
+					ERR_error_string_n(error, buffer, sizeof(buffer));
+
+					fprintf( stderr, "Error: %d - %s\n", error, buffer);
+
+					error = ( int ) ERR_get_error();
+				}
+				
+				//m_error = true;
+			}
+			break;
+		}
+	}
+}
+
+
+bool
+tls_impl::make_cert( X509 **x509p, EVP_PKEY **pkeyp, int bits, int serial, int days )
+{
+	X509		*x;
+	EVP_PKEY	*pk;
+	RSA			*rsa;
+	X509_NAME	*name=NULL;
+	bool		ok = false;
+	
+	if ( ( pkeyp == NULL ) || ( *pkeyp == NULL ) )
+	{
+		if ( ( pk = EVP_PKEY_new() ) == NULL )
+		{
+			nklog( log::error, "EVP_PKEY_new() failed" );
+			goto exit;
+		}
+	}
+	else
+	{
+		pk = *pkeyp;
+	}
+
+	if ( ( x509p == NULL ) || ( *x509p == NULL ) )
+	{
+		if ( ( x = X509_new() ) == NULL )
+		{
+			nklog( log::error, "X509_new() failed" );
+			goto exit;
+		}
+	}
+	else
+	{
+		x = *x509p;
+	}
+
+	rsa = RSA_generate_key( bits, RSA_F4, callback, NULL );
+	
+	if ( !EVP_PKEY_assign_RSA( pk, rsa ) )
+	{
+		nklog( log::error, "EVP_PKEY_assign_RSA() failed" );
+		goto exit;
+	}
+
+	rsa = NULL;
+
+	X509_set_version( x,2 );
+	ASN1_INTEGER_set( X509_get_serialNumber(x),serial);
+	X509_gmtime_adj( X509_get_notBefore(x),0);
+	X509_gmtime_adj( X509_get_notAfter(x),(long)60*60*24*days);
+	X509_set_pubkey( x,pk);
+
+	name = X509_get_subject_name(x);
+
+	if ( !X509_NAME_add_entry_by_txt(name,"C", MBSTRING_ASC, ( const unsigned char* ) "US", -1, -1, 0) )
+	{
+		nklog( log::error, "X509_NAME_add_entry_by_txt() failed" );
+		goto exit;
+	}
+	
+	if ( !X509_NAME_add_entry_by_txt(name,"CN", MBSTRING_ASC, ( const unsigned char* ) "OpenSSL Group", -1, -1, 0 ) )
+	{
+		nklog( log::error, "X509_NAME_add_entry_by_txt() failed" );
+		goto exit;
+	}
+
+	// Its self signed so set the issuer name to be the same as the subject.
+	
+	X509_set_issuer_name(x,name);
+
+	// Add various extensions: standard extensions
+	
+	if ( !add( x, NID_basic_constraints, "critical,CA:TRUE" ) )
+	{
+		goto exit;
+	}
+	
+	if ( !add( x, NID_key_usage, "critical,keyCertSign,cRLSign" ) )
+	{
+		goto exit;
+	}
+
+	if ( !add( x, NID_subject_key_identifier, "hash" ) )
+	{
+		goto exit;
+	}
+
+	if ( !X509_sign( x, pk, EVP_md5() ) )
+	{
+		goto exit;
+	}
+
+	*x509p = x;
+	*pkeyp = pk;
+	
+	ok = true;
+	
+exit:
+
+	return ok;
+}
+
+
+int
+tls_impl::add( X509 *cert, int nid, const char *value )
+{
+	X509_EXTENSION *ex;
+	X509V3_CTX		ctx;
+	int				ret;
+	
+	X509V3_set_ctx_nodb(&ctx);
+	X509V3_set_ctx(&ctx, cert, cert, NULL, NULL, 0);
+	
+	ex = X509V3_EXT_conf_nid(NULL, &ctx, nid, ( char* ) value);
+	
+	if ( !ex )
+	{
+		nklog( log::error, "X509V3_EXT_conf_nid() failed" );
+		ret = 0;
+		goto exit;
+	}
+
+	X509_add_ext(cert,ex,-1);
+	X509_EXTENSION_free(ex);
+	
+	ret = 1;
+	
+exit:
+
+	return ret;
+}
+
+
+void
+tls_impl::callback(int p, int n, void *arg)
+{
+	char c='B';
+
+	if (p == 0) c='.';
+	if (p == 1) c='+';
+	if (p == 2) c='*';
+	if (p == 3) c='\n';
+	
+	fputc( c,stderr );
+}

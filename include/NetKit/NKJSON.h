@@ -153,7 +153,7 @@ public:
 
 	value( const value &v );
 	
-	value( enum class type t );
+	value( value::type t );
 
 	~value();
 	

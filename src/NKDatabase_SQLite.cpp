@@ -37,7 +37,7 @@ manager::create( const std::string &s )
 	{
 #if defined( __APPLE__ )
 
-		chmod( ( const char* ) uri->path().c_str(), 0666 );
+		chmod( s.c_str(), 0666 );
 	
 #endif
 
@@ -45,7 +45,11 @@ manager::create( const std::string &s )
 	}
 	else
 	{
+#if defined( WIN32 )
 		nklog( log::error, "sqlite3_open() failed: code = %d, message = %s", err, sqlite3_errstr( err ) );
+#else
+		nklog( log::error, "sqlite3_open() failed: code = %d", err );
+#endif
 	}
 	
 	return ( err == 0 ) ? true : false;

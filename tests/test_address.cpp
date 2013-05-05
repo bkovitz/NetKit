@@ -39,7 +39,7 @@ using namespace netkit;
 
 TEST_CASE( "NetKit/ip/address/1", "ip::address tests" )
 {
-	ip::address::ptr addr = new ip::address( INADDR_ANY );
+	ip::address::ref addr = new ip::address( INADDR_ANY );
 	
 	REQUIRE( addr->to_string() == "0.0.0.0" );
 }
@@ -47,7 +47,7 @@ TEST_CASE( "NetKit/ip/address/1", "ip::address tests" )
 
 TEST_CASE( "NetKit/ip/address/2", "ip::address tests" )
 {
-	ip::address::ptr addr = new ip::address( inet_addr( "192.168.1.175" ) );
+	ip::address::ref addr = new ip::address( inet_addr( "192.168.1.175" ) );
 	
 	REQUIRE( addr->to_string() == "192.168.1.175" );
 }

@@ -29,7 +29,6 @@
  */
 
 #include <NetKit/NetKit.h>
-#include <botan_all.h>
 #include <Foundation/Foundation.h>
 #include <CoreFoundation/CoreFoundation.h>
 #include <SystemConfiguration/SystemConfiguration.h>
@@ -93,8 +92,6 @@ netkit::initialize()
 		netkit::json::server::m_notification_handlers	= new netkit::json::server::notification_handlers;
 		netkit::json::server::m_request_handlers		= new netkit::json::server::request_handlers;
 		
-		Botan::LibraryInitializer::initialize();
-	
 		first = false;
 	}
 }
