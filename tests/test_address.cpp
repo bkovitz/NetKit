@@ -60,8 +60,8 @@ TEST_CASE( "NetKit/ip/address/3", "ip::address tests" )
 		REQUIRE( status == 0 );
 		REQUIRE( addrs.size() > 0 );
 		
-		runloop::instance()->stop();
+		runloop::main()->stop();
 	} );
 
-	runloop::instance()->run();
+	runloop::main()->run();
 }

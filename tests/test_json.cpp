@@ -235,9 +235,9 @@ TEST_CASE( "NetKit/json/3", "json rpc" )
 			REQUIRE( d == 9.5 );
 			REQUIRE( s == "hello world" );
 			
-			runloop::instance()->stop();
+			runloop::main()->stop();
 		} );
 	} );
 	
-	runloop::instance()->run();
+	runloop::main()->run();
 }

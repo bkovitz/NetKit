@@ -31,21 +31,25 @@
 #ifndef _netkit_tls_h
 #define _netkit_tls_h
 
-#include <NetKit/NKSocket.h>
+#include <NetKit/NKSource.h>
 
 namespace netkit {
 
 namespace tls {
 
-class NETKIT_DLL adapter : public source::adapter
-{
-public:
+namespace server {
 
-	typedef adapter *ptr;
-	
-	static adapter::ref
-	create();
-};
+source::adapter::ref
+create();
+
+}
+
+namespace client {
+
+source::adapter::ref
+create();
+
+}
 
 }
 

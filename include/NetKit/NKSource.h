@@ -45,7 +45,6 @@ class NETKIT_DLL source : public object
 {
 public:
 
-	typedef std::function< void ( int status ) >							accept_reply_f;
 	typedef std::function< void ( int status, const endpoint::ref &peer ) >	connect_reply_f;
 	typedef std::function< void ( int status ) >							send_reply_f;
 	typedef std::function< void ( int status, const std::size_t len ) >		peek_reply_f;
@@ -60,7 +59,6 @@ public:
 	
 		DECLARE_INTRUSIVE_LIST_OBJECT( adapter )
 		
-		typedef std::function< void ( int status ) >													accept_reply_f;
 		typedef std::function< void ( int status, const uri::ref &out_uri ) >							preflight_reply_f;
 		typedef std::function< void ( int status ) >													connect_reply_f;
 		typedef std::function< void ( int status, const std::uint8_t *out_buf, std::size_t out_len ) >	send_reply_f;
@@ -72,9 +70,6 @@ public:
 		adapter();
 		
 		virtual ~adapter();
-		
-		virtual void
-		accept( accept_reply_f reply );
 		
 		virtual void
 		preflight( const uri::ref &uri, preflight_reply_f reply );
@@ -101,9 +96,6 @@ public:
 
 	virtual void
 	add( adapter::ref adapter );
-	
-	void
-	accept( accept_reply_f reply );
 	
 	void
 	connect( const uri::ref &uri, connect_reply_f reply );

@@ -61,11 +61,11 @@ TEST_CASE( "NetKit/ssl/1", "ssl client" )
 				REQUIRE( status == 0 );
 				REQUIRE( strstr( ( const char* ) buf, "HTTP/1.1 200 OK" ) != NULL );
 				
-				runloop::instance()->stop();
+				runloop::main()->stop();
 			} );
 		} );
 		
-		netkit::runloop::instance()->run();
+		netkit::runloop::main()->run();
 	}
 }
 
@@ -126,10 +126,10 @@ TEST_CASE( "NetKit/ssl/2", "ssl server" )
 				REQUIRE( cbuf[ 3 ] == 'l' );
 				REQUIRE( cbuf[ 4 ] == 'o' );
 				
-				netkit::runloop::instance()->stop();
+				netkit::runloop::main()->stop();
 			} );
 		} );
 		
-		netkit::runloop::instance()->run();
+		netkit::runloop::main()->run();
 	}
 }

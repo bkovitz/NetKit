@@ -132,9 +132,6 @@ protected:
 		virtual ~adapter();
 		
 		virtual void
-		accept( accept_reply_f reply );
-		
-		virtual void
 		preflight( const uri::ref &uri, preflight_reply_f reply );
 	
 		virtual void

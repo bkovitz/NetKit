@@ -114,13 +114,6 @@ source::cancel( cookie c )
 
 
 void
-source::accept( accept_reply_f reply )
-{
-	m_adapters.head()->accept( reply );
-}
-
-
-void
 source::connect( const uri::ref &in_uri, connect_reply_f reply )
 {
 	endpoint::ref to;
@@ -404,13 +397,6 @@ source::adapter::~adapter()
 }
 
 
-void
-source::adapter::accept( accept_reply_f reply )
-{
-	reply( 0 );
-}
-
-		
 void
 source::adapter::preflight( const uri::ref &uri, preflight_reply_f reply )
 {

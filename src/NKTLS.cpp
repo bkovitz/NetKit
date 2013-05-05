@@ -43,9 +43,7 @@
 #include <assert.h>
 #include <algorithm>
 #include <stdio.h>
-#include <sys/socket.h>
 #include <string>
-#include <sys/socket.h>
 #include <iostream>
 #include <fstream>
 #include <memory>
@@ -55,17 +53,20 @@
 using namespace netkit;
 
 
-class tls_impl : public netkit::tls::adapter
+class tls_adapter : public netkit::source::adapter
 {
 public:
 
-	tls_impl();
-	
-	virtual ~tls_impl();
+	enum type
+	{
+		client,
+		server
+	};
 
-	virtual void
-	accept( source::accept_reply_f reply );
-		
+	tls_adapter( type t );
+	
+	virtual ~tls_adapter();
+
 	virtual void
 	preflight( const uri::ref &uri, preflight_reply_f reply );
 	
@@ -79,12 +80,6 @@ public:
 	recv( const std::uint8_t *in_buf, std::size_t in_len, recv_reply_f reply );
 	
 private:
-	
-	std::string
-	protocol_chooser( const std::vector< std::string > &protocols );
-	
-	void
-	wait_for_connect_handshake( connect_reply_f reply );
 	
 	bool
 	make_cert( X509 **x509p, EVP_PKEY **pkeyp, int bits, int serial, int days );
@@ -142,12 +137,6 @@ protected:
 		}
 	}
 	
-//	virtual void
-//	OnDataToWrite( std::uint8_t *data, size_t len) = 0;
-
-//	virtual void
-//	OnDataToRead( std::uint8_t *data, size_t len) = 0;
-
 	void
 	send_pending_data();
 
@@ -156,7 +145,6 @@ protected:
 
 	std::queue< buffer* >	m_pending_write_list;
 	std::queue< buffer* >	m_pending_read_list;
-	bool					m_accept;
 	bool					m_read_required;
 	bool					m_error;
 	SSL_CTX					*m_ssl_context;
@@ -166,18 +154,25 @@ protected:
 };
 
 
-X509        *tls_impl::m_cert	= NULL;
-EVP_PKEY    *tls_impl::m_pkey	= NULL;
+X509        *tls_adapter::m_cert	= NULL;
+EVP_PKEY    *tls_adapter::m_pkey	= NULL;
 
 
-tls::adapter::ref
-tls::adapter::create()
+source::adapter::ref
+tls::server::create()
 {
-	return new tls_impl;
+	return new tls_adapter( tls_adapter::server );
 }
 
 
-tls_impl::tls_impl()
+source::adapter::ref
+tls::client::create()
+{
+	return new tls_adapter( tls_adapter::client );
+}
+
+
+tls_adapter::tls_adapter( type t )
 :
 	m_read_required( false ),
 	m_handshake( false ),
@@ -212,10 +207,42 @@ tls_impl::tls_impl()
 		
 		init = true;
 	}
+
+	switch ( t )
+	{
+		case server:
+		{
+			m_ssl_context	= SSL_CTX_new( SSLv23_server_method() );
+			SSL_CTX_set_options( m_ssl_context, SSL_OP_NO_SSLv2 );
+			SSL_CTX_use_PrivateKey( m_ssl_context, m_pkey );
+			SSL_CTX_use_certificate( m_ssl_context, m_cert );
+	
+			m_ssl	= SSL_new( m_ssl_context );
+			m_in	= BIO_new( BIO_s_mem() );
+			m_out	= BIO_new( BIO_s_mem() );
+	
+			SSL_set_bio( m_ssl, m_in, m_out );
+			SSL_set_accept_state( m_ssl );
+		}
+		break;
+
+		case client:
+		{
+			m_ssl_context	= SSL_CTX_new( SSLv23_client_method() );
+			SSL_CTX_set_options( m_ssl_context, SSL_OP_NO_SSLv2 );
+	
+			m_ssl	= SSL_new( m_ssl_context );
+			m_in	= BIO_new( BIO_s_mem() );
+			m_out	= BIO_new( BIO_s_mem() );
+			
+			SSL_set_bio( m_ssl, m_in, m_out );
+			SSL_set_connect_state( m_ssl );
+		}
+	}
 }
 
 
-tls_impl::~tls_impl()
+tls_adapter::~tls_adapter()
 {
 	if ( m_out )
 	{
@@ -240,38 +267,7 @@ tls_impl::~tls_impl()
 
 
 void
-tls_impl::accept( source::accept_reply_f reply )
-{
-	m_ssl_context	= SSL_CTX_new( SSLv23_server_method() );
-	SSL_CTX_set_options( m_ssl_context, SSL_OP_NO_SSLv2 );
-	SSL_CTX_use_PrivateKey( m_ssl_context, m_pkey );
-	SSL_CTX_use_certificate( m_ssl_context, m_cert );
-	
-	m_ssl			= SSL_new( m_ssl_context );
-	m_in			= BIO_new( BIO_s_mem() );
-	m_out			= BIO_new( BIO_s_mem() );
-	
-	SSL_set_bio( m_ssl, m_in, m_out );
-	SSL_set_accept_state( m_ssl );
-	
-	m_accept = true;
-	
-	if ( m_next )
-	{
-		m_next->accept( [=]( int status )
-		{
-			reply( status );
-		} );
-	}
-	else
-	{
-		reply( 0 );
-	}
-}
-
-
-void
-tls_impl::preflight( const uri::ref &uri, preflight_reply_f reply )
+tls_adapter::preflight( const uri::ref &uri, preflight_reply_f reply )
 {
 	if ( m_next )
 	{
@@ -285,20 +281,8 @@ tls_impl::preflight( const uri::ref &uri, preflight_reply_f reply )
 
 
 void
-tls_impl::connect( const uri::ref &uri, const endpoint::ref &to, connect_reply_f reply )
+tls_adapter::connect( const uri::ref &uri, const endpoint::ref &to, connect_reply_f reply )
 {
-	m_ssl_context	= SSL_CTX_new( SSLv23_client_method() );
-	SSL_CTX_set_options( m_ssl_context, SSL_OP_NO_SSLv2 );
-	
-	m_ssl			= SSL_new( m_ssl_context );
-	m_in			= BIO_new( BIO_s_mem() );
-	m_out			= BIO_new( BIO_s_mem() );
-	
-	SSL_set_bio( m_ssl, m_in, m_out );
-	SSL_set_connect_state( m_ssl );
-	
-	m_accept = false;
-	
 	if ( m_prev )
 	{
 		m_prev->connect( uri, to, [=]( int status ) mutable
@@ -314,7 +298,7 @@ tls_impl::connect( const uri::ref &uri, const endpoint::ref &to, connect_reply_f
 
 
 void
-tls_impl::send( const std::uint8_t *data, std::size_t len, send_reply_f reply )
+tls_adapter::send( const std::uint8_t *data, std::size_t len, send_reply_f reply )
 {
 	buffer *buf = new buffer( data, len );
 
@@ -342,7 +326,7 @@ tls_impl::send( const std::uint8_t *data, std::size_t len, send_reply_f reply )
 
 
 void
-tls_impl::recv( const std::uint8_t *in_buf, std::size_t in_len, recv_reply_f reply )
+tls_adapter::recv( const std::uint8_t *in_buf, std::size_t in_len, recv_reply_f reply )
 {
 	m_next->recv( in_buf, in_len, [=]( int status, const std::uint8_t *out_buf, std::size_t out_len )
 	{
@@ -361,7 +345,6 @@ tls_impl::recv( const std::uint8_t *in_buf, std::size_t in_len, recv_reply_f rep
 		
 			if ( m_recv_data.size() > 0 )
 			{
-			fprintf( stderr, "calling callback with size %d: %c %c %c\n", m_recv_data.size(), m_recv_data[ 0 ], m_recv_data[ 1 ], m_recv_data[ 2 ] );
 				reply( 0, &m_recv_data[ 0 ], m_recv_data.size() );
 			}
 			else if ( m_error )
@@ -382,10 +365,8 @@ tls_impl::recv( const std::uint8_t *in_buf, std::size_t in_len, recv_reply_f rep
 
 
 void
-tls_impl::process()
+tls_adapter::process()
 {
-   fprintf( stderr, "%s process\n", m_accept ? "(server)" : "(client)" );
-   
 	while ( ( !m_read_required && ( m_pending_write_list.size() > 0 ) ) || ( m_pending_read_list.size() > 0 ) )
 	{
 		if ( SSL_in_init( m_ssl ) )
@@ -403,12 +384,11 @@ tls_impl::process()
 		if ( m_pending_read_list.size() > 0 )
 		{
 			buffer			*buf = m_pending_read_list.front();
-			
 			std::streamsize used = data_to_read( &buf->m_data[ 0 ], buf->m_data.size() );
 			
 			if ( used > 0 )
 			{
-				was_consumed( m_pending_read_list, buf, used );
+				was_consumed( m_pending_read_list, buf, ( std::size_t ) used );
 			}
 			else if ( used < 0 )
 			{
@@ -420,13 +400,11 @@ tls_impl::process()
 		{
 			buffer			*buf = m_pending_write_list.front();
 			
-			fprintf( stderr, "calling data_to_write\n" );
 			std::streamsize used = data_to_write( &buf->m_data[ 0 ], buf->m_data.size() );
-			fprintf( stderr, "returned %d\n", used );
 			
 			if ( used > 0 )
 			{
-				was_consumed( m_pending_write_list, buf, used );
+				was_consumed( m_pending_write_list, buf, ( std::size_t ) used );
 			}
 			else if ( used < 0 )
 			{
@@ -434,11 +412,8 @@ tls_impl::process()
 			}
 		}
 
-fprintf( stderr, "m_read_required = %s\n", m_read_required ? "true" : "false" );
-fprintf( stderr, "checking BIO_ctrl_pending...\n" );
 		if ( BIO_ctrl_pending( m_out ) )
 		{
-fprintf( stderr, "sending pending data \n" );
 			send_pending_data();
 		}
 	}
@@ -446,14 +421,14 @@ fprintf( stderr, "sending pending data \n" );
 
 
 std::streamsize
-tls_impl::data_to_write( std::uint8_t *data, std::size_t len )
+tls_adapter::data_to_write( std::uint8_t *data, std::size_t len )
 {
 	std::streamsize bytes_used	= 0;
 	std::streamsize result		= SSL_write( m_ssl, data, ( int ) len );
 
 	if ( result < 0 )
 	{
-		handle_error( result );
+		handle_error( ( int ) result );
 	}
 	else
 	{
@@ -462,8 +437,6 @@ tls_impl::data_to_write( std::uint8_t *data, std::size_t len )
 
 	if ( SSL_want_read( m_ssl ) )
 	{
-      fprintf( stderr, "SSL_want_read\n");
-
 		m_read_required = true;
 	}
 
@@ -472,7 +445,7 @@ tls_impl::data_to_write( std::uint8_t *data, std::size_t len )
 
 
 std::streamsize
-tls_impl::data_to_read( std::uint8_t *data, std::size_t len )
+tls_adapter::data_to_read( std::uint8_t *data, std::size_t len )
 {
 	std::uint8_t	buf[ 4192 ];
 	std::size_t		bytes_used	= BIO_write( m_in, data, ( int ) len );
@@ -487,10 +460,8 @@ tls_impl::data_to_read( std::uint8_t *data, std::size_t len )
 		if ( bytes_out > 0 )
 		{
 			auto old_size = m_recv_data.size();
-fprintf( stderr, "read %d bytes of data, old size = %d\n", bytes_out, old_size );
 			m_recv_data.resize( m_recv_data.size() + bytes_out );
 			memcpy( &m_recv_data[ old_size ], buf, bytes_out );
-			fprintf( stderr, "read %d bytes of data: %c %c %c\n", m_recv_data.size(), m_recv_data[ 0 ], m_recv_data[ 1 ], m_recv_data[ 2] );
 			
 			
 //			OnDataToRead( buf, bytes_out);
@@ -508,12 +479,10 @@ fprintf( stderr, "read %d bytes of data, old size = %d\n", bytes_out, old_size )
 
 
 void
-tls_impl::send_pending_data()
+tls_adapter::send_pending_data()
 {
 	std::uint8_t	buf[ 4192 ];
 	std::size_t		pending;
-
-	fprintf( stderr, "Send pending data\n");
 
 	while ( ( pending = BIO_ctrl_pending( m_out ) ) > 0 )
 	{
@@ -535,8 +504,6 @@ tls_impl::send_pending_data()
 				m_send_data.resize( m_send_data.size() + bytes_to_send );
 				memcpy( &m_send_data[ old_size ], buf, bytes_to_send );
 			}
-			
-			fprintf( stderr, "Sent %d bytes\n", bytes_to_send);
 		}
 
 		if ( bytes_to_send <= 0 )
@@ -551,7 +518,7 @@ tls_impl::send_pending_data()
 
 
 void
-tls_impl::handle_error( int result )
+tls_adapter::handle_error( int result )
 {
 	if ( result <= 0 )
 	{
@@ -588,7 +555,7 @@ tls_impl::handle_error( int result )
 
 
 bool
-tls_impl::make_cert( X509 **x509p, EVP_PKEY **pkeyp, int bits, int serial, int days )
+tls_adapter::make_cert( X509 **x509p, EVP_PKEY **pkeyp, int bits, int serial, int days )
 {
 	X509		*x;
 	EVP_PKEY	*pk;
@@ -690,7 +657,7 @@ exit:
 
 
 int
-tls_impl::add( X509 *cert, int nid, const char *value )
+tls_adapter::add( X509 *cert, int nid, const char *value )
 {
 	X509_EXTENSION *ex;
 	X509V3_CTX		ctx;
@@ -720,7 +687,7 @@ exit:
 
 
 void
-tls_impl::callback(int p, int n, void *arg)
+tls_adapter::callback(int p, int n, void *arg)
 {
 	char c='B';
 

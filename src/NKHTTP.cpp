@@ -706,7 +706,11 @@ response::init()
 	time_t     now = time(0);
     struct tm  tstruct;
     char       buf[80];
-    tstruct = *localtime(&now);
+#if defined( WIN32 )
+	localtime_s( &tstruct, &now );
+#else
+    tstruct = *localtime( &now );
+#endif
     strftime(buf, sizeof(buf), "%a, %d %b %Y %I:%M:%S %Z", &tstruct);
 	
 	add_to_header( "Date", buf );
@@ -1097,15 +1101,7 @@ connection::body_was_received( http_parser *parser, const char *buf, size_t len 
 		
 		if ( upgrade )
 		{
-			self->m_source->add( tls::adapter::create() );
-			
-			self->m_source->accept( [=]( int err ) mutable
-			{
-				if ( err )
-				{
-					self->close();
-				}
-			} );
+			self->m_source->add( tls::server::create() );
 		}
 		else if ( close )
 		{
@@ -1126,15 +1122,7 @@ connection::message_was_received( http_parser *parser )
 		
 		if ( upgrade )
 		{
-			self->m_source->add( tls::adapter::create() );
-			
-			self->m_source->accept( [=]( int err ) mutable
-			{
-				if ( err )
-				{
-					self->close();
-				}
-			} );
+			self->m_source->add( tls::server::create() );
 		}
 		else if ( close )
 		{

@@ -78,10 +78,10 @@ TEST_CASE( "NetKit/http/server/1", "http server tests" )
 	{
 		REQUIRE( response->status() == 200 );
 		
-		runloop::instance()->stop();
+		runloop::main()->stop();
 	} );
 	
-	runloop::instance()->run();
+	runloop::main()->run();
 }
 
 
@@ -121,8 +121,8 @@ TEST_CASE( "NetKit/http/server/2", "http server tests" )
 	http::client::send( request, [&]( int32_t error, const http::response::ref &response )
 	{
 		REQUIRE( response->status() == 404 );
-		runloop::instance()->stop();
+		runloop::main()->stop();
 	} );
 	
-	runloop::instance()->run();
+	runloop::main()->run();
 }
