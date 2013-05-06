@@ -152,7 +152,6 @@ public:
 
 	inline ~expected()
 	{
-	/*
         if ( is_valid() )
 		{
 			as_value().~T();
@@ -162,7 +161,6 @@ public:
             using std::exception_ptr;
             as_exception().~exception_ptr();
 		}
-		*/
 	}
 	
 	inline bool
@@ -266,7 +264,7 @@ private:
 	inline T const&
 	as_value() const
 	{
-		return *reinterpret_cast< T* >( &m_storage );
+		return *reinterpret_cast< const T* >( &m_storage );
     }
 
 	inline std::exception_ptr&
@@ -278,7 +276,7 @@ private:
 	inline std::exception_ptr const&
 	as_exception() const
 	{
-        return *reinterpret_cast< std::exception_ptr* >( &m_storage );
+        return *reinterpret_cast< const std::exception_ptr* >( &m_storage );
     }
 	
     bool	m_expected;
@@ -302,19 +300,6 @@ namespace detail {
 		}
 	}
 }
-
-/*
-template <typename T, typename... Args>
-inline expected<T>
-make_expected(Args&&... args)
-{
-    return detail::make_expected_helper<T>([&]
-	{
-		return T( std::forward< Args >( args )... );
-    });
-}
-*/
-
 
 template <typename T>
 void swap( expected< T >& lhs, expected< T >& rhs)

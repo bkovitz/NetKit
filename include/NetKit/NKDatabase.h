@@ -219,7 +219,8 @@ public:
 	object( const json::value::ref &root )
 	:
 		netkit::object( root ),
-		m_dirty( false )
+		m_dirty( false ),
+		m_oid( 0 )
 	{
 		inflate( root );
 	}

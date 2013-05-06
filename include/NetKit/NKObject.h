@@ -138,6 +138,9 @@ public:
 	void
 	set_value_for_key( const std::string &key, const std::string &val );
 	
+	void
+	remove_value_for_key( const std::string &key );
+
 	inline attrs::iterator
 	attrs_begin()
 	{

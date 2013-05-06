@@ -311,9 +311,7 @@ source::recv_internal( std::uint8_t *in_buf, std::size_t in_len, bool peek, recv
 				
 				if ( out_len )
 				{
-				
 					memcpy( in_buf, out_buf, min );
-				fprintf( stderr, "copying %d bytes into in_buf: %c %c %c\n", min, in_buf[ 0 ], in_buf[ 1 ], in_buf[ 2 ] );
 				
 					if ( peek )
 					{

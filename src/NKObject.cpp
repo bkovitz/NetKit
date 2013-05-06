@@ -311,6 +311,18 @@ object::set_value_for_key( const std::string &key, const std::string &value )
 }
 
 
+void
+object::remove_value_for_key( const std::string &key )
+{
+	auto it = m_attrs.find( key );
+
+	if ( it != m_attrs.end() )
+	{
+		m_attrs.erase( it );
+	}
+}
+
+
 bool
 object::equals( const object &that ) const
 {
