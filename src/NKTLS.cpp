@@ -212,7 +212,7 @@ tls_adapter::tls_adapter( type t )
 	{
 		case server:
 		{
-			m_ssl_context	= SSL_CTX_new( SSLv23_server_method() );
+			m_ssl_context	= SSL_CTX_new( TLSv1_server_method() );
 			SSL_CTX_set_options( m_ssl_context, SSL_OP_NO_SSLv2 );
 			SSL_CTX_use_PrivateKey( m_ssl_context, m_pkey );
 			SSL_CTX_use_certificate( m_ssl_context, m_cert );
@@ -228,7 +228,7 @@ tls_adapter::tls_adapter( type t )
 
 		case client:
 		{
-			m_ssl_context	= SSL_CTX_new( SSLv23_client_method() );
+			m_ssl_context	= SSL_CTX_new( TLSv1_client_method() );
 			SSL_CTX_set_options( m_ssl_context, SSL_OP_NO_SSLv2 );
 	
 			m_ssl	= SSL_new( m_ssl_context );
@@ -306,6 +306,8 @@ tls_adapter::send( const std::uint8_t *data, std::size_t len, send_reply_f reply
 	
 	m_sending = true;
 
+	m_send_data.clear();
+
 	process();
 	
 	m_sending = false;
@@ -371,9 +373,9 @@ tls_adapter::process()
 	{
 		if ( SSL_in_init( m_ssl ) )
 		{
-         fprintf( stderr, "waiting for handshake: ");
-         fprintf( stderr, "%s\n", SSL_state_string_long(m_ssl));
-         fprintf( stderr, "\n");
+			fprintf( stderr, "waiting for handshake: ");
+			fprintf( stderr, "%s\n", SSL_state_string_long(m_ssl));
+			fprintf( stderr, "\n");
 		}
 		else if ( !m_handshake )
 		{

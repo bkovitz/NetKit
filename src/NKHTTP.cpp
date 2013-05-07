@@ -173,7 +173,7 @@ status::to_string( std::uint16_t val )
 
 		case status::switching_protocols:
 		{
-			static std::string s( "Error" );
+			static std::string s( "Switching Protocols" );
 			return s;
 		}
 		break;
@@ -279,7 +279,7 @@ status::to_string( std::uint16_t val )
 
 		case status::unauthorized:
 		{
-			static std::string s( "Error" );
+			static std::string s( "Authorization Required" );
 			return s;
 		}
 		break;
@@ -496,6 +496,7 @@ message::message( const message &that )
 	m_minor( that.m_minor ),
 	m_content_type( that.m_content_type ),
 	m_content_length( that.m_content_length ),
+	m_upgrade( that.m_upgrade ),
 	m_keep_alive( that.m_keep_alive )
 {
 }
@@ -543,6 +544,10 @@ message::add_to_header( const std::string &key, const std::string &val )
 	else if ( key == "Content-Type" )
 	{
 		m_content_type = val;
+	}
+	else if ( key == "Upgrade" )
+	{
+		m_upgrade = val;
 	}
 }
 
@@ -655,6 +660,7 @@ request::add_to_header( const std::string &key, const std::string &val )
 		m_authorization = val;
 		
         base64Encoded	= m_authorization.substr( m_authorization.find( ' ' ) + 1 );
+
         decoded			= codec::base64::decode( base64Encoded );
 		pos				= decoded.find( ':' );
 
@@ -714,7 +720,7 @@ response::init()
     strftime(buf, sizeof(buf), "%a, %d %b %Y %I:%M:%S %Z", &tstruct);
 	
 	add_to_header( "Date", buf );
-	
+
 	if ( m_keep_alive )
 	{
 		add_to_header( "Connection", "Keep-Alive" );
@@ -740,6 +746,7 @@ connection::ref			connection::m_active;
 
 connection::connection()
 :
+	m_secure( false ),
 	m_okay( true )
 {
 	m_instances->push_back( this );
@@ -829,6 +836,17 @@ connection::bind( std::uint8_t m, handler::ref h )
 		l.push_back( h );
 		
 		m_handlers[ m ] = l;
+	}
+}
+
+
+void
+connection::set_secure( bool val )
+{
+	if ( !m_secure && val )
+	{
+		m_source->add( tls::server::create() );
+		m_secure = true;
 	}
 }
 
@@ -925,10 +943,6 @@ connection::process( const std::uint8_t *buf, size_t len )
 		ok = false;
 	}
 	
-	if ( m_parser->upgrade )
-	{
-	}
-
 	m_active = nullptr;
 
 	return ok;
@@ -1095,15 +1109,11 @@ connection::body_was_received( http_parser *parser, const char *buf, size_t len 
 {
 	connection *self = reinterpret_cast< connection* >( parser->data );
 	
-	return self->m_handler->m_rbwr( self->m_request, ( const uint8_t* ) buf, len, [=]( response::ref response, bool upgrade, bool close )
+	return self->m_handler->m_rbwr( self->m_request, ( const uint8_t* ) buf, len, [=]( response::ref response, bool close )
 	{
 		self->put( response.get() );
 		
-		if ( upgrade )
-		{
-			self->m_source->add( tls::server::create() );
-		}
-		else if ( close )
+		if ( close )
 		{
 			self->close();
 		}
@@ -1116,15 +1126,11 @@ connection::message_was_received( http_parser *parser )
 {
 	connection *self = reinterpret_cast< connection* >( parser->data );
 	
-	return self->m_handler->m_r( self->m_request, [=]( response::ref response, bool upgrade, bool close )
+	return self->m_handler->m_r( self->m_request, [=]( response::ref response, bool close )
 	{
 		self->put( response.get() );
 		
-		if ( upgrade )
-		{
-			self->m_source->add( tls::server::create() );
-		}
-		else if ( close )
+		if ( close )
 		{
 			self->close();
 		}

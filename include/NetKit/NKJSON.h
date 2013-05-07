@@ -503,10 +503,10 @@ class NETKIT_DLL server
 {
 public:
 
-	typedef std::function< netkit::status ( value::ref params ) >					preflight_f;
-	typedef std::function< void ( value::ref result, bool upgrade, bool close ) >	reply_f;
-	typedef std::function< void ( value::ref params ) >								notification_f;
-	typedef std::function< void ( value::ref params, reply_f func ) >				request_f;
+	typedef std::function< netkit::status ( value::ref params ) >		preflight_f;
+	typedef std::function< void ( value::ref result, bool close ) >		reply_f;
+	typedef std::function< void ( value::ref params ) >					notification_f;
+	typedef std::function< void ( value::ref params, reply_f func ) >	request_f;
 	
 	static void
 	preflight( preflight_f func );
@@ -524,7 +524,7 @@ public:
 	route_request( const value::ref &request, reply_f func );
 	
 	static void
-	reply_with_error( reply_f reply, netkit::status status, bool upgrade, bool close );
+	reply_with_error( reply_f reply, netkit::status status, bool close );
 	
 private:
 

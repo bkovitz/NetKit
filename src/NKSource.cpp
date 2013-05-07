@@ -294,7 +294,7 @@ source::recv( std::uint8_t *buf, std::size_t len, recv_reply_f reply )
 
 
 void
-source::recv_internal( std::uint8_t *in_buf, std::size_t in_len, bool peek, recv_reply_f reply )
+source::recv_internal( std::uint8_t *in_buf, std::size_t in_len, bool peek_flag, recv_reply_f reply )
 {
 	bool			would_block	= false;
 	std::streamsize num			= 0;
@@ -313,7 +313,7 @@ source::recv_internal( std::uint8_t *in_buf, std::size_t in_len, bool peek, recv
 				{
 					memcpy( in_buf, out_buf, min );
 				
-					if ( peek )
+					if ( peek_flag )
 					{
 						m_recv_buf.resize( min );
 						memmove( &m_recv_buf[ 0 ], out_buf, min );
@@ -327,6 +327,10 @@ source::recv_internal( std::uint8_t *in_buf, std::size_t in_len, bool peek, recv
 					}
 					
 					reply( 0, min );
+				}
+				else if ( peek_flag )
+				{
+					peek( in_buf, in_len, reply );
 				}
 				else
 				{
@@ -348,7 +352,7 @@ source::recv_internal( std::uint8_t *in_buf, std::size_t in_len, bool peek, recv
 		runloop::main()->schedule( m_recv_event, [=]( runloop::event event )
 		{
 			runloop::main()->suspend( event );
-			recv_internal( in_buf, in_len, peek, reply );
+			recv_internal( in_buf, in_len, peek_flag, reply );
 		} );
 	}
 	else

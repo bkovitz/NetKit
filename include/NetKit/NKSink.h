@@ -60,7 +60,7 @@ public:
 	
 	void
 	send( const std::uint8_t *buf, std::size_t len, source::send_reply_f reply );
-	
+
 	bool
 	is_open() const;
 	

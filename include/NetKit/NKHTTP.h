@@ -200,11 +200,23 @@ public:
 	{
 		return m_content_length;
 	}
+
+	inline const std::string&
+	upgrade() const
+	{
+		return m_upgrade;
+	}
 	
 	inline bool
 	keep_alive() const
 	{
 		return m_keep_alive;
+	}
+
+	inline void
+	set_keep_alive( bool val )
+	{
+		m_keep_alive = val;
 	}
 	
 	virtual void
@@ -243,6 +255,7 @@ protected:
 	header				m_header;
 	std::string			m_content_type;
 	size_t				m_content_length;
+	std::string			m_upgrade;
 	bool				m_keep_alive;
 	std::ostringstream	m_ostream;
 };
@@ -330,19 +343,7 @@ public:
 	{
 		m_redirect = val;
 	}
-	
-	inline bool
-	secure() const
-	{
-		return m_secure;
-	}
-	
-	inline void
-	set_secure( bool secure )
-	{
-		m_secure = secure;
-	}
-		
+
 	virtual void
 	send_prologue( connection_ref conn ) const;
 	
@@ -373,7 +374,6 @@ protected:
 	uri::ref		m_uri;
 	proxy::ref		m_proxy;
 	bool			m_redirect;
-	bool			m_secure;
 	std::string		m_host;
 	std::string		m_expect;
 	std::string		m_authorization;
@@ -426,7 +426,7 @@ class NETKIT_DLL connection : public sink
 {
 public:
 
-	typedef std::function< void ( http::response::ref response, bool upgrade, bool close ) >									response_f;
+	typedef std::function< void ( http::response::ref response, bool close ) >													response_f;
 	typedef std::function< http::request::ref ( int method, std::uint16_t major, std::uint16_t minor, const uri::ref &uri ) >	request_will_begin_f;
 	typedef std::function< int ( http::request::ref request, const std::uint8_t *buf, size_t len, response_f response ) >		request_body_was_received_f;
 	typedef std::function< int ( http::request::ref request, response_f func ) >												request_f;
@@ -457,6 +457,15 @@ public:
 	
 	virtual bool
 	process( const std::uint8_t *buf, std::size_t len );
+
+	inline bool
+	secure() const
+	{
+		return m_secure;
+	}
+
+	void
+	set_secure( bool val );
 	
 	bool
 	put( message::ref message );
@@ -480,7 +489,7 @@ public:
 	{
 		return func( *this );
 	}
-	
+
 	bool
 	flush();
 	
@@ -596,6 +605,7 @@ protected:
 	bool						m_okay;
 	std::vector< std::uint8_t >	m_body;
 	
+	bool						m_secure;
 	bool						m_is_web_socket;
 	http_parser_settings		*m_settings;
 	http_parser					*m_parser;

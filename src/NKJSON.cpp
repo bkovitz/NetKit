@@ -3174,7 +3174,7 @@ connection::really_process()
 				{
 					m_active = this;
 					
-					server::route_request( root, [=]( value::ref reply, bool upgrade, bool close ) mutable
+					server::route_request( root, [=]( value::ref reply, bool close ) mutable
 					{
 						m_active = NULL;
 	
@@ -3350,7 +3350,7 @@ server::route_request( const value::ref &request, reply_f r )
 				error[ "message" ]		= "Invalid Paramaters.";
 				reply[ "error" ]		= error;
 					
-				r( reply, false, false );
+				r( reply, false );
 			}
 		}
 		else
@@ -3362,7 +3362,7 @@ server::route_request( const value::ref &request, reply_f r )
 			error[ "message" ]	= "Method not found.";
 			reply[ "error" ]	= error;
 				
-			r( reply, false, false );
+			r( reply, false );
 		}
 	}
 	else
@@ -3374,13 +3374,13 @@ server::route_request( const value::ref &request, reply_f r )
 		error[ "message" ]	= status_to_string( status );
 		reply[ "error" ]	= error;
 				
-		r( reply, false, false );
+		r( reply, false );
 	}
 }
 
 
 void
-server::reply_with_error( reply_f r, netkit::status status, bool upgrade, bool close )
+server::reply_with_error( reply_f r, netkit::status status, bool close )
 {
 	value::ref reply;
 	value::ref error;
@@ -3389,7 +3389,7 @@ server::reply_with_error( reply_f r, netkit::status status, bool upgrade, bool c
 	error[ "message" ]	= status_to_string( status );
 	reply[ "error" ]	= error;
 			
-	r( reply, upgrade, close );
+	r( reply, close );
 }
 
 
