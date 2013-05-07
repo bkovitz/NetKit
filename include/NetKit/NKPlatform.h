@@ -32,6 +32,7 @@
 #define _netkit_platform_h
 
 #include <NetKit/NKObject.h>
+#include <NetKit/NKUUID.h>
 #include <string>
 
 #if defined( WIN32 )
@@ -62,9 +63,6 @@ machine_description();
 
 std::string NETKIT_DLL
 machine_id();
-
-std::string NETKIT_DLL
-uuid();
 
 bool NETKIT_DLL
 create_folder( const std::string& folder );

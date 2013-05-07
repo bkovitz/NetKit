@@ -221,12 +221,14 @@ IF EXIST ..\..\ThirdParty\uriparser GOTO DONE
     <ClCompile Include="..\NKOAuth.cpp" />
     <ClCompile Include="..\NKObject.cpp" />
     <ClCompile Include="..\NKProxy.cpp" />
+    <ClCompile Include="..\NKSHA1.cpp" />
     <ClCompile Include="..\NKSink.cpp" />
     <ClCompile Include="..\NKSocket.cpp" />
     <ClCompile Include="..\NKSource.cpp" />
     <ClCompile Include="..\NKTLS.cpp" />
     <ClCompile Include="..\NKUnicode.cpp" />
     <ClCompile Include="..\NKURI.cpp" />
+    <ClCompile Include="..\NKUUID.cpp" />
     <ClCompile Include="..\NKWebSocket.cpp" />
     <ClCompile Include=".\CRC32.cpp" />
     <ClCompile Include=".\EventLog.cpp" />
@@ -257,6 +259,7 @@ IF EXIST ..\..\ThirdParty\uriparser GOTO DONE
     <ClInclude Include="..\..\include\NetKit\NKPlatform.h" />
     <ClInclude Include="..\..\include\NetKit\NKProxy.h" />
     <ClInclude Include="..\..\include\NetKit\NKRunLoop.h" />
+    <ClInclude Include="..\..\include\NetKit\NKSHA1.h" />
     <ClInclude Include="..\..\include\NetKit\NKSink.h" />
     <ClInclude Include="..\..\include\NetKit\NKSmartRef.h" />
     <ClInclude Include="..\..\include\NetKit\NKSocket.h" />
@@ -264,6 +267,7 @@ IF EXIST ..\..\ThirdParty\uriparser GOTO DONE
     <ClInclude Include="..\..\include\NetKit\NKTLS.h" />
     <ClInclude Include="..\..\include\NetKit\NKUnicode.h" />
     <ClInclude Include="..\..\include\NetKit\NKURI.h" />
+    <ClInclude Include="..\..\include\NetKit\NKUUID.h" />
     <ClInclude Include="..\..\include\NetKit\NKWebSocket.h" />
     <ClInclude Include="..\..\ThirdParty\http-parser\http_parser.h" />
     <ClInclude Include="..\..\ThirdParty\sqlite\sqlite3.h" />

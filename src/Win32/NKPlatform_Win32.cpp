@@ -417,7 +417,7 @@ platform::machine_id()
 		if ( dwStatus != ERROR_SUCCESS )
 		{
 			nklog( log::error, "GetAdaptersInfo() failed: %d", GetLastError() );
-			id = uuid();
+			id = uuid::create()->to_string();
 			goto exit;
 		}
  
@@ -452,15 +452,29 @@ exit:
 }
 
 
-std::string
-platform::uuid()
+bool
+platform::create_folder( const std::string &folder )
 {
-	char	buf[ 1024 ];
-	GUID	guid;
+	return SHCreateDirectoryEx( NULL, widen( folder ).c_str(), NULL ) == ERROR_SUCCESS ? true : false;
+}
+
+
+uuid::ref
+uuid::create()
+{
+	std::uint8_t	data[ 16 ];
+	GUID			guid;
 
 	if ( CoCreateGuid( &guid ) == S_OK )
 	{
-		sprintf_s( buf, sizeof( buf ), "%.08x-%.04x-%.04x-%.02x%.02x-%.02x%.02x%.02x%.02x%.02x%.02x", guid.Data1, guid.Data2, guid.Data3, guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3], guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
+		memcpy( data, &guid.Data1, sizeof( guid.Data1 ) );
+		memcpy( data + 4, &guid.Data2, sizeof( guid.Data2 ) );
+		memcpy( data + 6, &guid.Data3, sizeof( guid.Data3 ) );
+
+		for ( auto i = 0; i < 8; i++ )
+		{
+			data[ i + 8 ] = guid.Data4[ i ];
+		}
 	}
 	else
 	{
@@ -471,16 +485,14 @@ platform::uuid()
  
 		long guidValue = CRC32( ( const unsigned char* ) &cpuTime, sizeof( cpuTime ) );
  
-		sprintf_s( buf, sizeof( buf ), "%08x-%04x-%04x-%04x-%08x%04x", guidValue, ( guidValue >> 16 ), ( guidValue & 0xFFFF ) ^ ( guidValue >> 16 ), ( long )( cpuTime.HighPart & 0xFFFF ), ( long )( cpuTime.QuadPart / 0xF1130495 ), GetTickCount() & 0xFFFF );
+		memcpy( data, &guidValue, 8 );
+		
+	
+		//sprintf_s( data, sizeof( data ), "%08x-%04x-%04x-%04x-%08x%04x", guidValue, ( guidValue >> 16 ), ( guidValue & 0xFFFF ) ^ ( guidValue >> 16 ), ( long )( cpuTime.HighPart & 0xFFFF ), ( long )( cpuTime.QuadPart / 0xF1130495 ), GetTickCount() & 0xFFFF );
 	}
 
-	return buf;
+	return new uuid( data );
 }
 
 
-bool
-platform::create_folder( const std::string &folder )
-{
-	return SHCreateDirectoryEx( NULL, widen( folder ).c_str(), NULL ) == ERROR_SUCCESS ? true : false;
-}
 

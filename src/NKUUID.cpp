@@ -22,37 +22,49 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * The views and conclusions contained in the software and documentation are those
- * of the authors and should not be interpreted as representing official policies,
- * either expressed or implied, of the FreeBSD Project.
- *
  */
 
-#ifndef _netkit_netkit_h
-#define _netkit_netkit_h
-
-#include <NetKit/NKObject.h>
-#include <NetKit/NKURI.h>
-#include <NetKit/NKCookie.h>
 #include <NetKit/NKUUID.h>
-#include <NetKit/NKSHA1.h>
-#include <NetKit/NKEndpoint.h>
-#include <NetKit/NKConcurrent.h>
-#include <NetKit/NKSocket.h>
-#include <NetKit/NKComponent.h>
-#include <NetKit/NKMIME.h>
-#include <NetKit/NKHTTP.h>
 #include <NetKit/NKBase64.h>
-#include <NetKit/cstring.h>
-#include <NetKit/NKPlatform.h>
-#include <NetKit/NKJSON.h>
-#include <NetKit/NKDatabase.h>
-#include <NetKit/NKRunLoop.h>
-#include <NetKit/NKSource.h>
-#include <NetKit/NKSink.h>
-#include <NetKit/NKUnicode.h>
-#include <NetKit/NKTLS.h>
-#include <NetKit/NKProxy.h>
-#include <NetKit/NKLog.h>
+#include <sstream>
 
-#endif
+using namespace netkit;
+
+
+uuid::uuid( std::uint8_t data[ 16 ] )
+{
+	memcpy( m_data, data, sizeof( data ) );
+}
+
+
+uuid::~uuid()
+{
+}
+
+
+std::string
+uuid::to_string() const
+{
+	std::ostringstream os;
+
+	os << std::hex;
+	
+	for ( auto i = 0; i < sizeof( m_data ); i++ )
+	{
+		os << m_data[ i ];
+
+		if ( ( i % 4 ) == 0 )
+		{
+			os << "-";
+		}
+	}
+
+	return os.str();
+}
+
+
+std::string
+uuid::to_base64() const
+{
+	return codec::base64::encode( std::string( m_data, m_data + sizeof( m_data ) ) );
+}
