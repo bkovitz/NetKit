@@ -177,7 +177,7 @@ source::connect_internal_1( const uri::ref &uri, connect_reply_f reply )
 void
 source::connect_internal_2( const uri::ref &uri, const endpoint::ref &to, connect_reply_f reply )
 {
-	m_adapters.tail()->connect( uri, to, [=]( int status )
+	m_adapters.head()->connect( uri, to, [=]( int status )
 	{
 		reply( status, to );
 	} );
@@ -409,14 +409,7 @@ source::adapter::preflight( const uri::ref &uri, preflight_reply_f reply )
 void
 source::adapter::connect( const uri::ref &uri, const endpoint::ref &to, connect_reply_f reply )
 {
-	if ( m_prev )
-	{
-		m_prev->connect( uri, to, reply );
-	}
-	else
-	{
-		reply( 0 );
-	}
+	reply( 0 );
 }
 
 

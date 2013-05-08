@@ -52,6 +52,7 @@
 #include <NetKit/NKSink.h>
 #include <NetKit/NKUnicode.h>
 #include <NetKit/NKTLS.h>
+#include <NetKit/NKWebSocket.h>
 #include <NetKit/NKProxy.h>
 #include <NetKit/NKLog.h>
 

@@ -191,19 +191,6 @@ platform::create_folder( const std::string &folder )
 }
 
 
-std::string
-platform::uuid()
-{
-	CFUUIDRef       uuidRef     =   CFUUIDCreate( NULL );
-	CFUUIDBytes     uuidBytes   =   CFUUIDGetUUIDBytes( uuidRef );
-	char			buf[ 512 ];
-
-	::sprintf( buf, "%x%x%x%x-%x%x%x%x-%x%x%x%x-%x%x%x%x", uuidBytes.byte0, uuidBytes.byte1, uuidBytes.byte2, uuidBytes.byte3, uuidBytes.byte4, uuidBytes.byte5, uuidBytes.byte6, uuidBytes.byte7, uuidBytes.byte8, uuidBytes.byte9, uuidBytes.byte10, uuidBytes.byte11, uuidBytes.byte12, uuidBytes.byte13, uuidBytes.byte14, uuidBytes.byte15 );
-	
-	CFRelease( uuidRef );
-
-	return buf;
-}
 
  
 // Returns an iterator containing the primary (built-in) Ethernet interface. The caller is responsible for
@@ -371,3 +358,32 @@ serial_number()
 	return serialNumber;
 }
 
+
+uuid::ref
+uuid::create()
+{
+	CFUUIDRef       uuidRef     =   CFUUIDCreate( NULL );
+	CFUUIDBytes     uuidBytes   =   CFUUIDGetUUIDBytes( uuidRef );
+	std::uint8_t	data[ 16 ];
+	
+	data[ 0 ] = uuidBytes.byte0;
+	data[ 1 ] = uuidBytes.byte1;
+	data[ 2 ] = uuidBytes.byte2;
+	data[ 3 ] = uuidBytes.byte3;
+	data[ 4 ] = uuidBytes.byte4;
+	data[ 5 ] = uuidBytes.byte5;
+	data[ 6 ] = uuidBytes.byte6;
+	data[ 7 ] = uuidBytes.byte7;
+	data[ 8 ] = uuidBytes.byte8;
+	data[ 9 ] = uuidBytes.byte9;
+	data[ 10 ] = uuidBytes.byte10;
+	data[ 11 ] = uuidBytes.byte11;
+	data[ 12 ] = uuidBytes.byte12;
+	data[ 13 ] = uuidBytes.byte13;
+	data[ 14 ] = uuidBytes.byte14;
+	data[ 15 ] = uuidBytes.byte15;
+
+	CFRelease( uuidRef );
+
+	return new uuid( data );
+}

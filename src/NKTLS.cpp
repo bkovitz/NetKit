@@ -283,17 +283,10 @@ tls_adapter::preflight( const uri::ref &uri, preflight_reply_f reply )
 void
 tls_adapter::connect( const uri::ref &uri, const endpoint::ref &to, connect_reply_f reply )
 {
-	if ( m_prev )
+	m_next->connect( uri, to, [=]( int status ) mutable
 	{
-		m_prev->connect( uri, to, [=]( int status ) mutable
-		{
-			reply( status );
-		} );
-	}
-	else
-	{
-		reply( 0 );
-	}
+		reply( status );
+	} );
 }
 
 

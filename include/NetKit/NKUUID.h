@@ -43,11 +43,11 @@ public:
 	virtual ~uuid();
 
 	std::string
-	to_string() const;
-
+	to_string( const char *delim = "-" ) const;
+	
 	std::string
 	to_base64() const;
-
+	
 protected:
 
 	uuid( std::uint8_t data[ 16 ] );

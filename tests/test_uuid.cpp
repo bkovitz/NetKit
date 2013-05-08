@@ -22,49 +22,22 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
+ * The views and conclusions contained in the software and documentation are those
+ * of the authors and should not be interpreted as representing official policies,
+ * either expressed or implied, of the FreeBSD Project.
+ *
  */
+ 
+#include "catch.hpp"
+#include <NetKit/NetKit.h>
 
-#include <NetKit/NKUUID.h>
-#include <NetKit/NKBase64.h>
-#include <sstream>
-
-using namespace netkit;
-
-
-uuid::uuid( std::uint8_t data[ 16 ] )
+TEST_CASE( "NetKit/uuid", "uuid tests" )
 {
-	memcpy( m_data, data, sizeof( m_data ) );
-}
-
-
-uuid::~uuid()
-{
-}
-
-
-std::string
-uuid::to_string( const char *delim ) const
-{
-	std::ostringstream os;
-
-	os << std::hex;
-	
-	for ( auto i = 0; i < sizeof( m_data ); i++ )
+	SECTION( "constructors", "socket constructors" )
 	{
-		os << m_data[ i ];
+		netkit::uuid::ref uuid = netkit::uuid::create();
 
-		if ( ( i % 4 ) == 0 )
-		{
-			os << delim;
-		}
+		REQUIRE( uuid->to_string().size() > 0 );
+		REQUIRE( uuid->to_base64().size() > 0 );
 	}
-
-	return os.str();
-}
-
-
-std::string
-uuid::to_base64() const
-{
-	return codec::base64::encode( std::string( m_data, m_data + sizeof( m_data ) ) );
 }

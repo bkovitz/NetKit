@@ -62,10 +62,10 @@ public:
 	cancel( event e );
 
 	virtual void
-	dispatch_on_main_thread( dispatch_f f );
+	dispatch( dispatch_f f );
 
 	virtual void
-	run();
+	run( mode how );
 	
 	virtual void
 	stop();

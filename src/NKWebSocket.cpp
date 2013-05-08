@@ -102,17 +102,14 @@ public:
 	
 private:
 
-	std::string m_resource;
-	std::string m_host;
-	std::string m_origin;
-	std::string m_protocol;
-	std::string m_key;
-
 	frame::type
-	parse_handshake( unsigned char* input_frame, int input_len );
+	parse_server_handshake( const std::uint8_t *buf, std::size_t in_len, std::size_t *out_len );
+	
+	frame::type
+	parse_client_handshake( unsigned char* input_frame, int input_len );
 
 	std::string
-	answer_handshake();
+	answer_client_handshake();
 
 	int
 	make_frame( frame::type type, unsigned char* msg, int msg_len, unsigned char* buffer, int buffer_len);
@@ -127,7 +124,8 @@ private:
 	explode( std::string string, std::string delim, bool include_empty_strings = false );
 
 	bool							m_handshake;
-	uuid::ref						m_client_key;
+	std::vector< std::uint8_t >		m_handshake_data;
+	std::string						m_expected_key;
 	std::uint8_t					m_buffer[ 4192 ];
 	std::vector< std::uint8_t >		m_send_data;
 	bool							m_sending;
@@ -149,10 +147,12 @@ protected:
 
 	struct buffer
 	{
+		send_reply_f				m_reply;
 		std::vector< std::uint8_t > m_data;
 
-		inline buffer( const std::uint8_t *data, std::size_t len )
+		inline buffer( send_reply_f reply, const std::uint8_t *data, std::size_t len )
 		:
+			m_reply( reply ),
 			m_data( data, data + len )
 		{
 		}
@@ -175,14 +175,22 @@ protected:
 	
 	void
 	send_pending_data();
+	
+	std::string
+	compute_key( const std::string &input );
 
-	void
-	handle_error( int result);
-
-	std::queue< buffer* >	m_pending_write_list;
+	std::queue< buffer* >	m_pending_send_list;
 	std::queue< buffer* >	m_pending_read_list;
 	bool					m_read_required;
 	bool					m_error;
+	type					m_type;
+	
+	std::string m_resource;
+	std::string m_host;
+	std::string m_origin;
+	std::string m_protocol;
+	std::string m_key;
+
 };
 
 
@@ -205,7 +213,8 @@ ws_adapter::ws_adapter( type t )
 	m_read_required( false ),
 	m_handshake( false ),
 	m_sending( false ),
-	m_error( false )
+	m_error( false ),
+	m_type( t )
 {
 	switch ( t )
 	{
@@ -216,7 +225,6 @@ ws_adapter::ws_adapter( type t )
 
 		case client:
 		{
-			m_client_key = uuid::create();
 		}
 	}
 }
@@ -248,28 +256,27 @@ ws_adapter::connect( const uri::ref &uri, const endpoint::ref &to, connect_reply
 	{
 		if ( status == 0 )
 		{
+			uuid::ref			uuid = uuid::create();
 			std::string			handshake;
 			std::ostringstream	os;
 
-			os << "Get " << uri->path() << " HTTP/1.1\r\n";
-			os << "Host: " << uri->host() << "\r\n";
+			os << "GET " << uri->path() << "?encoding=text HTTP/1.1\r\n";
 			os << "Upgrade: websocket\r\n";
 			os << "Connection: Upgrade\r\n";
-			os << "Sec-WebSocket-Key: " << m_client_key->to_base64() << "\r\n";
+			os << "Host: " << uri->host() << "\r\n";
+			os << "Sec-WebSocket-Key: " << uuid->to_base64() << "\r\n";
 			os << "Sec-WebSocket-Version: 13\r\n\r\n";
 
 			handshake = os.str();
 
-//        Sec-WebSocket-Protocol: chat, superchat
-
 			m_source->send( m_next, ( const std::uint8_t* ) handshake.c_str(), handshake.size(), [=]( int status )
 			{
 			} );
+			
+			m_expected_key = compute_key( uuid->to_string( "" ) );
 		}
-		else
-		{
-			reply( status );
-		}
+		
+		reply( status );
 	} );
 }
 
@@ -277,12 +284,21 @@ ws_adapter::connect( const uri::ref &uri, const endpoint::ref &to, connect_reply
 void
 ws_adapter::send( const std::uint8_t *data, std::size_t len, send_reply_f reply )
 {
-	std::vector< std::uint8_t > buf( len * 2 );
-	auto						actual = make_frame( frame::type::text, ( unsigned char* ) data, len, &buf[ 0 ], buf.size() );
+	std::vector< std::uint8_t > raw( len * 2 );
+	auto						actual = make_frame( frame::type::text, ( unsigned char* ) data, len, &raw[ 0 ], raw.size() );
 
 	if ( actual > 0 )
 	{
-		m_next->send( &buf[ 0 ], actual, reply );
+		if ( m_handshake )
+		{
+			m_next->send( &raw[ 0 ], actual, reply );
+		}
+		else
+		{
+			buffer *buf = new buffer( reply, &raw[ 0 ], actual );
+
+			m_pending_send_list.push( buf );
+		}
 	}
 	else
 	{
@@ -299,16 +315,57 @@ ws_adapter::recv( const std::uint8_t *in_buf, std::size_t in_len, recv_reply_f r
 		if ( status == 0 )
 		{
 			frame::type type	= frame::type::incomplete;
-			int len				= 0;
-
-			if ( out_len )
+			int			len		= 0;
+			
+			if ( m_handshake )
 			{
-				m_unparsed_recv_data.insert( m_unparsed_recv_data.begin(), out_buf, out_buf + out_len );
-				m_parsed_recv_data.resize( m_unparsed_recv_data.size() );
-
+				if ( out_len )
+				{
+					m_unparsed_recv_data.insert( m_unparsed_recv_data.begin(), out_buf, out_buf + out_len );
+					m_parsed_recv_data.resize( m_unparsed_recv_data.size() );
+				}
+			}
+			else
+			{
+				std::size_t out_header_len;
+				
+				m_unparsed_recv_data.insert( m_unparsed_recv_data.end(), out_buf, out_buf + out_len );
+				
+				type = parse_server_handshake( &m_unparsed_recv_data[ 0 ], m_unparsed_recv_data.size(), &out_header_len );
+				
+				if ( type == frame::type::opening )
+				{
+					m_handshake = true;
+					
+					if ( m_unparsed_recv_data.size() > out_header_len )
+					{
+						std::rotate( m_unparsed_recv_data.begin(), m_unparsed_recv_data.begin() + out_header_len, m_unparsed_recv_data.end() );
+						m_unparsed_recv_data.resize( m_unparsed_recv_data.size() - out_header_len );
+						m_parsed_recv_data.resize( m_unparsed_recv_data.size() );
+					}
+					else
+					{
+						m_unparsed_recv_data.clear();
+					}
+					
+					while ( m_pending_send_list.size() > 0 )
+					{
+						buffer *b = m_pending_send_list.front();
+						
+						m_next->send( &b->m_data[ 0 ], b->m_data.size(), b->m_reply );
+						
+						m_pending_send_list.pop();
+						
+						delete b;
+					}
+				}
+			}
+			
+			if ( ( type != frame::type::error ) && ( m_unparsed_recv_data.size() > 0 ) )
+			{
 				type = get_frame( &m_unparsed_recv_data[ 0 ], m_unparsed_recv_data.size(), &m_parsed_recv_data[ 0 ], m_parsed_recv_data.size(), &len );
 			}
-
+			
 			if ( type == frame::type::text )
 			{
 				reply( 0, &m_parsed_recv_data[ 0 ], len );
@@ -333,7 +390,81 @@ ws_adapter::recv( const std::uint8_t *in_buf, std::size_t in_len, recv_reply_f r
 
 
 frame::type
-ws_adapter::parse_handshake( unsigned char* input_frame, int input_len )
+ws_adapter::parse_server_handshake( const std::uint8_t *buf, std::size_t in_len, std::size_t *out_len )
+{
+	std::string					header( ( char* ) buf, in_len );
+	std::size_t					header_end = header.find( "\r\n\r\n" );
+	std::vector< std::string >	lines;
+	frame::type					type;
+
+	if ( header_end == std::string::npos )
+	{
+		type = frame::type::incomplete;
+		goto exit;
+	}
+	
+	// trim off any data we don't need after the headers
+
+	header.resize( header_end );
+
+	lines = explode( header, std::string( "\r\n" ) );
+	
+	if ( lines.size() == 0 )
+	{
+		nklog( log::error, "no lines in websocket handshake header???" );
+		type = frame::type::error;
+		goto exit;
+	}
+	
+	if ( lines[ 0 ] != "HTTP/1.1 101 Switching Protocols" )
+	{
+		nklog( log::error, "expecting 'HTTP/1.1 101 Switching Protocols', received %s", lines[ 0 ].c_str() );
+		type = frame::type::error;
+		goto exit;
+	}
+		
+	for ( int i = 1; i < lines.size(); i++ )
+	{
+		std::string& line = lines[ i ];
+		std::size_t pos = line.find( ":" );
+		std::string key;
+		std::string val;
+
+		if ( pos == std::string::npos )
+		{
+			nklog( log::error, "malformed header" );
+			type = frame::type::error;
+			goto exit;
+		}
+		
+		key = std::string( line, 0, pos );
+		val = std::string( line, pos + 1 );
+
+		val = trim( val );
+
+		if ( key == "Sec-WebSocket-Accept" )
+		{
+			if ( m_expected_key != val )
+			{
+				nklog( log::error, "bad accept key in websocket handshake" );
+				type = frame::type::error;
+				goto exit;
+			}
+		}
+	}
+	
+	*out_len = header_end + 4;
+	
+	type = frame::type::opening;
+	
+exit:
+
+	return type;
+}
+
+
+frame::type
+ws_adapter::parse_client_handshake( unsigned char* input_frame, int input_len )
 {
 	std::string headers( ( char* ) input_frame, input_len ); 
 	std::size_t header_end = headers.find("\r\n\r\n");
@@ -459,9 +590,8 @@ ws_adapter::explode( std::string the_string, std::string delim, bool include_emp
 
 
 std::string
-ws_adapter::answer_handshake() 
+ws_adapter::answer_client_handshake()
 {
-    unsigned char digest[20]; // 160 bit sha1 digest
 	std::string answer;
 
 	answer += "HTTP/1.1 101 Switching Protocols\r\n";
@@ -470,32 +600,7 @@ ws_adapter::answer_handshake()
 
 	if ( m_key.length() > 0 )
 	{
-		std::string accept_key;
-
-		accept_key += m_key;
-		accept_key += "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"; //RFC6544_MAGIC_KEY
-		crypto::hash::sha1 sha;
-		sha.input(accept_key.data(), accept_key.size());
-		sha.result((unsigned*)digest);
-
-		for ( int i = 0; i < 20; i += 4 )
-		{
-			unsigned char c;
-
-			c = digest[i];
-			digest[i] = digest[i+3];
-			digest[i+3] = c;
-
-			c = digest[i+1];
-			digest[i+1] = digest[i+2];
-			digest[i+2] = c;
-		}
-
-		//printf("DIGEST:"); for(int i=0; i<20; i++) printf("%02x ",digest[i]); printf("\n");
-
-		accept_key = codec::base64::encode( std::string( digest, digest + 20 ) ); //160bit = 20 bytes/chars
-
-		answer += "Sec-WebSocket-Accept: "+ ( accept_key ) + "\r\n";
+		answer += "Sec-WebSocket-Accept: "+ compute_key( m_key ) + "\r\n";
 	}
 
 	if ( m_protocol.length() > 0 )
@@ -638,4 +743,34 @@ ws_adapter::get_frame(unsigned char* in_buffer, int in_length, unsigned char* ou
 	}
 
 	return frame::type::error;
+}
+
+
+std::string
+ws_adapter::compute_key( const std::string &input )
+{
+	std::string			output( input );
+    unsigned char		digest[ 20 ]; // 160 bit sha1 digest
+	crypto::hash::sha1	sha;
+
+	output += "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"; //RFC6544_MAGIC_KEY
+	sha.input( output.data(),  output.size() );
+	sha.result(( unsigned* ) digest );
+
+	for ( int i = 0; i < 20; i += 4 )
+	{
+		unsigned char c;
+
+		c = digest[i];
+		digest[i] = digest[i+3];
+		digest[i+3] = c;
+
+		c = digest[i+1];
+		digest[i+1] = digest[i+2];
+		digest[i+2] = c;
+	}
+
+	output = codec::base64::encode( std::string( digest, digest + 20 ) ); //160bit = 20 bytes/chars
+	
+	return output;
 }

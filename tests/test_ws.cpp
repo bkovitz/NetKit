@@ -22,49 +22,56 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
+ * The views and conclusions contained in the software and documentation are those
+ * of the authors and should not be interpreted as representing official policies,
+ * either expressed or implied, of the FreeBSD Project.
+ *
  */
-
-#include <NetKit/NKUUID.h>
-#include <NetKit/NKBase64.h>
-#include <sstream>
+ 
+#include "catch.hpp"
+#include <NetKit/NetKit.h>
 
 using namespace netkit;
 
-
-uuid::uuid( std::uint8_t data[ 16 ] )
+TEST_CASE( "NetKit/ws", "websocket tests" )
 {
-	memcpy( m_data, data, sizeof( m_data ) );
-}
-
-
-uuid::~uuid()
-{
-}
-
-
-std::string
-uuid::to_string( const char *delim ) const
-{
-	std::ostringstream os;
-
-	os << std::hex;
-	
-	for ( auto i = 0; i < sizeof( m_data ); i++ )
+	SECTION( "constructors", "websocket constructors" )
 	{
-		os << m_data[ i ];
-
-		if ( ( i % 4 ) == 0 )
+		std::uint8_t	*buf = new std::uint8_t[ 1024 ];
+		source::ref		sock = new netkit::ip::tcp::socket;
+	
+		REQUIRE( sock );
+		
+		sock->add( ws::client::create() );
+		
+		sock->connect( new uri( "ws://127.0.0.1:8080"), [=]( int status, const endpoint::ref &peer ) mutable
 		{
-			os << delim;
-		}
+			REQUIRE( status == 0 );
+			
+			sock->send( ( const std::uint8_t* ) "echo", 4, [=]( int status )
+			{
+				REQUIRE( status == 0 );
+			} );
+			
+			sock->recv( buf, 1024, [=]( int status, std::size_t len ) mutable
+			{
+				REQUIRE( status == 0 );
+				REQUIRE( strstr( ( const char* ) buf, "echo" ) != NULL );
+				
+				sock->send( ( const std::uint8_t* ) "hello", 5, [=]( int status ) mutable
+				{
+				} );
+				
+				sock->recv( buf, 1024, [=]( int status, std::size_t len ) mutable
+				{
+					REQUIRE( status == 0 );
+					REQUIRE( strstr( ( const char* ) buf, "hello" ) != NULL );
+				
+					runloop::main()->stop();
+				} );
+			} );
+		} );
+		
+		netkit::runloop::main()->run();
 	}
-
-	return os.str();
-}
-
-
-std::string
-uuid::to_base64() const
-{
-	return codec::base64::encode( std::string( m_data, m_data + sizeof( m_data ) ) );
 }
