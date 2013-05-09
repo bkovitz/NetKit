@@ -303,3 +303,23 @@ uri::decode( const std::string & str )
 	
 	return ret;
 }
+
+
+std::map< std::string, std::string >
+uri::parameters() const
+{
+	std::map< std::string, std::string > parameters;
+
+	strings params = split( query(), '&' );
+	for ( auto it = params.begin(); it != params.end(); it++ )
+	{
+		strings param = split( *it, '=' );
+
+		if ( param.size() == 2 )
+		{
+			parameters[ param[ 0 ] ] = param[ 1 ];
+		}
+	}
+
+	return parameters;
+}
