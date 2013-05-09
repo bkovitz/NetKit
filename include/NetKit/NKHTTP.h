@@ -451,6 +451,8 @@ public:
 	}
 
 	connection();
+
+	connection( source::ref source );
 	
 	virtual ~connection();
 	
@@ -572,8 +574,6 @@ protected:
 	
 protected:
 
-	
-	
 	static int
 	message_will_begin( http_parser *parser );
 
@@ -603,6 +603,9 @@ protected:
 
 	std::string
 	regexify( const std::string &s );
+
+	void
+	init();
 	
 	friend void					netkit::initialize();
 	

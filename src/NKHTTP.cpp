@@ -29,6 +29,7 @@
  */
  
 #include <NetKit/NKHTTP.h>
+#include <NetKit/NKSource.h>
 #include <NetKit/NKTLS.h>
 #include <NetKit/NKBase64.h>
 #include <NetKit/cstring.h>
@@ -754,6 +755,38 @@ connection::connection()
 	m_secure( false ),
 	m_okay( true )
 {
+	init();
+}
+
+
+connection::connection( netkit::source::ref source )
+:
+	m_secure( false ),
+	m_okay( true )
+{
+	init();
+
+	sink::bind( source );
+}
+
+
+connection::~connection()
+{
+	if ( m_settings )
+	{
+		delete m_settings;
+	}
+	
+	if ( m_parser )
+	{
+		delete m_parser;
+	}
+}
+
+
+void
+connection::init()
+{
 	m_instances->push_back( this );
 	
 	m_settings = new http_parser_settings;
@@ -772,20 +805,6 @@ connection::connection()
 	
 	http_parser_init( m_parser, HTTP_REQUEST );
 	m_parser->data = this;
-}
-
-
-connection::~connection()
-{
-	if ( m_settings )
-	{
-		delete m_settings;
-	}
-	
-	if ( m_parser )
-	{
-		delete m_parser;
-	}
 }
 
 
