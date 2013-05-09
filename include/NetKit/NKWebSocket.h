@@ -39,6 +39,9 @@ namespace ws {
 
 namespace server {
 
+std::string
+accept_key( const std::string &input );
+
 source::adapter::ref
 create();
 

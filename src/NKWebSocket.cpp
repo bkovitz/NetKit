@@ -176,9 +176,6 @@ protected:
 	void
 	send_pending_data();
 	
-	std::string
-	compute_key( const std::string &input );
-
 	std::queue< buffer* >	m_pending_send_list;
 	std::queue< buffer* >	m_pending_read_list;
 	bool					m_read_required;
@@ -273,7 +270,7 @@ ws_adapter::connect( const uri::ref &uri, const endpoint::ref &to, connect_reply
 			{
 			} );
 			
-			m_expected_key = compute_key( uuid->to_string( "" ) );
+			m_expected_key = ws::server::accept_key( uuid->to_string( "" ) );
 		}
 		
 		reply( status );
@@ -600,7 +597,7 @@ ws_adapter::answer_client_handshake()
 
 	if ( m_key.length() > 0 )
 	{
-		answer += "Sec-WebSocket-Accept: "+ compute_key( m_key ) + "\r\n";
+		answer += "Sec-WebSocket-Accept: "+ ws::server::accept_key( m_key ) + "\r\n";
 	}
 
 	if ( m_protocol.length() > 0 )
@@ -747,7 +744,7 @@ ws_adapter::get_frame(unsigned char* in_buffer, int in_length, unsigned char* ou
 
 
 std::string
-ws_adapter::compute_key( const std::string &input )
+ws::server::accept_key( const std::string &input )
 {
 	std::string			output( input );
     unsigned char		digest[ 20 ]; // 160 bit sha1 digest

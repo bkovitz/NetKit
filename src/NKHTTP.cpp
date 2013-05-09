@@ -497,6 +497,7 @@ message::message( const message &that )
 	m_content_type( that.m_content_type ),
 	m_content_length( that.m_content_length ),
 	m_upgrade( that.m_upgrade ),
+	m_ws_key( that.m_ws_key ),
 	m_keep_alive( that.m_keep_alive )
 {
 }
@@ -548,6 +549,10 @@ message::add_to_header( const std::string &key, const std::string &val )
 	else if ( key == "Upgrade" )
 	{
 		m_upgrade = val;
+	}
+	else if ( key == "Sec-WebSocket-Key" )
+	{
+		m_ws_key = val;
 	}
 }
 
@@ -946,6 +951,21 @@ connection::process( const std::uint8_t *buf, size_t len )
 	m_active = nullptr;
 
 	return ok;
+}
+
+
+void
+connection::upgrade_to_websocket( sink::ref new_sink )
+{
+	new_sink->bind( m_source );
+	m_source = nullptr;
+}
+
+
+void
+connection::upgrade_to_tls()
+{
+	set_secure( true );
 }
 
 

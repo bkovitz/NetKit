@@ -206,7 +206,13 @@ public:
 	{
 		return m_upgrade;
 	}
-	
+
+	inline const std::string&
+	ws_key() const
+	{
+		return m_ws_key;
+	}
+
 	inline bool
 	keep_alive() const
 	{
@@ -256,6 +262,7 @@ protected:
 	std::string			m_content_type;
 	size_t				m_content_length;
 	std::string			m_upgrade;
+	std::string			m_ws_key;
 	bool				m_keep_alive;
 	std::ostringstream	m_ostream;
 };
@@ -442,6 +449,10 @@ public:
 	{
 		return m_active;
 	}
+
+	connection();
+	
+	virtual ~connection();
 	
 	static void
 	bind( std::uint8_t method, const std::string &path, const std::string &type, request_f r );
@@ -457,6 +468,12 @@ public:
 	
 	virtual bool
 	process( const std::uint8_t *buf, std::size_t len );
+
+	void
+	upgrade_to_websocket( sink::ref new_sink );
+
+	void
+	upgrade_to_tls();
 
 	inline bool
 	secure() const
@@ -555,9 +572,7 @@ protected:
 	
 protected:
 
-	connection();
 	
-	virtual ~connection();
 	
 	static int
 	message_will_begin( http_parser *parser );

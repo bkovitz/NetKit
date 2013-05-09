@@ -388,7 +388,7 @@ public:
 	typedef std::list< ref >									list;
 	
 	connection();
-	
+
 	virtual ~connection();
 
 	static bool
