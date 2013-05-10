@@ -527,6 +527,10 @@ protected:
 			m_type( type ),
 			m_r( r )
 		{
+			m_rbwr = ( [=]( http::request::ref request, const std::uint8_t *buf, size_t len, response_f response )
+			{
+				return 0;
+			} );
 		}
 	
 		handler( const std::string &path, const std::string &type, request_body_was_received_f rbwr, request_f r )

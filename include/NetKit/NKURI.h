@@ -130,6 +130,9 @@ public:
 	static std::string
 	decode( const std::string& str );
 
+	std::map< std::string, std::string >
+	parameters() const;
+
 private:
 
 	std::string	m_scheme;
