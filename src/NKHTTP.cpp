@@ -788,6 +788,18 @@ void
 connection::init()
 {
 	m_instances->push_back( this );
+
+	on_close( [=]()
+	{
+		auto it = std::find_if( m_instances->begin(), m_instances->end(), [=]( connection::ref inserted )
+		{
+			return ( inserted.get() == this );
+		} );
+
+		assert( it != m_instances->end() );
+
+		m_instances->erase( it );
+	} );
 	
 	m_settings = new http_parser_settings;
 	memset( m_settings, 0, sizeof( http_parser_settings ) );

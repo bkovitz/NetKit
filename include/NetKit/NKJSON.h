@@ -420,7 +420,7 @@ public:
 	
 	virtual bool
 	process( const std::uint8_t *buf, std::size_t len );
-	
+
 protected:
 
 	typedef std::map< std::uint64_t, reply_f > reply_handlers;

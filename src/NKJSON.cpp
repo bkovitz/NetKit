@@ -2935,6 +2935,19 @@ connection::connection()
 	m_end( NULL )
 {
 	m_instances->push_back( this );
+
+	on_close( [=]()
+	{
+		auto it = std::find_if( m_instances->begin(), m_instances->end(), [=]( connection::ref inserted )
+		{
+			return ( inserted.get() == this );
+		} );
+
+		assert( it != m_instances->end() );
+
+		m_instances->erase( it );
+	} );
+
 	add( 4192 );
 }
 
