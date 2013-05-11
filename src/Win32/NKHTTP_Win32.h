@@ -75,6 +75,8 @@ public:
 			}
 
 			os << widen( it->first ) << ": " << widen( it->second );
+
+			first = false;
 		}
 
 		return os.str();
