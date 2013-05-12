@@ -386,32 +386,11 @@ public:
 	typedef std::function< void ( json::value::ref reply ) >	reply_f;
 	typedef smart_ref< connection >								ref;
 	typedef std::list< ref >									list;
-	
+
 	connection();
 
 	virtual ~connection();
 
-	static bool
-	adopt( source::ref source, const std::uint8_t *buf, std::size_t len );
-	
-	inline static connection::ref
-	active()
-	{
-		return m_active;
-	}
-	
-	inline static list::iterator
-	begin()
-	{
-		return m_instances->begin();
-	}
-	
-	inline static list::iterator
-	end()
-	{
-		return m_instances->end();
-	}
-	
 	bool
 	send_notification( value::ref request );
 	
@@ -425,6 +404,9 @@ protected:
 
 	typedef std::map< std::uint64_t, reply_f > reply_handlers;
 	
+	void
+	init();
+
 	virtual bool
 	send( value::ref request );
 	
@@ -486,10 +468,6 @@ protected:
 	void
 	shutdown();
 	
-	friend void							netkit::initialize();
-		
-	static connection::list				*m_instances;
-	static connection::ref				m_active;
 	reply_handlers						m_reply_handlers;
 	static std::atomic< std::int32_t >	m_id;
 	
@@ -507,6 +485,9 @@ public:
 	typedef std::function< void ( value::ref result, bool close ) >		reply_f;
 	typedef std::function< void ( value::ref params ) >					notification_f;
 	typedef std::function< void ( value::ref params, reply_f func ) >	request_f;
+	
+	static sink::ref
+	adopt( source::ref source, const std::uint8_t *buf, std::size_t len );
 	
 	static void
 	preflight( preflight_f func );
@@ -526,6 +507,30 @@ public:
 	static void
 	reply_with_error( reply_f reply, netkit::status status, bool close );
 	
+	inline static connection::ref
+	active_connection()
+	{
+		return m_active_connection;
+	}
+
+	inline static void
+	set_active_connection( connection *c )
+	{
+		m_active_connection = c;
+	}
+	
+	inline static connection::list::iterator
+	begin_connections()
+	{
+		return m_connections->begin();
+	}
+	
+	inline static connection::list::iterator
+	end_connections()
+	{
+		return m_connections->end();
+	}
+	
 private:
 
 	friend void												netkit::initialize();
@@ -535,6 +540,9 @@ private:
 	typedef std::pair< std::size_t, request_f >				request_target;
 	typedef std::map< std::string, request_target >			request_handlers;
 	
+	static connection::list									*m_connections;
+	static connection::ref									m_active_connection;
+
 	static preflight_f										m_preflight_handler;
 	static notification_handlers							*m_notification_handlers;
 	static request_handlers									*m_request_handlers;

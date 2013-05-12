@@ -253,7 +253,19 @@ runloop_win32::schedule( event e, event_f func )
 
 	if ( a->m_scheduled )
 	{
-		nklog( log::error, "trying to schedule an event that has already been scheduled on fd %d", s->m_socket );
+		if ( s->is_timer() )
+		{
+			nklog( log::error, "trying to schedule a timer event that has already been scheduled" );
+		}
+		else if ( s->is_handle() )
+		{
+			nklog( log::error, "trying to schedule an event that has already been scheduled with handle %d", s->m_handle );
+		}
+		else
+		{
+			nklog( log::error, "trying to schedule an event that has already been scheduled on fd %d", s->m_socket );
+		}
+
 		goto exit;
 	}
 

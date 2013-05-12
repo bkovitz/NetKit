@@ -441,7 +441,7 @@ public:
 	typedef smart_ref< connection > ref;
 	typedef std::list< ref > list;
 	
-	static bool
+	static sink::ref
 	adopt( source::ref source, const std::uint8_t *buf, size_t len );
 
 	inline static connection::ref
@@ -452,8 +452,6 @@ public:
 
 	connection();
 
-	connection( source::ref source );
-	
 	virtual ~connection();
 	
 	static void

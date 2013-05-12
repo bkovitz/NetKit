@@ -376,6 +376,11 @@ source::close()
 		runloop::main()->cancel( m_recv_event );
 		m_recv_event = nullptr;
 	}
+
+	for ( auto it = m_close_handlers.begin(); it != m_close_handlers.end(); it++ )
+	{
+		it->second();
+	}
 }
 
 

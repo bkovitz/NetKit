@@ -56,6 +56,7 @@ sink::sink( const uri::ref &uri )
 
 sink::~sink()
 {
+fprintf( stderr, "in sink destructor\n" );
 }
 
 
@@ -155,11 +156,17 @@ sink::run()
 	{
 		if ( status == 0 )
 		{
+			sink::ref artifical( this );
+
 			if ( len > 0 )
 			{
 				if ( process( m_buf, len ) )
 				{
-					run();
+					if ( is_open() )
+					{
+				fprintf( stderr, "after process\n" );
+						run();
+					}
 				}
 				else
 				{

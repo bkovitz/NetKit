@@ -759,17 +759,6 @@ connection::connection()
 }
 
 
-connection::connection( netkit::source::ref source )
-:
-	m_secure( false ),
-	m_okay( true )
-{
-	init();
-
-	sink::bind( source );
-}
-
-
 connection::~connection()
 {
 	if ( m_settings )
@@ -901,10 +890,10 @@ connection::http_minor() const
 }
 
 
-bool
+netkit::sink::ref
 connection::adopt( netkit::source::ref source, const std::uint8_t *buf, size_t len )
 {
-	bool ok = false;
+	sink::ref sink;
 	
 	if ( ( len >= 3 ) &&
 	     ( ( std::strncasecmp( ( const char* ) buf, "get", 3 ) == 0 ) ||
@@ -912,14 +901,10 @@ connection::adopt( netkit::source::ref source, const std::uint8_t *buf, size_t l
 	       ( std::strncasecmp( ( const char* ) buf, "opt", 3 ) == 0 ) ||
 	       ( std::strncasecmp( ( const char* ) buf, "hea", 3 ) == 0 ) ) )
 	{
-		sink::ref conn = new connection;
-		
-		conn->bind( source );
-		
-		ok = true;
+		sink = new connection;
 	}
 	
-	return ok;
+	return sink;
 }
 
 

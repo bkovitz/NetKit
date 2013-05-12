@@ -178,13 +178,6 @@ socket::set_blocking( native fd, bool block )
 void
 socket::close()
 {
-	source::close();
-
-	for ( auto it = m_close_handlers.begin(); it != m_close_handlers.end(); it++ )
-	{
-		it->second();
-	}
-	
 	if ( m_fd != null )
 	{
 #if defined( WIN32 )
@@ -193,6 +186,8 @@ socket::close()
 		::close( m_fd );
 #endif
 		m_fd = null;
+
+		source::close();
 	}
 }
 
