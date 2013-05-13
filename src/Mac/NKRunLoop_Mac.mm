@@ -36,7 +36,7 @@
 using namespace netkit;
 
 runloop::ref
-runloop::instance()
+runloop::main()
 {
 	static runloop::ref singleton = new runloop_mac;
 	
@@ -132,7 +132,7 @@ runloop_mac::cancel( event e )
 	auto event = reinterpret_cast< dispatch_source_t >( e );
 	dispatch_source_cancel( event );
 	
-	dispatch_on_main_thread( ^()
+	dispatch( ^()
 	{
 	//	dispatch_release( event );
 	} );
@@ -140,7 +140,7 @@ runloop_mac::cancel( event e )
 
 
 void
-runloop_mac::dispatch_on_main_thread( dispatch_f f )
+runloop_mac::dispatch( dispatch_f f )
 {
 	dispatch_async( dispatch_get_main_queue(), ^()
 	{
@@ -150,7 +150,7 @@ runloop_mac::dispatch_on_main_thread( dispatch_f f )
 
 
 void
-runloop_mac::run()
+runloop_mac::run( mode how )
 {
 	CFRunLoopRun();
 }

@@ -222,8 +222,6 @@
 		D223BA501718CFAE000C2C44 /* NKEndpoint.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NKEndpoint.h; path = include/NetKit/NKEndpoint.h; sourceTree = "<group>"; };
 		D223BA531718CFBA000C2C44 /* NKEndpoint.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = NKEndpoint.cpp; path = src/NKEndpoint.cpp; sourceTree = "<group>"; };
 		D229D729171E02A800CC8A4F /* test_ssl.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = test_ssl.cpp; path = tests/test_ssl.cpp; sourceTree = SOURCE_ROOT; };
-		D229D734171F10D900CC8A4F /* botan_all.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = botan_all.cpp; path = ThirdParty/botan/botan_all.cpp; sourceTree = "<group>"; };
-		D229D735171F10D900CC8A4F /* botan_all.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = botan_all.h; path = ThirdParty/botan/botan_all.h; sourceTree = "<group>"; };
 		D2365E3915FD9515000B6EE3 /* Uri.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Uri.h; path = ThirdParty/uriparser/include/uriparser/Uri.h; sourceTree = "<group>"; };
 		D2365E3A15FD9515000B6EE3 /* UriBase.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = UriBase.h; path = ThirdParty/uriparser/include/uriparser/UriBase.h; sourceTree = "<group>"; };
 		D2365E3B15FD9515000B6EE3 /* UriDefsAnsi.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = UriDefsAnsi.h; path = ThirdParty/uriparser/include/uriparser/UriDefsAnsi.h; sourceTree = "<group>"; };
@@ -377,15 +375,6 @@
 			name = WebSocket;
 			sourceTree = "<group>";
 		};
-		D229D733171F10C100CC8A4F /* botan */ = {
-			isa = PBXGroup;
-			children = (
-				D229D734171F10D900CC8A4F /* botan_all.cpp */,
-				D229D735171F10D900CC8A4F /* botan_all.h */,
-			);
-			name = botan;
-			sourceTree = "<group>";
-		};
 		D23DF51A15F698390027A8F1 = {
 			isa = PBXGroup;
 			children = (
@@ -393,7 +382,6 @@
 				D23DF59A15F6AFCD0027A8F1 /* tests */,
 				D2740F3415FBA84300589649 /* http-parser */,
 				D26F04F715FA5B77003F7389 /* uriparser */,
-				D229D733171F10C100CC8A4F /* botan */,
 				D23DF52815F698390027A8F1 /* Frameworks */,
 				D23DF52715F698390027A8F1 /* Products */,
 			);
