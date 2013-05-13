@@ -75,6 +75,8 @@ public:
 			}
 
 			os << widen( it->first ) << ": " << widen( it->second );
+
+			first = false;
 		}
 
 		return os.str();
@@ -149,6 +151,7 @@ private:
 	reply( DWORD error );
 
 	request_win32::ref		m_request;
+	std::string				m_body;
 	response_win32::ref		m_response;
 	std::uint8_t			m_scratch[ 4192 ];
 	HINTERNET				m_session_handle;

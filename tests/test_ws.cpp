@@ -28,34 +28,50 @@
  *
  */
  
-#ifndef _netkit_web_socket_h
-#define _netkit_web_socket_h
+#include "catch.hpp"
+#include <NetKit/NetKit.h>
 
-#include <NetKit/NKSource.h>
+using namespace netkit;
 
-namespace netkit {
-
-namespace ws {
-
-namespace server {
-
-std::string
-accept_key( const std::string &input );
-
-source::adapter::ref
-create();
-
+TEST_CASE( "NetKit/ws", "websocket tests" )
+{
+	SECTION( "constructors", "websocket constructors" )
+	{
+		std::uint8_t	*buf = new std::uint8_t[ 1024 ];
+		source::ref		sock = new netkit::ip::tcp::socket;
+	
+		REQUIRE( sock );
+		
+		sock->add( ws::client::create() );
+		
+		sock->connect( new uri( "ws://127.0.0.1:8080"), [=]( int status, const endpoint::ref &peer ) mutable
+		{
+			REQUIRE( status == 0 );
+			
+			sock->send( ( const std::uint8_t* ) "echo", 4, [=]( int status )
+			{
+				REQUIRE( status == 0 );
+			} );
+			
+			sock->recv( buf, 1024, [=]( int status, std::size_t len ) mutable
+			{
+				REQUIRE( status == 0 );
+				REQUIRE( strstr( ( const char* ) buf, "echo" ) != NULL );
+				
+				sock->send( ( const std::uint8_t* ) "hello", 5, [=]( int status ) mutable
+				{
+				} );
+				
+				sock->recv( buf, 1024, [=]( int status, std::size_t len ) mutable
+				{
+					REQUIRE( status == 0 );
+					REQUIRE( strstr( ( const char* ) buf, "hello" ) != NULL );
+				
+					runloop::main()->stop();
+				} );
+			} );
+		} );
+		
+		netkit::runloop::main()->run();
+	}
 }
-
-namespace client {
-
-source::adapter::ref
-create();
-
-}
-
-}
-
-}
-
-#endif

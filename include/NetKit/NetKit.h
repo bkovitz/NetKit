@@ -34,6 +34,8 @@
 #include <NetKit/NKObject.h>
 #include <NetKit/NKURI.h>
 #include <NetKit/NKCookie.h>
+#include <NetKit/NKUUID.h>
+#include <NetKit/NKSHA1.h>
 #include <NetKit/NKEndpoint.h>
 #include <NetKit/NKConcurrent.h>
 #include <NetKit/NKSocket.h>
@@ -50,6 +52,7 @@
 #include <NetKit/NKSink.h>
 #include <NetKit/NKUnicode.h>
 #include <NetKit/NKTLS.h>
+#include <NetKit/NKWebSocket.h>
 #include <NetKit/NKProxy.h>
 #include <NetKit/NKLog.h>
 

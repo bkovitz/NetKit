@@ -65,7 +65,7 @@ TEST_CASE( "NetKit/http/server/1", "http server tests" )
 		
 		*response << "hello";
 		
-		reply( response, false, false );
+		reply( response, false );
 		
 		return 0;
 	} );
@@ -109,7 +109,7 @@ TEST_CASE( "NetKit/http/server/2", "http server tests" )
 	{
 		http::response::ref response = http::response::create( request->major(), request->minor(), 200, false );
 		
-		func( response, false, false );
+		func( response, false );
 		
 		return 0;
 	} );

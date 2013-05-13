@@ -22,39 +22,38 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * The views and conclusions contained in the software and documentation are those
- * of the authors and should not be interpreted as representing official policies,
- * either expressed or implied, of the FreeBSD Project.
- *
  */
- 
-#ifndef _netkit_web_socket_h
-#define _netkit_web_socket_h
 
-#include <NetKit/NKSource.h>
+#ifndef _netkit_uuid_h
+#define _netkit_uuid_h
+
+#include <NetKit/NKObject.h>
 
 namespace netkit {
 
-namespace ws {
+class uuid : public object
+{
+public:
 
-namespace server {
+	typedef smart_ref< uuid > ref;
 
-std::string
-accept_key( const std::string &input );
+	static uuid::ref
+	create();
 
-source::adapter::ref
-create();
+	virtual ~uuid();
 
-}
+	std::string
+	to_string( const char *delim = "-" ) const;
+	
+	std::string
+	to_base64() const;
+	
+protected:
 
-namespace client {
+	uuid( std::uint8_t data[ 16 ] );
 
-source::adapter::ref
-create();
-
-}
-
-}
+	std::uint8_t m_data[ 16 ];
+};
 
 }
 

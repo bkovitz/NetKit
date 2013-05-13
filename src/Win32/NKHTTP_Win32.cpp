@@ -215,6 +215,7 @@ client_win32::send_request()
 {
 	DWORD		options;
 	DWORD		open_flags = 0;
+	std::string	body;
 	HINTERNET	handle;
 
 	retain();
@@ -348,7 +349,9 @@ client_win32::send_request()
 
 	WinHttpSetOption( m_request->handle(), WINHTTP_OPTION_SECURITY_FLAGS, &options, sizeof( DWORD ) );
 
-	if ( !::WinHttpSendRequest( m_request->handle(), WINHTTP_NO_ADDITIONAL_HEADERS, 0, ( LPVOID ) &m_request->body()[ 0 ], m_request->body().size(), m_request->body().size(), ( DWORD_PTR ) this ) )
+	m_body = m_request->body();
+
+	if ( !::WinHttpSendRequest( m_request->handle(), WINHTTP_NO_ADDITIONAL_HEADERS, 0, ( LPVOID ) m_body.c_str(), m_body.size(), m_body.size(), ( DWORD_PTR ) this ) )
 	{
 		reply( GetLastError() );
 		goto exit;

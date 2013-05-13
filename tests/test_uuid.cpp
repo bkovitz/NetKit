@@ -28,34 +28,16 @@
  *
  */
  
-#ifndef _netkit_web_socket_h
-#define _netkit_web_socket_h
+#include "catch.hpp"
+#include <NetKit/NetKit.h>
 
-#include <NetKit/NKSource.h>
+TEST_CASE( "NetKit/uuid", "uuid tests" )
+{
+	SECTION( "constructors", "socket constructors" )
+	{
+		netkit::uuid::ref uuid = netkit::uuid::create();
 
-namespace netkit {
-
-namespace ws {
-
-namespace server {
-
-std::string
-accept_key( const std::string &input );
-
-source::adapter::ref
-create();
-
+		REQUIRE( uuid->to_string().size() > 0 );
+		REQUIRE( uuid->to_base64().size() > 0 );
+	}
 }
-
-namespace client {
-
-source::adapter::ref
-create();
-
-}
-
-}
-
-}
-
-#endif

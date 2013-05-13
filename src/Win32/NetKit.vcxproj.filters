@@ -135,6 +135,12 @@
     <ClCompile Include="..\..\ThirdParty\uriparser\src\UriShorten.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\NKSHA1.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\NKUUID.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\NetKit\cstring.h">
@@ -276,6 +282,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\NetKit\NKSmartRef.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\NetKit\NKSHA1.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\NetKit\NKUUID.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

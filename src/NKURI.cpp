@@ -231,11 +231,11 @@ uri::assign( const std::string& s )
 		text.assign( uri.portText.first, uri.portText.afterLast - uri.portText.first );
 		m_port = atoi( text.c_str() );
 	}
-	else if ( m_scheme == "http" )
+	else if ( ( m_scheme == "http" ) || ( m_scheme == "ws" ) )
 	{
 		m_port = 80;
 	}
-	else if ( m_scheme == "https" )
+	else if ( ( m_scheme == "https" ) || ( m_scheme == "wss" ) )
 	{
 		m_port = 443;
 	}
@@ -247,6 +247,11 @@ uri::assign( const std::string& s )
 		temp.assign( path->text.first, path->text.afterLast - path->text.first );
 		temp = decode( temp );
 		m_path += "/" + temp;
+	}
+	
+	if ( m_path.size() == 0 )
+	{
+		m_path = "/";
 	}
 	
 	m_query.assign( uri.query.first, uri.query.afterLast - uri.query.first );
@@ -297,4 +302,24 @@ uri::decode( const std::string & str )
 	ret.assign( dummy.c_str(), last );
 	
 	return ret;
+}
+
+
+std::map< std::string, std::string >
+uri::parameters() const
+{
+	std::map< std::string, std::string > parameters;
+
+	strings params = split( query(), '&' );
+	for ( auto it = params.begin(); it != params.end(); it++ )
+	{
+		strings param = split( *it, '=' );
+
+		if ( param.size() == 2 )
+		{
+			parameters[ param[ 0 ] ] = param[ 1 ];
+		}
+	}
+
+	return parameters;
 }

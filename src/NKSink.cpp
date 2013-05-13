@@ -56,6 +56,7 @@ sink::sink( const uri::ref &uri )
 
 sink::~sink()
 {
+fprintf( stderr, "in sink destructor\n" );
 }
 
 
@@ -66,6 +67,14 @@ sink::bind( source::ref source )
 
 	m_source->on_close( [=]()
 	{
+		// This can get kind of tricky. It's very possible for whatever code
+		// executes in these close_handlers to cause this sink to be deleted.
+		// 
+		// That is a bad thing. So to prevent it, we'll artifically bump up
+		// our reference count, and then release right after.
+
+		sink::ref artifical( this );
+
 		for ( auto it = m_close_handlers.begin(); it != m_close_handlers.end(); it++ )
 		{
 			it->second();
@@ -147,11 +156,17 @@ sink::run()
 	{
 		if ( status == 0 )
 		{
+			sink::ref artifical( this );
+
 			if ( len > 0 )
 			{
 				if ( process( m_buf, len ) )
 				{
-					run();
+					if ( is_open() )
+					{
+				fprintf( stderr, "after process\n" );
+						run();
+					}
 				}
 				else
 				{

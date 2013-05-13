@@ -22,40 +22,49 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * The views and conclusions contained in the software and documentation are those
- * of the authors and should not be interpreted as representing official policies,
- * either expressed or implied, of the FreeBSD Project.
- *
  */
- 
-#ifndef _netkit_web_socket_h
-#define _netkit_web_socket_h
 
-#include <NetKit/NKSource.h>
+#include <NetKit/NKUUID.h>
+#include <NetKit/NKBase64.h>
+#include <sstream>
 
-namespace netkit {
+using namespace netkit;
 
-namespace ws {
 
-namespace server {
+uuid::uuid( std::uint8_t data[ 16 ] )
+{
+	memcpy( m_data, data, sizeof( m_data ) );
+}
+
+
+uuid::~uuid()
+{
+}
+
 
 std::string
-accept_key( const std::string &input );
+uuid::to_string( const char *delim ) const
+{
+	std::ostringstream os;
 
-source::adapter::ref
-create();
+	os << std::hex << std::uppercase;
 
+	for ( auto i = 0; i < sizeof( m_data ); i++ )
+	{
+		if ( i && ( ( i % 4 ) == 0 ) )
+		{
+			os << delim;
+		}
+
+		os << ( int ) m_data[ i ];
+	}
+
+	return os.str();
 }
 
-namespace client {
 
-source::adapter::ref
-create();
-
+std::string
+uuid::to_base64() const
+{
+	return codec::base64::encode( std::string( m_data, m_data + sizeof( m_data ) ) );
 }
-
-}
-
-}
-
-#endif

@@ -29,6 +29,7 @@
  */
  
 #include <NetKit/NKHTTP.h>
+#include <NetKit/NKSource.h>
 #include <NetKit/NKTLS.h>
 #include <NetKit/NKBase64.h>
 #include <NetKit/cstring.h>
@@ -497,6 +498,7 @@ message::message( const message &that )
 	m_content_type( that.m_content_type ),
 	m_content_length( that.m_content_length ),
 	m_upgrade( that.m_upgrade ),
+	m_ws_key( that.m_ws_key ),
 	m_keep_alive( that.m_keep_alive )
 {
 }
@@ -548,6 +550,10 @@ message::add_to_header( const std::string &key, const std::string &val )
 	else if ( key == "Upgrade" )
 	{
 		m_upgrade = val;
+	}
+	else if ( key == "Sec-WebSocket-Key" )
+	{
+		m_ws_key = val;
 	}
 }
 
@@ -740,33 +746,15 @@ response::send_prologue( connection::ref conn ) const
 #	pragma mark connection implementation
 #endif
 
-connection::list		*connection::m_instances;
-connection::handlers	connection::m_handlers;
-connection::ref			connection::m_active;
 
-connection::connection()
+
+connection::connection( type t )
 :
 	m_secure( false ),
-	m_okay( true )
+	m_okay( true ),
+	m_type( t )
 {
-	m_instances->push_back( this );
-	
-	m_settings = new http_parser_settings;
-	memset( m_settings, 0, sizeof( http_parser_settings ) );
-	
-	m_parser = new http_parser;
-	memset( m_parser, 0, sizeof( http_parser ) );
-
-	m_settings->on_message_begin 	= message_will_begin;
-	m_settings->on_url				= uri_was_received;
-	m_settings->on_header_field		= header_field_was_received;
-	m_settings->on_header_value		= header_value_was_received;
-	m_settings->on_body				= body_was_received;
-	m_settings->on_headers_complete	= headers_were_received;
-	m_settings->on_message_complete	= message_was_received;
-	
-	http_parser_init( m_parser, HTTP_REQUEST );
-	m_parser->data = this;
+	init();
 }
 
 
@@ -785,58 +773,24 @@ connection::~connection()
 
 
 void
-connection::bind( std::uint8_t m, const std::string &path, const std::string &type, request_f r )
+connection::init()
 {
-	handler::ref h = new handler( path, type, r );
+	m_settings = new http_parser_settings;
+	memset( m_settings, 0, sizeof( http_parser_settings ) );
 	
-	bind( m, h );
-}
+	m_parser = new http_parser;
+	memset( m_parser, 0, sizeof( http_parser ) );
 
-
-void
-connection::bind( std::uint8_t m, const std::string &path, const std::string &type, request_body_was_received_f rbwr, request_f r )
-{
-	handler::ref h = new handler( path, type, rbwr, r );
+	m_settings->on_message_begin 	= message_will_begin;
+	m_settings->on_url				= uri_was_received;
+	m_settings->on_header_field		= header_field_was_received;
+	m_settings->on_header_value		= header_value_was_received;
+	m_settings->on_body				= body_was_received;
+	m_settings->on_headers_complete	= headers_were_received;
+	m_settings->on_message_complete	= message_was_received;
 	
-	bind( m, h );
-}
-
-
-void
-connection::bind( std::uint8_t m, const std::string &path, const std::string &type, request_will_begin_f rwb, request_body_was_received_f rbwr, request_f r )
-{
-	handler::ref h = new handler( path, type, rwb, rbwr, r );
-	
-	bind( m, h );
-}
-
-
-void
-connection::bind( std::uint8_t m, const std::string &path, sink::ref sink )
-{
-	handler::ref h = new handler( path, sink );
-	
-	bind( m, h );
-}
-
-
-void
-connection::bind( std::uint8_t m, handler::ref h )
-{
-	handlers::iterator it = m_handlers.find( m );
-	
-	if ( it != m_handlers.end() )
-	{
-		it->second.push_back( h );
-	}
-	else
-	{
-		handler::list l;
-		
-		l.push_back( h );
-		
-		m_handlers[ m ] = l;
-	}
+	http_parser_init( m_parser, ( m_type == type::server ) ? HTTP_REQUEST : HTTP_RESPONSE );
+	m_parser->data = this;
 }
 
 
@@ -862,28 +816,6 @@ int
 connection::http_minor() const
 {
 	return m_parser->http_minor;
-}
-
-
-bool
-connection::adopt( netkit::source::ref source, const std::uint8_t *buf, size_t len )
-{
-	bool ok = false;
-	
-	if ( ( len >= 3 ) &&
-	     ( ( std::strncasecmp( ( const char* ) buf, "get", 3 ) == 0 ) ||
-	       ( std::strncasecmp( ( const char* ) buf, "pos", 3 ) == 0 ) ||
-	       ( std::strncasecmp( ( const char* ) buf, "opt", 3 ) == 0 ) ||
-	       ( std::strncasecmp( ( const char* ) buf, "hea", 3 ) == 0 ) ) )
-	{
-		sink::ref conn = new connection;
-		
-		conn->bind( source );
-		
-		ok = true;
-	}
-	
-	return ok;
 }
 
 
@@ -932,7 +864,10 @@ connection::flush()
 bool
 connection::process( const std::uint8_t *buf, size_t len )
 {
-	m_active = this;
+	if ( m_type == type::server )
+	{
+		server::set_active_connection( this );
+	}
 
 	std::streamsize processed	= http_parser_execute( m_parser, m_settings, ( const char* ) buf, len );
 	bool			ok			= true;
@@ -942,10 +877,28 @@ connection::process( const std::uint8_t *buf, size_t len )
 		nklog( log::error, "http_parser_execute() failed: bytes read = %ld, processed = %ld", len, processed );
 		ok = false;
 	}
-	
-	m_active = nullptr;
 
+	if ( m_type == type::server )
+	{
+		server::set_active_connection( nullptr );
+	}
+	
 	return ok;
+}
+
+
+void
+connection::upgrade_to_websocket( sink::ref new_sink )
+{
+	new_sink->bind( m_source );
+	m_source = nullptr;
+}
+
+
+void
+connection::upgrade_to_tls()
+{
+	set_secure( true );
 }
 
 
@@ -965,7 +918,6 @@ connection::message_will_begin( http_parser *parser )
 	self->m_header_value.clear();
 	self->m_header.clear();
 	
-	self->m_handler	= nullptr;
 	self->m_request = nullptr;
 	
 	return 0;
@@ -1040,23 +992,23 @@ connection::header_value_was_received( http_parser *parser, const char *buf, siz
 int
 connection::headers_were_received( http_parser *parser )
 {
-	connection			*self	= reinterpret_cast< connection* >( parser->data );
-	handlers::iterator	it;
-	int					ret		= 0;
+	connection	*self	= reinterpret_cast< connection* >( parser->data );
+	int			ret		= 0;
 	
-	if ( !self->resolve( parser ) )
+	if ( self->m_type == type::server )
 	{
-		response::ref response = http::response::create( self->http_major(), self->http_minor(), http::status::not_found, false );
-		response->add_to_header( "Connection", "Close" );
-		response->add_to_header( "Content-Type", "text/html" );
-		*response << "<html>Error 404: Content Not Found</html>";
-		self->put( response.get() );
-		ret = -1;
-		goto exit;
+		if ( !server::resolve( self ) )
+		{
+			response::ref response = http::response::create( self->http_major(), self->http_minor(), http::status::not_found, false );
+			response->add_to_header( "Connection", "Close" );
+			response->add_to_header( "Content-Type", "text/html" );
+			*response << "<html>Error 404: Content Not Found</html>";
+			self->put( response.get() );
+			ret = -1;
+			goto exit;
+		}
 	}
 	
-
-
 	/*
 	for ( message::header::const_iterator it = self->m_request->heade().begin(); it != self->m_request->heade().end(); it++ )
 	{
@@ -1108,16 +1060,23 @@ int
 connection::body_was_received( http_parser *parser, const char *buf, size_t len )
 {
 	connection *self = reinterpret_cast< connection* >( parser->data );
-	
-	return self->m_handler->m_rbwr( self->m_request, ( const uint8_t* ) buf, len, [=]( response::ref response, bool close )
+
+	if ( self->m_type == type::server )
 	{
-		self->put( response.get() );
-		
-		if ( close )
+		return server::active_handler()->m_rbwr( self->m_request, ( const uint8_t* ) buf, len, [=]( response::ref response, bool close )
 		{
-			self->close();
-		}
-	} );
+			self->put( response.get() );
+		
+			if ( close )
+			{
+				self->close();
+			}
+		} );
+	}
+	else
+	{
+		// Client
+	}
 }
 
 	
@@ -1126,26 +1085,130 @@ connection::message_was_received( http_parser *parser )
 {
 	connection *self = reinterpret_cast< connection* >( parser->data );
 	
-	return self->m_handler->m_r( self->m_request, [=]( response::ref response, bool close )
+	if ( self->m_type == type::server )
 	{
-		self->put( response.get() );
-		
-		if ( close )
+		return server::active_handler()->m_r( self->m_request, [=]( response::ref response, bool close )
 		{
-			self->close();
-		}
-	} );
+			self->put( response.get() );
+			
+			if ( close )
+			{
+				self->close();
+			}
+		} );
+	}
+	else
+	{
+		// Client
+	}
+}
+
+
+#if defined( __APPLE__ )
+#	pragma mark server implementation
+#endif
+
+connection::ref			server::m_active_connection;
+connection::list		*server::m_connections;
+server::handler::ref	server::m_active_handler;
+server::handlers		server::m_handlers;
+
+netkit::sink::ref
+server::adopt( netkit::source::ref source, const std::uint8_t *buf, size_t len )
+{
+	connection::ref sink;
+	
+	if ( ( len >= 3 ) &&
+	     ( ( std::strncasecmp( ( const char* ) buf, "get", 3 ) == 0 ) ||
+	       ( std::strncasecmp( ( const char* ) buf, "pos", 3 ) == 0 ) ||
+	       ( std::strncasecmp( ( const char* ) buf, "opt", 3 ) == 0 ) ||
+	       ( std::strncasecmp( ( const char* ) buf, "hea", 3 ) == 0 ) ) )
+	{
+		sink = new connection;
+
+		m_connections->push_back( sink );
+
+		sink->on_close( [=]()
+		{
+			auto it = std::find_if( m_connections->begin(), m_connections->end(), [=]( connection::ref inserted )
+			{
+				return ( inserted.get() == sink.get() );
+			} );
+
+			assert( it != m_connections->end() );
+
+			m_connections->erase( it );
+		} );
+	}
+	
+	return sink.get();
+}
+
+	
+void
+server::bind( std::uint8_t m, const std::string &path, const std::string &type, request_f r )
+{
+	handler::ref h = new handler( path, type, r );
+	
+	bind( m, h );
+}
+
+
+void
+server::bind( std::uint8_t m, const std::string &path, const std::string &type, request_body_was_received_f rbwr, request_f r )
+{
+	handler::ref h = new handler( path, type, rbwr, r );
+	
+	bind( m, h );
+}
+
+
+void
+server::bind( std::uint8_t m, const std::string &path, const std::string &type, request_will_begin_f rwb, request_body_was_received_f rbwr, request_f r )
+{
+	handler::ref h = new handler( path, type, rwb, rbwr, r );
+	
+	bind( m, h );
+}
+
+
+void
+server::bind( std::uint8_t m, const std::string &path, netkit::sink::ref s )
+{
+	handler::ref h = new handler( path, s );
+	
+	bind( m, h );
+}
+
+
+void
+server::bind( std::uint8_t m, handler::ref h )
+{
+	handlers::iterator it = m_handlers.find( m );
+	
+	if ( it != m_handlers.end() )
+	{
+		it->second.push_back( h );
+	}
+	else
+	{
+		handler::list l;
+		
+		l.push_back( h );
+		
+		m_handlers[ m ] = l;
+	}
 }
 
 
 bool
-connection::resolve( http_parser *parser )
+server::resolve( connection::ref conn )
 {
 	bool resolved = false;
 	
-	m_method = parser->method;
+	conn->m_method = conn->m_parser->method;
 	
-	auto it = m_handlers.find( parser->method );
+	auto it = m_handlers.find( conn->m_parser->method );
 	
 	if ( it != m_handlers.end() )
 	{
@@ -1156,9 +1219,9 @@ connection::resolve( http_parser *parser )
 				std::regex regex1( regexify( ( *it2 )->m_path ) );
 				std::regex regex2( regexify( ( *it2 )->m_type ) );
 			
-				if ( std::regex_search( m_uri_value, regex1 ) && std::regex_search( m_content_type, regex2 ) )
+				if ( std::regex_search( conn->m_uri_value, regex1 ) && std::regex_search( conn->m_content_type, regex2 ) )
 				{
-					m_handler = *it2;
+					m_active_handler = *it2;
 					break;
 				}
 			}
@@ -1169,33 +1232,33 @@ connection::resolve( http_parser *parser )
 		}
 	}
 	
-	if ( !m_handler )
+	if ( !m_active_handler )
 	{
-		nklog( log::error, "unable to find binding for method %d -> %s", m_method, m_uri_value.c_str() );
+		nklog( log::error, "unable to find binding for method %d -> %s", conn->m_method, conn->m_uri_value.c_str() );
 		goto exit;
 	}
 	
-	if ( m_handler->m_rwb )
+	if ( m_active_handler->m_rwb )
 	{
-		m_request = m_handler->m_rwb( http_major(), http_minor(), parser->method, new uri( m_uri_value ) );
+		conn->m_request = m_active_handler->m_rwb( conn->http_major(), conn->http_minor(), conn->m_parser->method, new uri( conn->m_uri_value ) );
 	}
 	else
 	{
-		m_request = http::request::create( http_major(), http_minor(), parser->method, new uri( m_uri_value ) );
+		conn->m_request = http::request::create( conn->http_major(), conn->http_minor(), conn->m_parser->method, new uri( conn->m_uri_value ) );
 	}
 
-	if ( !m_request )
+	if ( !conn->m_request )
 	{
-		nklog( log::error, "unable to create request for method %d -> %s", m_method, m_uri_value.c_str() );
+		nklog( log::error, "unable to create request for method %d -> %s", conn->m_method, conn->m_uri_value.c_str() );
 		goto exit;
 	}
 	
-	m_request->add_to_header( m_header );
+	conn->m_request->add_to_header( conn->m_header );
 	
-	if ( m_request->expect() == "100-continue" )
+	if ( conn->m_request->expect() == "100-continue" )
 	{
-		response::ref response = http::response::create( http_major(), http_minor(), http::status::cont, false );
-		put( response.get() );
+		response::ref response = http::response::create( conn->http_major(), conn->http_minor(), http::status::cont, false );
+		conn->put( response.get() );
 	}
 	
 	resolved = true;
@@ -1206,20 +1269,8 @@ exit:
 }
 
 
-static void
-replace( std::string& str, const std::string& oldStr, const std::string& newStr)
-{
-  size_t pos = 0;
-  while((pos = str.find(oldStr, pos)) != std::string::npos)
-  {
-     str.replace(pos, oldStr.length(), newStr);
-     pos += newStr.length();
-  }
-}
-
-
 std::string
-connection::regexify( const std::string &in )
+server::regexify( const std::string &in )
 {
 	std::string out( in );
 
@@ -1241,6 +1292,20 @@ connection::regexify( const std::string &in )
 
 	return out;
 }
+
+
+void
+server::replace( std::string& str, const std::string& oldStr, const std::string& newStr)
+{
+	size_t pos = 0;
+
+	while ( ( pos = str.find( oldStr, pos ) ) != std::string::npos )
+	{
+		str.replace(pos, oldStr.length(), newStr);
+		pos += newStr.length();
+	}
+}
+
 
 #if defined( __APPLE__ )
 #	pragma mark client implementation

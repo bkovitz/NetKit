@@ -132,7 +132,7 @@ runloop_mac::cancel( event e )
 	auto event = reinterpret_cast< dispatch_source_t >( e );
 	dispatch_source_cancel( event );
 	
-	dispatch( ^()
+	dispatch( [=]()
 	{
 	//	dispatch_release( event );
 	} );

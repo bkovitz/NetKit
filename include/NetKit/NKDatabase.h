@@ -46,6 +46,11 @@ find( const std::string &key, T val )				\
 {													\
 	return netkit::database::object::find<NAME, ref>( key, val );	\
 }													\
+static void											\
+clear()												\
+{													\
+	return netkit::database::object::clear<NAME>();	\
+}													\
 NAME( const netkit::database::statement::ref &stmt );\
 static bool initialize();							\
 virtual bool save( bool force = false ) const;
@@ -380,6 +385,17 @@ public:
 		
 			manager::instance()->exec( os.str() );
 		}
+	}
+
+	template <class Type>
+	inline static void
+	clear()
+	{
+		std::ostringstream os;
+		
+		os << "DELETE FROM " << Type::table_name() << ";";
+		
+		manager::instance()->exec( os.str() );
 	}
 
 	inline oid_t

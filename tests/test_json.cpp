@@ -143,7 +143,7 @@ TEST_CASE( "NetKit/json/2", "json encoding tests" )
 	
 	val[ "numbers" ] = arr;
 	
-	std::string s = val->flatten();
+	std::string s = val->to_string();
 	val2->load_from_string( s );
 	
 	REQUIRE( *val == *val2 );
@@ -220,7 +220,7 @@ TEST_CASE( "NetKit/json/3", "json rpc" )
 		
 		response[ "result" ] = result;
 		
-		reply( response, false, false );
+		reply( response, false );
 	} );
 	
 	e->connect( new uri( "json", "127.0.0.1", acceptor->endpoint()->port() ), [=]( int status, const endpoint::ref &peer ) mutable

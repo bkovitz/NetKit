@@ -47,9 +47,9 @@ public:
 	typedef smart_ref< sink >				ref;
 	
 	sink();
-	
+
 	sink( const uri::ref &uri );
-	
+
 	virtual ~sink();
 	
 	virtual void

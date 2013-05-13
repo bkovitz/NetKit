@@ -2924,8 +2924,6 @@ netkit::json::operator<<(std::ostream &output, const value &v)
 #	pragma mark connection implementation
 #endif
 
-connection::list			*connection::m_instances;
-connection::ref				connection::m_active;
 std::atomic< std::int32_t >	connection::m_id( 1 );
 
 connection::connection()
@@ -2934,8 +2932,7 @@ connection::connection()
 	m_eptr( NULL ),
 	m_end( NULL )
 {
-	m_instances->push_back( this );
-	add( 4192 );
+	init();
 }
 
 
@@ -2945,52 +2942,27 @@ connection::~connection()
 }
 
 
-bool
-connection::adopt( source::ref source, const std::uint8_t *buf, std::size_t len )
+void
+connection::init()
 {
-	unsigned	index = 0;
-	bool		ok = false;
+	on_close( [=]()
+	{
+		value::ref reply;
+		value::ref error;
+	
+		error[ "code" ]		= status::internal_error;
+		error[ "message" ]	= "Lost connection";
+		reply[ "error" ]	= error;
 
-	while ( isdigit( buf[ index ] ) && ( index < len ) )
-	{
-		index++;
-	}
-	
-	if ( index == len )
-	{
-		goto exit;
-	}
-	
-	if ( buf[ index++ ] != ':' )
-	{
-		goto exit;
-	}
-	
-	if ( index == len )
-	{
-		goto exit;
-	}
-	
-	if ( buf[ index ] != '{' )
-	{
-		goto exit;
-	}
+		for ( auto it = m_reply_handlers.begin(); it != m_reply_handlers.end(); it++ )
+		{
+			it->second( reply );
+		}
+	} );
 
-	try
-	{
-		sink::ref conn = new connection;
-		conn->bind( source );
-		ok = true;
-	}
-	catch ( ... )
-	{
-		// log this
-	}
-	
-exit:
-
-	return ok;
+	add( 4192 );
 }
+
 
 
 bool
@@ -3164,19 +3136,19 @@ connection::really_process()
 			{
 				if ( id->is_null() )
 				{
-					m_active = this;
+					server::set_active_connection( this );
 					
 					server::route_notification( root );
 					
-					m_active = NULL;
+					server::set_active_connection( nullptr );
 				}
 				else
 				{
-					m_active = this;
+					server::set_active_connection( this );
 					
 					server::route_request( root, [=]( value::ref reply, bool close ) mutable
 					{
-						m_active = NULL;
+						server::set_active_connection( nullptr );
 	
 						reply[ "jsonrpc" ]	= "2.0";
 						reply[ "id" ]		= id;
@@ -3263,19 +3235,10 @@ connection::validate( const value::ref &root, value::ref error)
 void
 connection::shutdown()
 {
-	value::ref reply;
-	value::ref error;
-	
 	m_source->close();
-	
-	error[ "code" ]		= status::internal_error;
-	error[ "message" ]	= "Lost connection";
-	reply[ "error" ]	= error;
 
-	for ( auto it = m_reply_handlers.begin(); it != m_reply_handlers.end(); it++ )
-	{
-		it->second( reply );
-	}
+	// Don't do anything after this, as we are
+	// most likely deleted
 }
 
 #if defined( __APPLE__ )
@@ -3285,6 +3248,67 @@ connection::shutdown()
 server::preflight_f				server::m_preflight_handler = []( json::value::ref request ){ return netkit::status::ok; };
 server::notification_handlers	*server::m_notification_handlers;
 server::request_handlers		*server::m_request_handlers;
+connection::ref					server::m_active_connection;
+connection::list				*server::m_connections;
+
+sink::ref
+server::adopt( source::ref source, const std::uint8_t *buf, std::size_t len )
+{
+	connection::ref	sink;
+	unsigned		idx = 0;
+
+	while ( isdigit( buf[ idx ] ) && ( idx < len ) )
+	{
+		idx++;
+	}
+	
+	if ( idx == len )
+	{
+		goto exit;
+	}
+	
+	if ( buf[ idx++ ] != ':' )
+	{
+		goto exit;
+	}
+	
+	if ( idx == len )
+	{
+		goto exit;
+	}
+	
+	if ( buf[ idx ] != '{' )
+	{
+		goto exit;
+	}
+
+	try
+	{
+		sink = new connection;
+		m_connections->push_back( sink );
+
+		sink->on_close( [=]()
+		{
+			auto it = std::find_if( m_connections->begin(), m_connections->end(), [=]( connection::ref inserted )
+			{
+				return ( inserted.get() == sink.get() );
+			} );
+
+			assert( it != m_connections->end() );
+				
+			m_connections->erase( it );
+		} );
+	}
+	catch ( ... )
+	{
+		// log this
+	}
+	
+exit:
+
+	return sink.get();
+}
+
 
 void
 server::preflight( preflight_f func )

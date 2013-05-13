@@ -44,7 +44,7 @@ TEST_CASE( "NetKit/ssl/1", "ssl client" )
 		source::ref	sock = new netkit::ip::tcp::socket;
 		REQUIRE( sock );
 		
-		sock->add( tls::adapter::create() );
+		sock->add( tls::client::create() );
 		
 		fprintf( stderr, "connecting ssl socket\n" );
 		sock->connect( new uri( "https://www.collobos.com/index.html"), [=]( int status, const endpoint::ref &peer ) mutable
@@ -85,13 +85,8 @@ TEST_CASE( "NetKit/ssl/2", "ssl server" )
 		{
 			REQUIRE( status == 0 );
 			
-			sock->add( tls::adapter::create() );
+			sock->add( tls::server::create() );
 			
-			sock->accept( [=]( int status )
-			{
-				REQUIRE( status == 0 );
-			} );
-		
 			sock->recv( sbuf, 4192, [=]( int status, std::size_t len ) mutable
 			{
 				REQUIRE( status == 0 );
@@ -105,7 +100,7 @@ TEST_CASE( "NetKit/ssl/2", "ssl server" )
 		ip::tcp::socket::ref	sock = new ip::tcp::socket;
 		REQUIRE( sock );
 		
-		sock->add( tls::adapter::create() );
+		sock->add( tls::client::create() );
 		
 		sock->connect( new uri( "echo", "127.0.0.1", acceptor->endpoint()->port() ), [=]( int status, const endpoint::ref &peer ) mutable
 		{
