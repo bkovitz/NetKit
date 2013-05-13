@@ -47,16 +47,16 @@ uuid::to_string( const char *delim ) const
 {
 	std::ostringstream os;
 
-	os << std::hex;
-	
+	os << std::hex << std::uppercase;
+
 	for ( auto i = 0; i < sizeof( m_data ); i++ )
 	{
-		os << m_data[ i ];
-
-		if ( ( i % 4 ) == 0 )
+		if ( i && ( ( i % 4 ) == 0 ) )
 		{
 			os << delim;
 		}
+
+		os << ( int ) m_data[ i ];
 	}
 
 	return os.str();
