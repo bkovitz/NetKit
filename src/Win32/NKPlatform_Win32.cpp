@@ -32,7 +32,7 @@ netkit::initialize()
 
         netkit::component::m_instances                  = new netkit::component::list;
 
-        netkit::http::connection::m_instances           = new netkit::http::connection::list;
+        netkit::http::server::m_connections				= new netkit::http::connection::list;
 
         netkit::json::server::m_connections				= new netkit::json::connection::list;
         netkit::json::server::m_notification_handlers   = new netkit::json::server::notification_handlers;

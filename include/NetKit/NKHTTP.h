@@ -433,39 +433,19 @@ class NETKIT_DLL connection : public sink
 {
 public:
 
-	typedef std::function< void ( http::response::ref response, bool close ) >													response_f;
-	typedef std::function< http::request::ref ( int method, std::uint16_t major, std::uint16_t minor, const uri::ref &uri ) >	request_will_begin_f;
-	typedef std::function< int ( http::request::ref request, const std::uint8_t *buf, size_t len, response_f response ) >		request_body_was_received_f;
-	typedef std::function< int ( http::request::ref request, response_f func ) >												request_f;
-
 	typedef smart_ref< connection > ref;
 	typedef std::list< ref > list;
-	
-	static sink::ref
-	adopt( source::ref source, const std::uint8_t *buf, size_t len );
 
-	inline static connection::ref
-	active()
+	enum class type
 	{
-		return m_active;
-	}
-
-	connection();
+		client,
+		server
+	};
+	
+	connection( type t  = type::server );
 
 	virtual ~connection();
-	
-	static void
-	bind( std::uint8_t method, const std::string &path, const std::string &type, request_f r );
-	
-	static void
-	bind( std::uint8_t method, const std::string &path, const std::string &type, request_body_was_received_f rbwr, request_f r );
-	
-	static void
-	bind( std::uint8_t method, const std::string &path, const std::string &type, request_will_begin_f rwb, request_body_was_received_f rbwr, request_f r );
-	
-	static void
-	bind( std::uint8_t method, const std::string &path, sink::ref sink );
-	
+
 	virtual bool
 	process( const std::uint8_t *buf, std::size_t len );
 
@@ -511,6 +491,80 @@ public:
 	flush();
 	
 protected:
+
+	enum
+	{
+		NONE = 0,
+		FIELD,
+		VALUE
+	};
+	
+protected:
+
+	static int
+	message_will_begin( http_parser *parser );
+
+	static int
+	uri_was_received( http_parser *parser, const char *buf, size_t len );
+
+	static int
+	header_field_was_received( http_parser *parser, const char *buf, size_t len );
+
+	static int
+	header_value_was_received( http_parser *parser, const char *buf, size_t len );
+	
+	static int
+	headers_were_received( http_parser *parser );
+	
+	static int
+	body_was_received( http_parser *parser, const char *buf, size_t len );
+	
+	static int
+	message_was_received( http_parser *parser );
+	
+	void
+	init();
+	
+	friend class				server;
+	
+	std::uint8_t				m_method;
+	std::string					m_uri_value;
+	std::string					m_header_field;
+	std::string					m_header_value;
+	time_t						m_start;
+	bool						m_okay;
+	std::vector< std::uint8_t >	m_body;
+	
+	bool						m_secure;
+	bool						m_is_web_socket;
+	http_parser_settings		*m_settings;
+	http_parser					*m_parser;
+	int							m_parse_state;
+	
+	message::header				m_header;
+	std::string					m_content_type;
+	request::ref				m_request;
+
+	std::string					m_expect;
+	std::string					m_host;
+	std::string					m_authorization;
+	std::string					m_username;
+	std::string					m_password;
+	
+	std::ostringstream			m_ostream;
+
+	type						m_type;
+};
+
+
+class NETKIT_DLL server
+{
+public:
+
+	typedef std::function< void ( http::response::ref response, bool close ) >													response_f;
+	typedef std::function< http::request::ref ( int method, std::uint16_t major, std::uint16_t minor, const uri::ref &uri ) >	request_will_begin_f;
+	typedef std::function< int ( http::request::ref request, const std::uint8_t *buf, size_t len, response_f response ) >		request_body_was_received_f;
+	typedef std::function< int ( http::request::ref request, response_f func ) >												request_f;
 
 	class handler : public object
 	{
@@ -564,84 +618,75 @@ protected:
 		request_f					m_r;
 		sink::ref					m_sink;
 	};
-	
-	typedef std::map< std::uint8_t, handler::list > handlers;
-	
-	enum
-	{
-		NONE = 0,
-		FIELD,
-		VALUE
-	};
-	
-protected:
 
-	static int
-	message_will_begin( http_parser *parser );
+	static sink::ref
+	adopt( source::ref source, const std::uint8_t *buf, size_t len );
 
-	static int
-	uri_was_received( http_parser *parser, const char *buf, size_t len );
-
-	static int
-	header_field_was_received( http_parser *parser, const char *buf, size_t len );
-
-	static int
-	header_value_was_received( http_parser *parser, const char *buf, size_t len );
-	
-	static int
-	headers_were_received( http_parser *parser );
-	
-	static int
-	body_was_received( http_parser *parser, const char *buf, size_t len );
-	
-	static int
-	message_was_received( http_parser *parser );
+	static void
+	bind( std::uint8_t method, const std::string &path, const std::string &type, request_f r );
 	
 	static void
-	bind( std::uint8_t method, handler::ref handler );
+	bind( std::uint8_t method, const std::string &path, const std::string &type, request_body_was_received_f rbwr, request_f r );
 	
-	bool
-	resolve( http_parser *parser );
+	static void
+	bind( std::uint8_t method, const std::string &path, const std::string &type, request_will_begin_f rwb, request_body_was_received_f rbwr, request_f r );
+	
+	static void
+	bind( std::uint8_t method, const std::string &path, sink::ref sink );
 
-	std::string
+	static bool
+	resolve( connection::ref conn );
+
+	inline static connection::ref
+	active_connection()
+	{
+		return m_active_connection;
+	}
+
+	inline static void
+	set_active_connection( connection *c )
+	{
+		m_active_connection = c;
+	}
+
+	inline static handler::ref
+	active_handler()
+	{
+		return m_active_handler;
+	}
+
+	inline static connection::list::iterator
+	begin_connections()
+	{
+		return m_connections->begin();
+	}
+	
+	inline static connection::list::iterator
+	end_connections()
+	{
+		return m_connections->end();
+	}
+
+protected:
+
+	friend void					netkit::initialize();
+
+	static void
+	bind( std::uint8_t method, handler::ref handler );
+
+	static std::string
 	regexify( const std::string &s );
 
-	void
-	init();
+	static void
+	replace( std::string& str, const std::string& oldStr, const std::string& newStr);
 	
-	friend void					netkit::initialize();
-	
-	static connection::list		*m_instances;
+	typedef std::map< std::uint8_t, handler::list > handlers;
+
+	static connection::ref		m_active_connection;
+	static handler::ref			m_active_handler;
+
+	static connection::list		*m_connections;
 	static handlers				m_handlers;
-
-	static connection::ref		m_active;
-	
-	std::uint8_t				m_method;
-	std::string					m_uri_value;
-	std::string					m_header_field;
-	std::string					m_header_value;
-	handler::ref				m_handler;
-	time_t						m_start;
-	bool						m_okay;
-	std::vector< std::uint8_t >	m_body;
-	
-	bool						m_secure;
-	bool						m_is_web_socket;
-	http_parser_settings		*m_settings;
-	http_parser					*m_parser;
-	int							m_parse_state;
-	
-	message::header				m_header;
-	std::string					m_content_type;
-	request::ref				m_request;
-
-	std::string					m_expect;
-	std::string					m_host;
-	std::string					m_authorization;
-	std::string					m_username;
-	std::string					m_password;
-	
-	std::ostringstream			m_ostream;
 };
 
 
