@@ -141,7 +141,7 @@ class NETKIT_DLL message : public object
 {
 public:
 
-	typedef std::list< std::pair< std::string, std::string > > header;
+	typedef std::map< std::string, std::string >  header;
 	
 	typedef smart_ref< message > ref;
 	

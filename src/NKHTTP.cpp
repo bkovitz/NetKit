@@ -522,10 +522,7 @@ message::add_to_header( const header &heder )
 void
 message::add_to_header( const std::string &key, int val )
 {
-	char buf[ 1024 ];
-		
-	std::sprintf_s( buf, sizeof( buf ), sizeof( buf ), "%d", val );
-	m_header.push_back( make_pair( key, buf ) );
+	m_header[ key ] = std::to_string( val );
 	
 	if ( key == "Content-Length" )
 	{
@@ -537,8 +534,8 @@ message::add_to_header( const std::string &key, int val )
 void
 message::add_to_header( const std::string &key, const std::string &val )
 {
-	m_header.push_back( make_pair( key, val ) );
-	
+	m_header[ key ] = val;
+
 	if ( key == "Content-Length" )
 	{
 		m_content_length = atoi( val.c_str() );
@@ -561,14 +558,7 @@ message::add_to_header( const std::string &key, const std::string &val )
 void
 message::remove_from_header( const std::string &key )
 {
-	for ( auto it = m_header.begin(); it != m_header.end(); it++ )
-	{
-		if ( it->first == key )
-		{
-			m_header.erase( it );
-			break;
-		}
-	}
+	m_header.erase( key );
 }
 
 
@@ -959,8 +949,8 @@ connection::header_field_was_received( http_parser *parser, const char *buf, siz
 	{
 		if ( ( self->m_header_field.size() > 0 ) && ( self->m_header_value.size() > 0 ) )
 		{
-			self->m_header.push_back( make_pair( self->m_header_field, self->m_header_value ) );
-			
+			self->m_header[ self->m_header_field ] = self->m_header_value;
+
 			if ( self->m_header_field == "Content-Type" )
 			{
 				self->m_content_type = self->m_header_value;
