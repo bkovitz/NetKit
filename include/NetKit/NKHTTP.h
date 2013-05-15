@@ -428,7 +428,34 @@ protected:
 	std::uint16_t m_status;
 };
 
-	
+
+class handler : public object
+{
+public:
+
+	typedef smart_ref< handler > ref;
+	typedef std::list< ref > list;
+
+	virtual int
+	uri_was_received( http_parser *parser, const char *buf, size_t len ) = 0;
+
+	virtual int
+	header_field_was_received( http_parser *parser, const char *buf, size_t len ) = 0;
+
+	virtual int
+	header_value_was_received( http_parser *parser, const char *buf, size_t len ) = 0;
+
+	virtual int
+	headers_were_received( http_parser *parser ) = 0;
+
+	virtual int
+	body_was_received( http_parser *parser, const char *buf, size_t len ) = 0;
+
+	virtual int
+	message_was_received( http_parser *parser ) = 0;
+};
+
+
 class NETKIT_DLL connection : public sink
 {
 public:
@@ -442,7 +469,9 @@ public:
 		server
 	};
 	
-	connection( type t  = type::server );
+	connection();
+
+	connection( handler::ref h, type t = type::server );
 
 	virtual ~connection();
 
@@ -553,6 +582,7 @@ protected:
 	
 	std::ostringstream			m_ostream;
 
+	handler::ref				m_handler;
 	type						m_type;
 };
 
@@ -566,13 +596,20 @@ public:
 	typedef std::function< int ( http::request::ref request, const std::uint8_t *buf, size_t len, response_f response ) >		request_body_was_received_f;
 	typedef std::function< int ( http::request::ref request, response_f func ) >												request_f;
 
-	class handler : public object
+	class handler : public http::handler
 	{
 	public:
 	
 		typedef smart_ref< handler > ref;
 		typedef std::list< ref > list;
 		
+		handler()
+		:
+			m_path( "" ),
+			m_type( "" )
+		{
+		}
+
 		handler( const std::string &path, const std::string &type, request_f r )
 		:
 			m_path( path ),
@@ -610,6 +647,24 @@ public:
 			m_sink( sink )
 		{
 		}
+
+		virtual int
+		uri_was_received( http_parser *parser, const char *buf, size_t len );
+
+		virtual int
+		header_field_was_received( http_parser *parser, const char *buf, size_t len );
+
+		virtual int
+		header_value_was_received( http_parser *parser, const char *buf, size_t len );
+
+		virtual int
+		headers_were_received( http_parser *parser );
+
+		virtual int
+		body_was_received( http_parser *parser, const char *buf, size_t len );
+
+		virtual int
+		message_was_received( http_parser *parser );
 	
 		std::string					m_path;
 		std::string					m_type;
@@ -697,26 +752,54 @@ public:
 	typedef smart_ref< client >													ref;
 	typedef std::function< bool ( request::ref &request, uint32_t status ) >	auth_f;
 	typedef std::function< void ( uint32_t error, response::ref response ) >	response_f;
-	
+
 	static request::ref
 	request( int method, const uri::ref &uri );
-	
+
 	static void
 	send( const request::ref &request, response_f response_func );
-	
+
 	static void
 	send( const request::ref &request, auth_f auth_func, response_f response_func );
-	
+
 protected:
 
 	client( const request::ref &request, auth_f auth_func, response_f response_func );
-	
+
 	virtual ~client();
-	
+
+	class handler : public http::handler
+	{
+	public:
+
+		typedef smart_ref< handler > ref;
+		typedef std::list< ref > list;
+
+		virtual int
+		uri_was_received( http_parser *parser, const char *buf, size_t len );
+
+		virtual int
+		header_field_was_received( http_parser *parser, const char *buf, size_t len );
+
+		virtual int
+		header_value_was_received( http_parser *parser, const char *buf, size_t len );
+
+		virtual int
+		headers_were_received( http_parser *parser );
+
+		virtual int
+		body_was_received( http_parser *parser, const char *buf, size_t len );
+
+		virtual int
+		message_was_received( http_parser *parser );
+	};
+
 	request::ref	m_request;
 	response::ref	m_response;
 	auth_f			m_auth_func;
 	response_f		m_response_func;
+
+	connection::ref	m_connection;
 };
 
 

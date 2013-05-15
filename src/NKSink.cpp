@@ -56,7 +56,7 @@ sink::sink( const uri::ref &uri )
 
 sink::~sink()
 {
-fprintf( stderr, "in sink destructor\n" );
+fprintf( stderr, "in sink destructor %lx\n", this );
 }
 
 
@@ -152,33 +152,41 @@ sink::close()
 void
 sink::run()
 {
+	sink::ref artifical( this );
+
+	fprintf( stderr, "starting sink::run( this = 0x%lx\n", this );
+
 	m_source->recv( m_buf, sizeof( m_buf ), [=]( int status, std::size_t len )
 	{
-		if ( status == 0 )
+		if ( artifical->m_source->is_open() )
 		{
-			sink::ref artifical( this );
-
-			if ( len > 0 )
+			fprintf( stderr, "got callback in sink::run( this = 0x%lx\n", this );
+			if ( status == 0 )
 			{
-				if ( process( m_buf, len ) )
+			
+
+				if ( len > 0 )
 				{
-					if ( is_open() )
+					if ( process( m_buf, len ) )
 					{
-				fprintf( stderr, "after process\n" );
-						run();
+						if ( is_open() )
+						{
+					fprintf( stderr, "after process\n" );
+							run();
+						}
+					}
+					else
+					{
+						nklog( log::verbose, "process() returned an error...closing connection", status );
+						close();
 					}
 				}
-				else
-				{
-					nklog( log::verbose, "process() returned an error...closing connection", status );
-					close();
-				}
 			}
-		}
-		else
-		{
-			nklog( log::verbose, "source::recv() returned an error...closing connection", status );
-			close();
+			else
+			{
+				nklog( log::verbose, "source::recv() returned an error...closing connection", status );
+				close();
+			}
 		}
 	} );
 }
