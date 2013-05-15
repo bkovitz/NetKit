@@ -99,6 +99,17 @@ ip::address::address( struct in6_addr addr )
 }
 
 
+ip::address::address( const std::string &val )
+{
+	memset( &m_addr, 0, sizeof( m_addr ) );
+	
+	if ( inet_pton( AF_INET, val.c_str(), &m_addr ) != 1 )
+	{
+		inet_pton( AF_INET6, val.c_str(), &m_addr );
+	}
+}
+
+
 /*
 address::address( addrinfo &ai )
 {

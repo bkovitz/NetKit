@@ -169,7 +169,7 @@ ip::endpoint::to_string() const
 		
 #else
 	
-		if ( inet_ntop( addr.ss_family, &( ( ( struct sockaddr_in *) &addr )->sin_addr ), buf, sizeof( buf ) ) != NULL )
+		if ( inet_ntop( addr.ss_family, &( ( ( struct sockaddr_in *) &addr )->sin_addr ), buf, sizeof( buf ) ) == NULL )
 #endif
 		{
 			nklog( log::error, "error converting IPv4 addr to string: %d", platform::error() );

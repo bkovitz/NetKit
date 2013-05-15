@@ -89,6 +89,8 @@ public:
 	
 	address( struct in6_addr addr );
 	
+	address( const std::string &val );
+	
 	virtual ~address();
 	
 	inline bool

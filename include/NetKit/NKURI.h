@@ -115,9 +115,6 @@ public:
 		m_query = val;
 	}
 	
-	std::string
-	recompose() const;
-
 	bool
 	assign( const std::string &s );
 	
@@ -132,6 +129,9 @@ public:
 
 	std::map< std::string, std::string >
 	parameters() const;
+
+	std::string
+	to_string() const;
 
 private:
 

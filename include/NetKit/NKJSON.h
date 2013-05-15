@@ -145,6 +145,8 @@ public:
 	
 	value( std::uint64_t v );
 	
+	value( std::time_t v );
+	
 	value( status v );
 
 	value( double v );
@@ -246,6 +248,9 @@ public:
 	
 	std::uint64_t
 	as_uint64( std::uint64_t default_value = 0 ) const;
+	
+	std::time_t
+	as_time( std::time_t default_value = 0 ) const;
 	
 	status
 	as_status( status = status::ok ) const;
@@ -676,6 +681,13 @@ public:
 	}
 	
 	inline smart_ref( std::uint64_t v )
+	:
+		m_ref( new json::value( v ) )
+	{
+		m_ref->retain();
+	}
+	
+	inline smart_ref( std::time_t v )
 	:
 		m_ref( new json::value( v ) )
 	{

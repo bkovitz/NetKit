@@ -122,88 +122,6 @@ uri::escape( const std::string &in )
 }
 
 
-std::string
-uri::recompose() const
-{
-	std::string	ret;
-	UriUriStructA	uri;
-	std::string		port;
-	strings			components;
-	strings			encodedComponents;
-	char			*str	= NULL;
-	int				len;
-	
-	memset( &uri, 0, sizeof( UriUriStructA ) );
-	
-	uri.scheme.first		= m_scheme.c_str();
-	uri.scheme.afterLast	= m_scheme.c_str() + m_scheme.size();
-	
-	uri.hostText.first		= m_host.c_str();
-	uri.hostText.afterLast	= m_host.c_str() + m_host.size();
-	
-	if ( m_port != 0 )
-	{
-		port = std::to_string( m_port );
-
-		uri.portText.first		= port.c_str();
-		uri.portText.afterLast	= port.c_str() + port.size();
-	}
-	
-	components = split( m_path, '/' );
-	
-	if ( components.size() > 0 )
-	{
-		UriPathSegmentA **path = &uri.pathHead;
-		int index = 0;
-		
-		for ( auto it = components.begin(); it != components.end(); it++ )
-		{
-			encodedComponents.push_back( encode( *it ) );
-			*path = ( UriPathSegmentA* ) malloc( sizeof ( UriPathSegmentA ) );
-			( *path )->text.first = encodedComponents[ index ].c_str();
-			( *path )->text.afterLast = encodedComponents[ index ].c_str() + encodedComponents[ index ].size();
-			( *path )->next = NULL;
-			
-			path = &( *path )->next;
-			
-			index++;
-		}
-	}
-
-	if ( uriToStringCharsRequiredA( &uri, &len ) != URI_SUCCESS )
-	{
-		goto exit;
-	}
-	
-	len++;
-
-	str = new char[ len ];
-	
-	if ( !str )
-	{
-		goto exit;
-	}
-	
-	if ( uriToStringA( str, &uri, len, NULL ) != URI_SUCCESS )
-	{
-		goto exit;
-	}
-	
-	ret.assign( str );
-	
-exit:
-
-	uriFreeUriMembersA( &uri );
-	
-	if ( str )
-	{
-		delete [] str;
-	}
-	
-	return ret;
-}
-
-
 bool
 uri::assign( const std::string& s )
 {
@@ -322,4 +240,86 @@ uri::parameters() const
 	}
 
 	return parameters;
+}
+
+
+std::string
+uri::to_string() const
+{
+	std::string	ret;
+	UriUriStructA	uri;
+	std::string		port;
+	strings			components;
+	strings			encodedComponents;
+	char			*str	= NULL;
+	int				len;
+	
+	memset( &uri, 0, sizeof( UriUriStructA ) );
+	
+	uri.scheme.first		= m_scheme.c_str();
+	uri.scheme.afterLast	= m_scheme.c_str() + m_scheme.size();
+	
+	uri.hostText.first		= m_host.c_str();
+	uri.hostText.afterLast	= m_host.c_str() + m_host.size();
+	
+	if ( m_port != 0 )
+	{
+		port = std::to_string( m_port );
+
+		uri.portText.first		= port.c_str();
+		uri.portText.afterLast	= port.c_str() + port.size();
+	}
+	
+	components = split( m_path, '/' );
+	
+	if ( components.size() > 0 )
+	{
+		UriPathSegmentA **path = &uri.pathHead;
+		int index = 0;
+		
+		for ( auto it = components.begin(); it != components.end(); it++ )
+		{
+			encodedComponents.push_back( encode( *it ) );
+			*path = ( UriPathSegmentA* ) malloc( sizeof ( UriPathSegmentA ) );
+			( *path )->text.first = encodedComponents[ index ].c_str();
+			( *path )->text.afterLast = encodedComponents[ index ].c_str() + encodedComponents[ index ].size();
+			( *path )->next = NULL;
+			
+			path = &( *path )->next;
+			
+			index++;
+		}
+	}
+
+	if ( uriToStringCharsRequiredA( &uri, &len ) != URI_SUCCESS )
+	{
+		goto exit;
+	}
+	
+	len++;
+
+	str = new char[ len ];
+	
+	if ( !str )
+	{
+		goto exit;
+	}
+	
+	if ( uriToStringA( str, &uri, len, NULL ) != URI_SUCCESS )
+	{
+		goto exit;
+	}
+	
+	ret.assign( str );
+	
+exit:
+
+	uriFreeUriMembersA( &uri );
+	
+	if ( str )
+	{
+		delete [] str;
+	}
+	
+	return ret;
 }

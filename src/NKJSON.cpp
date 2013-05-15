@@ -1482,6 +1482,14 @@ value::value( std::uint64_t val )
 }
 
 
+value::value( std::time_t val )
+:
+	m_kind( type::integer ),
+	m_data( new std::uint64_t( val ) )
+{
+}
+
+
 value::value( status v )
 :
 	m_kind( type::integer ),
@@ -2019,6 +2027,13 @@ std::uint64_t
 value::as_uint64( std::uint64_t default_value ) const
 {
 	return ( m_kind == type::integer ) ? *m_data.m_integer : default_value;
+}
+
+
+std::time_t
+value::as_time( std::time_t default_value ) const
+{
+	return ( m_kind == type::integer ) ? ( std::time_t ) *m_data.m_integer : default_value;
 }
 
 
