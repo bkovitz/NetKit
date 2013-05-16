@@ -278,19 +278,20 @@ public:
 	create( std::uint16_t major, std::uint16_t minor, int method, const uri::ref &uri );
 
 	virtual ~request();
-	
-	template< class T > void
-	add_to_header( const std::string &key, const T &val )
-	{
-		add_to_header( key, std::to_string( val ) );
-	}
 
 	virtual void
 	add_to_header( const header& header );
 
 	virtual void
 	add_to_header( const std::string &key, const std::string &val );
-	
+
+	template< class T > auto
+	add_to_header( const std::string &key, const T &val )
+	-> decltype( std::to_string( val ), void() )
+	{
+		add_to_header( key, std::to_string( val ) );
+	}
+
 	inline const std::string&
 	peer_host() const
 	{
