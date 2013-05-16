@@ -163,15 +163,13 @@ sink::run()
 			fprintf( stderr, "got callback in sink::run( this = 0x%lx\n", this );
 			if ( status == 0 )
 			{
-			
-
 				if ( len > 0 )
 				{
 					if ( process( m_buf, len ) )
 					{
 						if ( is_open() )
 						{
-					fprintf( stderr, "after process\n" );
+							fprintf( stderr, "after process\n" );
 							run();
 						}
 					}

@@ -278,19 +278,20 @@ public:
 	create( std::uint16_t major, std::uint16_t minor, int method, const uri::ref &uri );
 
 	virtual ~request();
-	
-	template< class T > void
-	add_to_header( const std::string &key, const T &val )
-	{
-		add_to_header( key, std::to_string( val ) );
-	}
 
 	virtual void
 	add_to_header( const header& header );
 
 	virtual void
 	add_to_header( const std::string &key, const std::string &val );
-	
+
+	template< class T > auto
+	add_to_header( const std::string &key, const T &val )
+	-> decltype( std::to_string( val ), void() )
+	{
+		add_to_header( key, std::to_string( val ) );
+	}
+
 	inline const std::string&
 	peer_host() const
 	{
@@ -418,6 +419,12 @@ public:
 	{
 		m_status = status;
 	}
+
+	inline bool
+	good() const
+	{
+		return success;
+	}
 	
 	virtual void
 	send_prologue( connection_ref conn ) const;
@@ -432,6 +439,8 @@ protected:
 	init();
 	
 	std::uint16_t m_status;
+
+	bool success;
 };
 
 
@@ -452,7 +461,7 @@ public:
 	header_value_was_received( http_parser *parser, const char *buf, size_t len ) = 0;
 
 	virtual int
-	headers_were_received( http_parser *parser ) = 0;
+	headers_were_received( http_parser *parser, message::header &header ) = 0;
 
 	virtual int
 	body_was_received( http_parser *parser, const char *buf, size_t len ) = 0;
@@ -664,7 +673,7 @@ public:
 		header_value_was_received( http_parser *parser, const char *buf, size_t len );
 
 		virtual int
-		headers_were_received( http_parser *parser );
+		headers_were_received( http_parser *parser, message::header &header );
 
 		virtual int
 		body_was_received( http_parser *parser, const char *buf, size_t len );
@@ -750,7 +759,7 @@ public:
 
 	typedef smart_ref< client >													ref;
 	typedef std::function< bool ( request::ref &request, uint32_t status ) >	auth_f;
-	typedef std::function< void ( uint32_t error, response::ref response ) >	response_f;
+	typedef std::function< void ( response::ref response ) >					response_f;
 
 	static request::ref
 	request( int method, const uri::ref &uri );
@@ -765,6 +774,9 @@ protected:
 
 	client( const request::ref &request, auth_f auth_func, response_f response_func );
 
+	void
+	send_request();
+
 	virtual ~client();
 
 	class handler : public http::handler
@@ -773,6 +785,20 @@ protected:
 
 		typedef smart_ref< handler > ref;
 		typedef std::list< ref > list;
+
+		handler()
+		{
+			m_response_func = [=]( response::ref response )
+			{
+			};
+		}
+
+
+		handler( response_f r )
+		:
+			m_response_func( r )
+		{
+		}
 
 		virtual int
 		uri_was_received( http_parser *parser, const char *buf, size_t len );
@@ -784,20 +810,23 @@ protected:
 		header_value_was_received( http_parser *parser, const char *buf, size_t len );
 
 		virtual int
-		headers_were_received( http_parser *parser );
+		headers_were_received( http_parser *parser, message::header &header );
 
 		virtual int
 		body_was_received( http_parser *parser, const char *buf, size_t len );
 
 		virtual int
 		message_was_received( http_parser *parser );
+
+		auth_f			m_auth_func;
+		response_f		m_response_func;
+
+		response::ref	m_response;
 	};
 
 	request::ref	m_request;
-	response::ref	m_response;
-	auth_f			m_auth_func;
-	response_f		m_response_func;
 
+	handler::ref	m_handler;
 	connection::ref	m_connection;
 };
 

@@ -672,7 +672,7 @@ request::add_to_header( const std::string &key, const std::string &val )
 void
 request::send_prologue( connection_ref conn ) const
 {
-	*conn << m_method << " " << m_uri->path() << " HTTP/1.1" << http::endl;
+	*conn << method::to_string( m_method ) << " " << m_uri->path() << " HTTP/1.1" << http::endl;
 }
 
 #if defined( __APPLE__ )
@@ -740,8 +740,7 @@ response::send_prologue( connection::ref conn ) const
 connection::connection()
 :
 	m_secure( false ),
-	m_okay( true ),
-	m_type( type::server )
+	m_okay( true )
 {
 	init();
 }
@@ -1008,6 +1007,10 @@ connection::headers_were_received( http_parser *parser )
 			goto exit;
 		}
 	}
+	else
+	{
+		ret = self->m_handler->headers_were_received( parser, self->m_header );
+	}
 	
 	/*
 	for ( message::header::const_iterator it = self->m_request->heade().begin(); it != self->m_request->heade().end(); it++ )
@@ -1188,10 +1191,10 @@ server::resolve( connection::ref conn )
 			{
 				std::regex regex1( regexify( ( *it2 )->m_path ) );
 				std::regex regex2( regexify( ( *it2 )->m_type ) );
-			
+
 				if ( std::regex_search( conn->m_uri_value, regex1 ) && std::regex_search( conn->m_content_type, regex2 ) )
 				{
-					conn->m_handler = ( *it2 ).get();
+					conn->m_handler =   ( *it2 ).get();
 					handler = *it2;
 					break;
 				}
@@ -1300,7 +1303,7 @@ server::handler::header_value_was_received( http_parser *parser, const char *buf
 
 
 int
-server::handler::headers_were_received( http_parser *parser )
+server::handler::headers_were_received( http_parser *parser, message::header &header )
 {
 	return 0;
 }
@@ -1346,10 +1349,10 @@ server::handler::message_was_received( http_parser *parser )
 
 client::client( const request::ref &request, auth_f auth_func, response_f response_func )
 :
-	m_request( request ),
-	m_auth_func( auth_func ),
-	m_response_func( response_func )
+	m_request( request )
 {
+	m_handler = new handler( response_func );
+	m_connection = new connection( m_handler.get(), connection::type::client );
 }
 
 
@@ -1358,9 +1361,44 @@ client::~client()
 }
 
 
+void
+client::send( const request::ref &request, response_f response_func )
+{
+	client *self = new client( request, [=]( request::ref &request, uint32_t status )
+	{
+		return false;
+	}, response_func );
+
+	self->send_request();
+}
+
+
+void
+client::send_request()
+{
+	m_connection->connect( m_request->uri(), [=]( int status, const endpoint::ref &peer )
+	{
+		if ( status == 0 )
+		{
+			m_request->add_to_header( "Host", m_request->uri()->host() );
+			m_request->add_to_header( "User-Agent", "NetKit/2 " + platform::machine_description() );
+
+			if ( m_request->body().length() > 0 )
+			{
+				m_request->add_to_header( "Content-Length", m_request->body().length() );
+			}
+
+			m_connection->put( m_request.get() );
+		}
+	} );
+}
+
+
 int
 client::handler::uri_was_received( http_parser *parser, const char *buf, size_t len )
 {
+	connection *conn = reinterpret_cast< connection* >( parser->data );
+
 	return 0;
 }
 
@@ -1368,6 +1406,8 @@ client::handler::uri_was_received( http_parser *parser, const char *buf, size_t 
 int
 client::handler::header_field_was_received( http_parser *parser, const char *buf, size_t len )
 {
+	connection *conn = reinterpret_cast< connection* >( parser->data );
+
 	return 0;
 }
 
@@ -1375,13 +1415,21 @@ client::handler::header_field_was_received( http_parser *parser, const char *buf
 int
 client::handler::header_value_was_received( http_parser *parser, const char *buf, size_t len )
 {
+	connection *conn = reinterpret_cast< connection* >( parser->data );
+
 	return 0;
 }
 
 
 int
-client::handler::headers_were_received( http_parser *parser )
+client::handler::headers_were_received( http_parser *parser, message::header &header )
 {
+	connection *conn = reinterpret_cast< connection* >( parser->data );
+
+	m_response = response::create( parser->http_major, parser->http_minor, parser->status_code, false);
+
+	m_response->add_to_header( header );
+
 	return 0;
 }
 
@@ -1389,6 +1437,10 @@ client::handler::headers_were_received( http_parser *parser )
 int
 client::handler::body_was_received( http_parser *parser, const char *buf, size_t len )
 {
+	connection *conn = reinterpret_cast< connection* >( parser->data );
+
+	m_response->write( reinterpret_cast< const uint8_t* >( buf ), len );
+
 	return 0;
 }
 
@@ -1396,5 +1448,9 @@ client::handler::body_was_received( http_parser *parser, const char *buf, size_t
 int
 client::handler::message_was_received( http_parser *parser )
 {
+	connection *conn = reinterpret_cast< connection* >( parser->data );
+
+	m_response_func( m_response );
+
 	return 0;
 }
