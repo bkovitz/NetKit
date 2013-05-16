@@ -145,7 +145,9 @@ public:
 	
 	value( std::uint64_t v );
 	
+#if !defined( _WIN32 )
 	value( std::time_t v );
+#endif
 	
 	value( status v );
 
@@ -687,12 +689,14 @@ public:
 		m_ref->retain();
 	}
 	
+#if !defined( _WIN32 )
 	inline smart_ref( std::time_t v )
 	:
 		m_ref( new json::value( v ) )
 	{
 		m_ref->retain();
 	}
+#endif
 	
 	inline smart_ref( netkit::status v )
 	:
