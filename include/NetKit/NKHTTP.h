@@ -279,6 +279,12 @@ public:
 
 	virtual ~request();
 	
+	template< class T > void
+	add_to_header( const std::string &key, const T &val )
+	{
+		add_to_header( key, std::to_string( val ) );
+	}
+
 	virtual void
 	add_to_header( const header& header );
 
