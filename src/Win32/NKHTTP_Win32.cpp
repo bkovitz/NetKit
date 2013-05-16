@@ -201,12 +201,21 @@ client_win32::callback( HINTERNET handle, DWORD_PTR context, DWORD code, void* i
 void
 client::send( const request::ref &request, response_f response_func )
 {
+	client *self = new client( request, [=]( request::ref &request, uint32_t status )
+	{
+		return false;
+	}, response_func );
+
+	self->send_request();
+
+/*
     client_win32 *self = new client_win32( request, [=]( request::ref &request, uint32_t status )
     {
         return false;
     }, response_func );
 
     self->send_request();
+*/
 }
 
 
@@ -401,7 +410,7 @@ client_win32::on_headers_are_available()
 
 	if ( ( statusCode == 401 ) || ( statusCode == 407 ) )
 	{
-		if ( m_auth_func( super::m_request, statusCode ) )
+		if ( m_handler->m_auth_func( super::m_request, statusCode ) )
 		{
 			send_request();
 			goto exit;
@@ -507,7 +516,7 @@ client_win32::reply( DWORD error )
 {
 	std::lock_guard< std::recursive_mutex > guard( m_mutex );
 
-	m_response_func( error, super::m_response );
+	m_handler->m_response_func( error, super::m_response );
 
 	m_request->set_handle( NULL );
 

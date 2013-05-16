@@ -740,8 +740,7 @@ response::send_prologue( connection::ref conn ) const
 connection::connection()
 :
 	m_secure( false ),
-	m_okay( true ),
-	m_type( type::server )
+	m_okay( true )
 {
 	init();
 }
@@ -1188,10 +1187,10 @@ server::resolve( connection::ref conn )
 			{
 				std::regex regex1( regexify( ( *it2 )->m_path ) );
 				std::regex regex2( regexify( ( *it2 )->m_type ) );
-			
+
 				if ( std::regex_search( conn->m_uri_value, regex1 ) && std::regex_search( conn->m_content_type, regex2 ) )
 				{
-					conn->m_handler = ( *it2 ).get();
+					conn->m_handler =   ( *it2 ).get();
 					handler = *it2;
 					break;
 				}
@@ -1346,15 +1345,35 @@ server::handler::message_was_received( http_parser *parser )
 
 client::client( const request::ref &request, auth_f auth_func, response_f response_func )
 :
-	m_request( request ),
-	m_auth_func( auth_func ),
-	m_response_func( response_func )
+	m_request( request )
 {
+	m_handler = new handler( response_func );
+	m_connection = new connection( m_handler.get(), connection::type::client );
 }
 
 
 client::~client()
 {
+}
+
+
+void
+client::send_request()
+{
+	m_connection->connect( m_request->uri(), [=]( int status, const endpoint::ref &peer )
+	{
+		if ( status == 0 )
+		{
+			m_request->add_to_header( "Host", m_request->uri()->host() );
+
+			if ( m_request->body().length() > 0 )
+			{
+				m_request->add_to_header( "Content-Length", m_request->body().length() );
+			}
+
+			m_connection->put( m_request.get() );
+		}
+	} );
 }
 
 
@@ -1396,5 +1415,7 @@ client::handler::body_was_received( http_parser *parser, const char *buf, size_t
 int
 client::handler::message_was_received( http_parser *parser )
 {
+	connection *conn = reinterpret_cast< connection* >( parser->data );
+
 	return 0;
 }

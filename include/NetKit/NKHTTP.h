@@ -765,6 +765,9 @@ protected:
 
 	client( const request::ref &request, auth_f auth_func, response_f response_func );
 
+	void
+	send_request();
+
 	virtual ~client();
 
 	class handler : public http::handler
@@ -773,6 +776,20 @@ protected:
 
 		typedef smart_ref< handler > ref;
 		typedef std::list< ref > list;
+
+		handler()
+		{
+			m_response_func = [=]( uint32_t error, response::ref response )
+			{
+			};
+		}
+
+
+		handler( response_f r )
+		:
+			m_response_func( r )
+		{
+		}
 
 		virtual int
 		uri_was_received( http_parser *parser, const char *buf, size_t len );
@@ -791,13 +808,15 @@ protected:
 
 		virtual int
 		message_was_received( http_parser *parser );
+
+		auth_f			m_auth_func;
+		response_f		m_response_func;
 	};
 
 	request::ref	m_request;
 	response::ref	m_response;
-	auth_f			m_auth_func;
-	response_f		m_response_func;
 
+	handler::ref	m_handler;
 	connection::ref	m_connection;
 };
 
