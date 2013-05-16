@@ -798,7 +798,15 @@ connection::set_secure( bool val )
 {
 	if ( !m_secure && val )
 	{
-		m_source->add( tls::server::create() );
+		if ( m_type == type::server )
+		{
+			m_source->add( tls::server::create() );
+		}
+		else
+		{
+			m_source->add( tls::client::create() );
+		}
+
 		m_secure = true;
 	}
 }
@@ -1380,6 +1388,11 @@ client::send_request()
 	{
 		if ( status == 0 )
 		{
+			if ( m_request->uri()->scheme() == "https" )
+			{
+				m_connection->set_secure( true );
+			}
+
 			m_request->add_to_header( "Host", m_request->uri()->host() );
 			m_request->add_to_header( "User-Agent", "NetKit/2 " + platform::machine_description() );
 

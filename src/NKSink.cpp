@@ -32,6 +32,7 @@
 #include <NetKit/NKSource.h>
 #include <NetKit/NKSocket.h>
 #include <NetKit/NKLog.h>
+#include <NetKit/NKTLS.h>
 
 using namespace netkit;
 
