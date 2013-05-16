@@ -109,60 +109,6 @@ public:
 	std::size_t m_size;
 };
 
-
-class client_win32 : public client
-{
-public:
-
-	typedef smart_ref< client_win32 > ref;
-	typedef client super;
-
-	client_win32( const request::ref &request, auth_f handler, response_f reply );
-
-	void
-	send_request();
-
-	virtual ~client_win32();
-
-private:
-
-	static void CALLBACK
-	callback( HINTERNET handle, DWORD_PTR context, DWORD code, void* info, DWORD length );
-
-	void
-	on_send_request_complete();
-
-	void
-	on_headers_are_available();
-
-	void
-	on_read( DWORD length );
-
-	void
-	on_error( HINTERNET handle, DWORD error );
-
-	void
-	on_closing( HINTERNET handle );
-
-	void
-	start_read();
-
-	void
-	reply( DWORD error );
-
-	request_win32::ref		m_request;
-	std::string				m_body;
-	response_win32::ref		m_response;
-	std::uint8_t			m_scratch[ 4192 ];
-	HINTERNET				m_session_handle;
-	uint32_t				m_resolve_timeout;
-	uint32_t				m_connect_timeout;
-	uint32_t				m_send_timeout;
-	uint32_t				m_receive_timeout;
-	std::recursive_mutex	m_mutex;
-	bool					m_done;
-};
-
 }
 
 }

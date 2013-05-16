@@ -419,6 +419,12 @@ public:
 	{
 		m_status = status;
 	}
+
+	inline bool
+	good() const
+	{
+		return success;
+	}
 	
 	virtual void
 	send_prologue( connection_ref conn ) const;
@@ -433,6 +439,8 @@ protected:
 	init();
 	
 	std::uint16_t m_status;
+
+	bool success;
 };
 
 
@@ -453,7 +461,7 @@ public:
 	header_value_was_received( http_parser *parser, const char *buf, size_t len ) = 0;
 
 	virtual int
-	headers_were_received( http_parser *parser ) = 0;
+	headers_were_received( http_parser *parser, message::header &header ) = 0;
 
 	virtual int
 	body_was_received( http_parser *parser, const char *buf, size_t len ) = 0;
@@ -665,7 +673,7 @@ public:
 		header_value_was_received( http_parser *parser, const char *buf, size_t len );
 
 		virtual int
-		headers_were_received( http_parser *parser );
+		headers_were_received( http_parser *parser, message::header &header );
 
 		virtual int
 		body_was_received( http_parser *parser, const char *buf, size_t len );
@@ -751,7 +759,7 @@ public:
 
 	typedef smart_ref< client >													ref;
 	typedef std::function< bool ( request::ref &request, uint32_t status ) >	auth_f;
-	typedef std::function< void ( uint32_t error, response::ref response ) >	response_f;
+	typedef std::function< void ( response::ref response ) >					response_f;
 
 	static request::ref
 	request( int method, const uri::ref &uri );
@@ -780,7 +788,7 @@ protected:
 
 		handler()
 		{
-			m_response_func = [=]( uint32_t error, response::ref response )
+			m_response_func = [=]( response::ref response )
 			{
 			};
 		}
@@ -802,7 +810,7 @@ protected:
 		header_value_was_received( http_parser *parser, const char *buf, size_t len );
 
 		virtual int
-		headers_were_received( http_parser *parser );
+		headers_were_received( http_parser *parser, message::header &header );
 
 		virtual int
 		body_was_received( http_parser *parser, const char *buf, size_t len );
@@ -812,10 +820,11 @@ protected:
 
 		auth_f			m_auth_func;
 		response_f		m_response_func;
+
+		response::ref	m_response;
 	};
 
 	request::ref	m_request;
-	response::ref	m_response;
 
 	handler::ref	m_handler;
 	connection::ref	m_connection;

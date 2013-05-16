@@ -1007,6 +1007,10 @@ connection::headers_were_received( http_parser *parser )
 			goto exit;
 		}
 	}
+	else
+	{
+		ret = self->m_handler->headers_were_received( parser, self->m_header );
+	}
 	
 	/*
 	for ( message::header::const_iterator it = self->m_request->heade().begin(); it != self->m_request->heade().end(); it++ )
@@ -1299,7 +1303,7 @@ server::handler::header_value_was_received( http_parser *parser, const char *buf
 
 
 int
-server::handler::headers_were_received( http_parser *parser )
+server::handler::headers_were_received( http_parser *parser, message::header &header )
 {
 	return 0;
 }
@@ -1358,6 +1362,18 @@ client::~client()
 
 
 void
+client::send( const request::ref &request, response_f response_func )
+{
+	client *self = new client( request, [=]( request::ref &request, uint32_t status )
+	{
+		return false;
+	}, response_func );
+
+	self->send_request();
+}
+
+
+void
 client::send_request()
 {
 	m_connection->connect( m_request->uri(), [=]( int status, const endpoint::ref &peer )
@@ -1365,6 +1381,7 @@ client::send_request()
 		if ( status == 0 )
 		{
 			m_request->add_to_header( "Host", m_request->uri()->host() );
+			m_request->add_to_header( "User-Agent", "NetKit/2 " + platform::machine_description() );
 
 			if ( m_request->body().length() > 0 )
 			{
@@ -1380,6 +1397,8 @@ client::send_request()
 int
 client::handler::uri_was_received( http_parser *parser, const char *buf, size_t len )
 {
+	connection *conn = reinterpret_cast< connection* >( parser->data );
+
 	return 0;
 }
 
@@ -1387,6 +1406,8 @@ client::handler::uri_was_received( http_parser *parser, const char *buf, size_t 
 int
 client::handler::header_field_was_received( http_parser *parser, const char *buf, size_t len )
 {
+	connection *conn = reinterpret_cast< connection* >( parser->data );
+
 	return 0;
 }
 
@@ -1394,13 +1415,21 @@ client::handler::header_field_was_received( http_parser *parser, const char *buf
 int
 client::handler::header_value_was_received( http_parser *parser, const char *buf, size_t len )
 {
+	connection *conn = reinterpret_cast< connection* >( parser->data );
+
 	return 0;
 }
 
 
 int
-client::handler::headers_were_received( http_parser *parser )
+client::handler::headers_were_received( http_parser *parser, message::header &header )
 {
+	connection *conn = reinterpret_cast< connection* >( parser->data );
+
+	m_response = response::create( parser->http_major, parser->http_minor, parser->status_code, false);
+
+	m_response->add_to_header( header );
+
 	return 0;
 }
 
@@ -1408,6 +1437,10 @@ client::handler::headers_were_received( http_parser *parser )
 int
 client::handler::body_was_received( http_parser *parser, const char *buf, size_t len )
 {
+	connection *conn = reinterpret_cast< connection* >( parser->data );
+
+	m_response->write( reinterpret_cast< const uint8_t* >( buf ), len );
+
 	return 0;
 }
 
@@ -1416,6 +1449,8 @@ int
 client::handler::message_was_received( http_parser *parser )
 {
 	connection *conn = reinterpret_cast< connection* >( parser->data );
+
+	m_response_func( m_response );
 
 	return 0;
 }
