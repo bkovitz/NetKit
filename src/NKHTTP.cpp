@@ -1080,7 +1080,6 @@ connection::message_was_received( http_parser *parser )
 
 connection::ref			server::m_active_connection;
 connection::list		*server::m_connections;
-server::handler::ref	server::m_active_handler;
 server::handlers		server::m_handlers;
 
 netkit::sink::ref

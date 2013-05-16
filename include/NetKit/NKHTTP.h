@@ -704,12 +704,6 @@ public:
 		m_active_connection = c;
 	}
 
-	inline static handler::ref
-	active_handler()
-	{
-		return m_active_handler;
-	}
-
 	inline static connection::list::iterator
 	begin_connections()
 	{
@@ -738,7 +732,6 @@ protected:
 	typedef std::map< std::uint8_t, handler::list > handlers;
 
 	static connection::ref		m_active_connection;
-	static handler::ref			m_active_handler;
 
 	static connection::list		*m_connections;
 	static handlers				m_handlers;
