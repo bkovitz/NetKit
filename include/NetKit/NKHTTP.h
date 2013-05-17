@@ -758,8 +758,14 @@ class NETKIT_DLL client : public object
 public:
 
 	typedef smart_ref< client >													ref;
+
 	typedef std::function< bool ( request::ref &request, uint32_t status ) >	auth_f;
 	typedef std::function< void ( response::ref response ) >					response_f;
+
+	typedef std::function< void ( std::string &uri ) >							uri_recv_f;
+	typedef std::function< void ( std::string &field ) >						header_field_recv_f;
+	typedef std::function< void ( std::string &val ) >							header_value_recv_f;
+	typedef std::function< void ( message::header &headers ) >					headers_recv_f;
 
 	static request::ref
 	request( int method, const uri::ref &uri );
@@ -770,9 +776,12 @@ public:
 	static void
 	send( const request::ref &request, auth_f auth_func, response_f response_func );
 
+	static void
+	send( const request::ref &request, response_f response_func, uri_recv_f uri_func, header_field_recv_f header_field_func, header_value_recv_f header_value_func, headers_recv_f headers_func );
+
 protected:
 
-	client( const request::ref &request, auth_f auth_func, response_f response_func );
+	client( const request::ref &request, auth_f auth_func, response_f response_func, uri_recv_f uri_func, header_field_recv_f header_field_func, header_value_recv_f header_value_func, headers_recv_f headers_func );
 
 	void
 	send_request();
@@ -786,17 +795,13 @@ protected:
 		typedef smart_ref< handler > ref;
 		typedef std::list< ref > list;
 
-		handler()
-		{
-			m_response_func = [=]( response::ref response )
-			{
-			};
-		}
-
-
-		handler( response_f r )
+		handler( response_f r, uri_recv_f ur, header_field_recv_f hfr, header_value_recv_f hvr, headers_recv_f hr )
 		:
-			m_response_func( r )
+			m_response_func( r ),
+			m_uri_recv_func( ur ),
+			m_header_field_recv_func( hfr ),
+			m_header_value_recv_func( hvr ),
+			m_headers_recv_func( hr )
 		{
 		}
 
@@ -818,10 +823,14 @@ protected:
 		virtual int
 		message_was_received( http_parser *parser );
 
-		auth_f			m_auth_func;
-		response_f		m_response_func;
+		auth_f					m_auth_func;
+		response_f				m_response_func;
+		uri_recv_f				m_uri_recv_func;
+		header_field_recv_f		m_header_field_recv_func;
+		header_value_recv_f		m_header_value_recv_func;
+		headers_recv_f			m_headers_recv_func;
 
-		response::ref	m_response;
+		response::ref			m_response;
 	};
 
 	request::ref	m_request;

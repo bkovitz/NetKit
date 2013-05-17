@@ -940,6 +940,11 @@ connection::uri_was_received( http_parser *parser, const char *buf, size_t len )
 	nklog( log::verbose, "uri was received: %s", str.c_str() );
 	
 	self->m_uri_value.append( str );
+
+	if ( self->m_handler )
+	{
+		self->m_handler->uri_was_received( parser, buf, len );
+	}
 	
 	return 0;
 }
@@ -972,6 +977,11 @@ connection::header_field_was_received( http_parser *parser, const char *buf, siz
 		self->m_header_field.append( str );
 	}
 
+	if ( self->m_handler )
+	{
+		self->m_handler->header_field_was_received( parser, buf, len );
+	}
+
 	return ret;
 }
 
@@ -990,6 +1000,11 @@ connection::header_value_was_received( http_parser *parser, const char *buf, siz
 	else
 	{
 		self->m_header_value.append( str );
+	}
+
+	if ( self->m_handler )
+	{
+		self->m_handler->header_value_was_received( parser, buf, len );
 	}
 	
 	return 0;
@@ -1014,10 +1029,6 @@ connection::headers_were_received( http_parser *parser )
 			ret = -1;
 			goto exit;
 		}
-	}
-	else
-	{
-		ret = self->m_handler->headers_were_received( parser, self->m_header );
 	}
 	
 	/*
@@ -1062,6 +1073,11 @@ connection::headers_were_received( http_parser *parser )
 	*/
 
 exit:
+
+	if ( self->m_handler )
+	{
+		self->m_handler->headers_were_received( parser, self->m_header );
+	}
 
 	return ret;
 }
@@ -1355,11 +1371,11 @@ server::handler::message_was_received( http_parser *parser )
 #	pragma mark client implementation
 #endif
 
-client::client( const request::ref &request, auth_f auth_func, response_f response_func )
+client::client( const request::ref &request, auth_f auth_func, response_f response_func, uri_recv_f uri_func, header_field_recv_f header_field_func, header_value_recv_f header_value_func, headers_recv_f headers_func )
 :
 	m_request( request )
 {
-	m_handler = new handler( response_func );
+	m_handler = new handler( response_func, uri_func, header_field_func, header_value_func, headers_func );
 	m_connection = new connection( m_handler.get(), connection::type::client );
 }
 
@@ -1375,7 +1391,27 @@ client::send( const request::ref &request, response_f response_func )
 	client *self = new client( request, [=]( request::ref &request, uint32_t status )
 	{
 		return false;
-	}, response_func );
+	}, response_func, [=]( std::string& )
+	{
+	}, [=]( std::string& )
+	{
+	}, [=] ( std::string& )
+	{
+	}, [=] ( message::header& )
+	{
+	});
+
+	self->send_request();
+}
+
+
+void
+client::send( const request::ref &request, response_f response_func, uri_recv_f uri_func, header_field_recv_f header_field_func, header_value_recv_f header_value_func, headers_recv_f headers_func )
+{
+	client *self = new client( request, [=]( request::ref &request, uint32_t status )
+	{
+		return false;
+	}, response_func, uri_func, header_field_func, header_value_func, headers_func );
 
 	self->send_request();
 }
@@ -1410,7 +1446,8 @@ client::send_request()
 int
 client::handler::uri_was_received( http_parser *parser, const char *buf, size_t len )
 {
-	connection *conn = reinterpret_cast< connection* >( parser->data );
+	std::string uri( buf, len );
+	m_uri_recv_func( uri );
 
 	return 0;
 }
@@ -1419,7 +1456,8 @@ client::handler::uri_was_received( http_parser *parser, const char *buf, size_t 
 int
 client::handler::header_field_was_received( http_parser *parser, const char *buf, size_t len )
 {
-	connection *conn = reinterpret_cast< connection* >( parser->data );
+	std::string field( buf, len );
+	m_header_field_recv_func( field );
 
 	return 0;
 }
@@ -1428,7 +1466,8 @@ client::handler::header_field_was_received( http_parser *parser, const char *buf
 int
 client::handler::header_value_was_received( http_parser *parser, const char *buf, size_t len )
 {
-	connection *conn = reinterpret_cast< connection* >( parser->data );
+	std::string value( buf, len );
+	m_header_value_recv_func( value );
 
 	return 0;
 }
@@ -1437,10 +1476,9 @@ client::handler::header_value_was_received( http_parser *parser, const char *buf
 int
 client::handler::headers_were_received( http_parser *parser, message::header &header )
 {
-	connection *conn = reinterpret_cast< connection* >( parser->data );
+	m_headers_recv_func( header );
 
-	m_response = response::create( parser->http_major, parser->http_minor, parser->status_code, false);
-
+	m_response = response::create( parser->http_major, parser->http_minor, parser->status_code, false );
 	m_response->add_to_header( header );
 
 	return 0;
@@ -1450,8 +1488,6 @@ client::handler::headers_were_received( http_parser *parser, message::header &he
 int
 client::handler::body_was_received( http_parser *parser, const char *buf, size_t len )
 {
-	connection *conn = reinterpret_cast< connection* >( parser->data );
-
 	m_response->write( reinterpret_cast< const uint8_t* >( buf ), len );
 
 	return 0;
@@ -1461,8 +1497,6 @@ client::handler::body_was_received( http_parser *parser, const char *buf, size_t
 int
 client::handler::message_was_received( http_parser *parser )
 {
-	connection *conn = reinterpret_cast< connection* >( parser->data );
-
 	m_response_func( m_response );
 
 	return 0;
