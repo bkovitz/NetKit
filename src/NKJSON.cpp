@@ -1845,7 +1845,7 @@ value::operator[](const object_map::key_type &key)
 
 
 value::ref
-value::operator[]( std::uint32_t index )
+value::at_index( std::size_t index )
 {
 	if (m_kind != type::array )
 	{

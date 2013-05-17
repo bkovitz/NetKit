@@ -192,7 +192,16 @@ public:
 	operator[]( const std::string &key );
 
 	value::ref
-	operator[]( std::uint32_t index );
+	at_index( std::size_t index );
+
+	const value::ref
+	at_index( std::size_t index ) const;
+
+	template< typename T> auto
+	operator[]( T index ) -> decltype( std::to_string( val ), value::ref() )  // uses comma operator
+	{
+		return at_index( index );
+	}
 
 	type
 	kind() const;
@@ -805,17 +814,17 @@ public:
 	{
 		return ( m_ref->is_null() );
 	}
-	
-	inline smart_ref< json::value >
-	operator[]( std::uint32_t index )
+
+	template< typename T > auto
+	operator[]( T index ) -> decltype( std::to_string( index ), smart_ref< json::value >() )  // uses comma operator
 	{
-		return ( *m_ref )[ index ];
+		return m_ref->at_index( index );
 	}
 	
 	inline const smart_ref< json::value >
-	operator[]( std::uint32_t index ) const
+	operator[]( std::size_t index ) const
 	{
-		return ( *m_ref )[ index ];
+		return m_ref->at_index( index );
 	}
 
 	inline smart_ref< json::value >
