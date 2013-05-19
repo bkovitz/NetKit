@@ -74,6 +74,8 @@ public:
 
 	object();
 
+	object( const object& that );
+
 	object( const json::value_ref &root );
 
 	virtual ~object() = 0;

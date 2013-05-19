@@ -221,6 +221,14 @@ public:
 	{
 	}
 
+	object( const object &that )
+	:
+		netkit::object( that ),
+		m_oid( that.m_oid ),
+		m_dirty( false )
+	{
+	}
+
 	object( const json::value::ref &root )
 	:
 		netkit::object( root ),

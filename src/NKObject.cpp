@@ -50,6 +50,13 @@ object::object()
 }
 
 
+object::object( const object &that )
+:
+	m_attrs( that.m_attrs )
+{
+}
+
+
 object::object( const json::value_ref &root )
 {
 	inflate( root );
