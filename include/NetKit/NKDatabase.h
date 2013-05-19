@@ -225,7 +225,7 @@ public:
 	:
 		netkit::object( that ),
 		m_oid( that.m_oid ),
-		m_dirty( false )
+		m_dirty( that.m_dirty )
 	{
 	}
 
