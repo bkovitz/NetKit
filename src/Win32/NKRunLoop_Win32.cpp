@@ -490,6 +490,13 @@ runloop_win32::cancel( event e )
 	}
 
 	s->m_atoms.remove( a );
+	a->m_source = nullptr;
+
+	if ( s->m_atoms.size() == 0 )
+	{
+		m_sources.remove( s );
+		delete s;
+	}
 
 	// Don't delete the atom now, because it holds the lambda context.  This will allow us
 	// to call cancel while in the context of a lambda handler.  Otherwise, we'd be deleting
@@ -500,12 +507,6 @@ runloop_win32::cancel( event e )
 	dispatch( [=]() mutable
 	{
 		delete a;
-
-		if ( s->m_atoms.size() == 0 )
-		{
-			m_sources.remove( s );
-			delete s;
-		}
 	} );
 
 exit:
