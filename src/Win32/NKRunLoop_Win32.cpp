@@ -249,6 +249,7 @@ runloop_win32::schedule( event e, event_f func )
 		goto exit;
 	}
 
+
 	// First check our main Worker. In most cases, we won't have to worry about threads
 
 	if ( a->m_scheduled )
@@ -368,26 +369,6 @@ exit:
 	}
 }
 
-
-/*
-void
-runloop_win32::unregisterSocket( socket::ref sock )
-{	
-	for ( source::list::iterator it = m_sources.begin(); it != m_sources.end(); it++ )
-	{
-		if ( ( ( *it )->m_type == source::socketType ) && ( ( *it )->m_socket->fd() == sock->fd() ) )
-		{
-			source *s = *it;
-			
-			WSAEventSelect( sock->fd(), nullptr, 0 );
-			WSACloseEvent( s->m_handle );
-			unregisterSource( s );
-			delete s;
-			break;
-		}
-	}
-}	
-*/
 
 void
 runloop_win32::suspend( event e )

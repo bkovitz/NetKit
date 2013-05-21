@@ -366,13 +366,9 @@ tls_adapter::process()
 	{
 		if ( SSL_in_init( m_ssl ) )
 		{
-			fprintf( stderr, "waiting for handshake: ");
-			fprintf( stderr, "%s\n", SSL_state_string_long(m_ssl));
-			fprintf( stderr, "\n");
 		}
 		else if ( !m_handshake )
 		{
-			fprintf( stderr, "got handshake\n" );
 			m_handshake = true;
 		}
 

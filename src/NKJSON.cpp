@@ -3142,7 +3142,7 @@ connection::really_process()
 			goto exit;
 		}
 		
-		fprintf( stderr, "msg = %s\n", msg.c_str() );
+		nklog( log::verbose, "msg = %s", msg.c_str() );
 		root = ret.get();
 		
 		if ( !root[ "method" ]->is_null() )

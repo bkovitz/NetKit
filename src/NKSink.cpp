@@ -56,7 +56,6 @@ sink::sink( const uri::ref &uri )
 
 sink::~sink()
 {
-fprintf( stderr, "in sink destructor %lx\n", this );
 }
 
 
@@ -154,13 +153,10 @@ sink::run()
 {
 	sink::ref artifical( this );
 
-	fprintf( stderr, "starting sink::run( this = 0x%lx\n", this );
-
 	m_source->recv( m_buf, sizeof( m_buf ), [=]( int status, std::size_t len )
 	{
 		if ( artifical->m_source->is_open() )
 		{
-			fprintf( stderr, "got callback in sink::run( this = 0x%lx\n", this );
 			if ( status == 0 )
 			{
 				if ( len > 0 )
@@ -169,7 +165,6 @@ sink::run()
 					{
 						if ( is_open() )
 						{
-							fprintf( stderr, "after process\n" );
 							run();
 						}
 					}
