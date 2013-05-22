@@ -322,7 +322,7 @@ ws_adapter::recv( const std::uint8_t *in_buf, std::size_t in_len, recv_reply_f r
 					m_parsed_recv_data.resize( m_unparsed_recv_data.size() );
 				}
 			}
-			else
+			else if ( out_len > 0 )
 			{
 				std::size_t out_header_len;
 				
