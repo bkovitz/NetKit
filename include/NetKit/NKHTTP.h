@@ -141,9 +141,8 @@ class NETKIT_DLL message : public object
 {
 public:
 
-	typedef std::map< std::string, std::string >  header;
-	
-	typedef smart_ref< message > ref;
+	typedef std::map< std::string, std::string >	header;
+	typedef smart_ref< message >					ref;
 	
 public:
 
@@ -166,7 +165,7 @@ public:
 	}
 	
 	inline const header&
-	heder() const
+	heeder() const
 	{
 		return m_header;
 	}
@@ -274,8 +273,7 @@ public:
 
 	typedef smart_ref< request > ref;
 
-	static request::ref
-	create( std::uint16_t major, std::uint16_t minor, int method, const uri::ref &uri );
+	request( int method, std::uint16_t major, std::uint16_t minor, const uri::ref &uri );
 
 	virtual ~request();
 
@@ -375,8 +373,6 @@ public:
 	
 protected:
 
-	request( std::uint16_t major, std::uint16_t minor, int method, const uri::ref &uri );
-	
 	request( const request &that );
 
 	void
@@ -403,8 +399,7 @@ public:
 
 	typedef smart_ref< response > ref;
 
-	static response::ref
-	create( std::uint16_t major, std::uint16_t minor, std::uint16_t status, bool keep_alive );
+	response( std::uint16_t major, std::uint16_t minor, std::uint16_t status, bool keep_alive );
 
 	virtual ~response();
 
@@ -431,7 +426,6 @@ public:
 
 protected:
 
-	response( std::uint16_t major, std::uint16_t minor, std::uint16_t status, bool keep_alive );
 	
 	response( const response &that );
 
@@ -444,33 +438,6 @@ protected:
 };
 
 
-class handler : public object
-{
-public:
-
-	typedef smart_ref< handler > ref;
-	typedef std::list< ref > list;
-
-	virtual int
-	uri_was_received( http_parser *parser, const char *buf, size_t len ) = 0;
-
-	virtual int
-	header_field_was_received( http_parser *parser, const char *buf, size_t len ) = 0;
-
-	virtual int
-	header_value_was_received( http_parser *parser, const char *buf, size_t len ) = 0;
-
-	virtual int
-	headers_were_received( http_parser *parser, message::header &header ) = 0;
-
-	virtual int
-	body_was_received( http_parser *parser, const char *buf, size_t len ) = 0;
-
-	virtual int
-	message_was_received( http_parser *parser ) = 0;
-};
-
-
 class NETKIT_DLL connection : public sink
 {
 public:
@@ -478,17 +445,44 @@ public:
 	typedef smart_ref< connection > ref;
 	typedef std::list< ref > list;
 
-	enum class type
+	class handler : public object
 	{
-		client,
-		server
-	};
-	
-	connection();
+	public:
 
-	connection( handler::ref h, type t = type::server );
+		typedef smart_ref< handler > ref;
+		typedef std::list< ref > list;
+
+		virtual void
+		process_will_begin( connection::ref connection ) = 0;
+
+		virtual void
+		message_will_begin( connection::ref connection ) = 0;
+
+		virtual int
+		uri_was_received( connection::ref connection, const char *buf, size_t len ) = 0;
+
+		virtual int
+		headers_were_received( connection::ref connection, message::header &header ) = 0;
+
+		virtual int
+		body_was_received( connection::ref connection, const char *buf, size_t len ) = 0;
+
+		virtual int
+		message_was_received( connection::ref connection ) = 0;
+
+		virtual void
+		process_did_end( connection::ref connection ) = 0;
+	};
+
+	connection( handler::ref handler );
 
 	virtual ~connection();
+
+	inline handler::ref
+	handler()  const
+	{
+		return m_handler;
+	}
 
 	virtual bool
 	process( const std::uint8_t *buf, std::size_t len );
@@ -511,6 +505,12 @@ public:
 	bool
 	put( message::ref message );
 	
+	int
+	method() const;
+
+	int
+	status_code() const;
+
 	int
 	http_major() const;
 	
@@ -571,8 +571,6 @@ protected:
 	
 	friend class				server;
 	
-	std::uint8_t				m_method;
-	std::string					m_uri_value;
 	std::string					m_header_field;
 	std::string					m_header_value;
 	time_t						m_start;
@@ -586,19 +584,10 @@ protected:
 	int							m_parse_state;
 	
 	message::header				m_header;
-	std::string					m_content_type;
-	request::ref				m_request;
 
-	std::string					m_expect;
-	std::string					m_host;
-	std::string					m_authorization;
-	std::string					m_username;
-	std::string					m_password;
-	
 	std::ostringstream			m_ostream;
 
 	handler::ref				m_handler;
-	type						m_type;
 };
 
 
@@ -611,42 +600,44 @@ public:
 	typedef std::function< int ( http::request::ref request, const std::uint8_t *buf, size_t len, response_f response ) >		request_body_was_received_f;
 	typedef std::function< int ( http::request::ref request, response_f func ) >												request_f;
 
-	class handler : public http::handler
+	class binding : public netkit::object
 	{
 	public:
-	
-		typedef smart_ref< handler > ref;
-		typedef std::list< ref > list;
-		
-		handler()
-		:
-			m_path( "" ),
-			m_type( "" )
-		{
-		}
 
-		handler( const std::string &path, const std::string &type, request_f r )
+		typedef smart_ref< binding > ref;
+		typedef std::list< ref > list;
+
+		binding( const std::string &path, const std::string &type, request_f r )
 		:
 			m_path( path ),
 			m_type( type ),
 			m_r( r )
 		{
-			m_rbwr = ( [=]( http::request::ref request, const std::uint8_t *buf, size_t len, response_f response )
+			m_rwb = [=]( int method, std::uint16_t major, std::uint16_t minor, const uri::ref &uri )
+			{
+				return new http::request( method, major, minor, uri );
+			};
+
+			m_rbwr = [=]( http::request::ref request, const std::uint8_t *buf, size_t len, response_f response )
 			{
 				return 0;
-			} );
+			};
 		}
 	
-		handler( const std::string &path, const std::string &type, request_body_was_received_f rbwr, request_f r )
+		binding( const std::string &path, const std::string &type, request_body_was_received_f rbwr, request_f r )
 		:
 			m_path( path ),
 			m_type( type ),
 			m_rbwr( rbwr ),
 			m_r( r )
 		{
+			m_rwb = [=]( int method, std::uint16_t major, std::uint16_t minor, const uri::ref &uri )
+			{
+				return new http::request( method, major, minor, uri );
+			};
 		}
 	
-		handler( const std::string &path, const std::string &type, request_will_begin_f rwb, request_body_was_received_f rbwr, request_f r )
+		binding( const std::string &path, const std::string &type, request_will_begin_f rwb, request_body_was_received_f rbwr, request_f r )
 		:
 			m_path( path ),
 			m_type( type ),
@@ -655,38 +646,12 @@ public:
 			m_r( r )
 		{
 		}
-		
-		handler( const std::string &path, sink::ref sink )
-		:
-			m_path( path ),
-			m_sink( sink )
-		{
-		}
 
-		virtual int
-		uri_was_received( http_parser *parser, const char *buf, size_t len );
-
-		virtual int
-		header_field_was_received( http_parser *parser, const char *buf, size_t len );
-
-		virtual int
-		header_value_was_received( http_parser *parser, const char *buf, size_t len );
-
-		virtual int
-		headers_were_received( http_parser *parser, message::header &header );
-
-		virtual int
-		body_was_received( http_parser *parser, const char *buf, size_t len );
-
-		virtual int
-		message_was_received( http_parser *parser );
-	
 		std::string					m_path;
 		std::string					m_type;
 		request_will_begin_f		m_rwb;
 		request_body_was_received_f	m_rbwr;
 		request_f					m_r;
-		sink::ref					m_sink;
 	};
 
 	static sink::ref
@@ -704,8 +669,8 @@ public:
 	static void
 	bind( std::uint8_t method, const std::string &path, sink::ref sink );
 
-	static bool
-	resolve( connection::ref conn );
+	static binding::ref
+	resolve( connection::ref conn, const message::header &header );
 
 	inline static connection::ref
 	active_connection()
@@ -733,10 +698,43 @@ public:
 
 protected:
 
+	class handler : public connection::handler
+	{
+	public:
+	
+		typedef smart_ref< handler > ref;
+		typedef std::list< ref > list;
+		
+		virtual void
+		process_will_begin( connection::ref connection );
+
+		virtual void
+		message_will_begin( connection::ref connection );
+
+		virtual int
+		uri_was_received( connection::ref connection, const char *buf, size_t len );
+
+		virtual int
+		headers_were_received( connection::ref connection, message::header &header );
+
+		virtual int
+		body_was_received( connection::ref connection, const char *buf, size_t len );
+
+		virtual int
+		message_was_received( connection::ref connection );
+
+		virtual void
+		process_did_end( connection::ref connection );
+
+		std::string		m_uri;
+		binding::ref	m_binding;
+		request::ref	m_request;
+	};
+
 	friend void					netkit::initialize();
 
 	static void
-	bind( std::uint8_t method, handler::ref handler );
+	bind( std::uint8_t method, binding::ref binding );
 
 	static std::string
 	regexify( const std::string &s );
@@ -744,12 +742,12 @@ protected:
 	static void
 	replace( std::string& str, const std::string& oldStr, const std::string& newStr);
 	
-	typedef std::map< std::uint8_t, handler::list > handlers;
+	typedef std::map< std::uint8_t, binding::list > bindings;
 
 	static connection::ref		m_active_connection;
 
 	static connection::list		*m_connections;
-	static handlers				m_handlers;
+	static bindings				m_bindings;
 };
 
 
@@ -757,78 +755,76 @@ class NETKIT_DLL client : public object
 {
 public:
 
-	typedef smart_ref< client >													ref;
-
 	typedef std::function< bool ( request::ref &request, uint32_t status ) >	auth_f;
-	typedef std::function< void ( response::ref response ) >					response_f;
-
-	typedef std::function< void ( std::string &uri ) >							uri_recv_f;
-	typedef std::function< void ( std::string &field ) >						header_field_recv_f;
-	typedef std::function< void ( std::string &val ) >							header_value_recv_f;
-	typedef std::function< void ( message::header &headers ) >					headers_recv_f;
+	typedef std::function< void ( message::header &headers ) >					headers_reply_f;
+	typedef std::function< void ( const char *buf, std::size_t len ) >			body_reply_f;
+	typedef std::function< void ( response::ref response ) >					reply_f;
+	typedef smart_ref< client >													ref;
 
 	static request::ref
 	request( int method, const uri::ref &uri );
 
 	static void
-	send( const request::ref &request, response_f response_func );
+	send( const request::ref &request, reply_f reply );
 
 	static void
-	send( const request::ref &request, auth_f auth_func, response_f response_func );
+	send( const request::ref &request, auth_f auth_func, reply_f reply );
 
 	static void
-	send( const request::ref &request, response_f response_func, uri_recv_f uri_func, header_field_recv_f header_field_func, header_value_recv_f header_value_func, headers_recv_f headers_func );
+	send( const request::ref &request, headers_reply_f headers_reply, reply_f reply );
+
+	static void
+	send( const request::ref &request, headers_reply_f headers_reply, body_reply_f body_reply, reply_f reply );
 
 protected:
 
-	client( const request::ref &request, auth_f auth_func, response_f response_func, uri_recv_f uri_func, header_field_recv_f header_field_func, header_value_recv_f header_value_func, headers_recv_f headers_func );
+	client( const request::ref &request, auth_f auth_func, headers_reply_f headers_reply, body_reply_f body_reply, reply_f reply );
 
 	void
 	send_request();
 
 	virtual ~client();
 
-	class handler : public http::handler
+	class handler : public connection::handler
 	{
 	public:
 
 		typedef smart_ref< handler > ref;
 		typedef std::list< ref > list;
 
-		handler( response_f r, uri_recv_f ur, header_field_recv_f hfr, header_value_recv_f hvr, headers_recv_f hr )
+		handler( headers_reply_f headers_reply, body_reply_f body_reply, reply_f reply )
 		:
-			m_response_func( r ),
-			m_uri_recv_func( ur ),
-			m_header_field_recv_func( hfr ),
-			m_header_value_recv_func( hvr ),
-			m_headers_recv_func( hr )
+			m_headers_reply( headers_reply ),
+			m_body_reply( body_reply ),
+			m_reply( reply )
 		{
 		}
 
-		virtual int
-		uri_was_received( http_parser *parser, const char *buf, size_t len );
+		virtual void
+		process_will_begin( connection::ref connection );
+
+		virtual void
+		message_will_begin( connection::ref connection );
 
 		virtual int
-		header_field_was_received( http_parser *parser, const char *buf, size_t len );
+		uri_was_received( connection::ref connection, const char *buf, size_t len );
 
 		virtual int
-		header_value_was_received( http_parser *parser, const char *buf, size_t len );
+		headers_were_received( connection::ref connection, message::header &header );
 
 		virtual int
-		headers_were_received( http_parser *parser, message::header &header );
+		body_was_received( connection::ref connection, const char *buf, size_t len );
 
 		virtual int
-		body_was_received( http_parser *parser, const char *buf, size_t len );
+		message_was_received( connection::ref connection );
 
-		virtual int
-		message_was_received( http_parser *parser );
+		virtual void
+		process_did_end( connection::ref connection );
 
 		auth_f					m_auth_func;
-		response_f				m_response_func;
-		uri_recv_f				m_uri_recv_func;
-		header_field_recv_f		m_header_field_recv_func;
-		header_value_recv_f		m_header_value_recv_func;
-		headers_recv_f			m_headers_recv_func;
+		headers_reply_f			m_headers_reply;
+		body_reply_f			m_body_reply;
+		reply_f					m_reply;
 
 		response::ref			m_response;
 	};

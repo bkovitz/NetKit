@@ -232,7 +232,6 @@ IF EXIST ..\..\ThirdParty\uriparser GOTO DONE
     <ClCompile Include="..\NKWebSocket.cpp" />
     <ClCompile Include=".\CRC32.cpp" />
     <ClCompile Include=".\EventLog.cpp" />
-    <ClCompile Include=".\NKHTTP_Win32.cpp" />
     <ClCompile Include=".\NKPlatform_Win32.cpp" />
     <ClCompile Include=".\NKRunLoop_Win32.cpp" />
   </ItemGroup>

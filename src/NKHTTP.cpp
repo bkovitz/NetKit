@@ -510,9 +510,9 @@ message::~message()
 
 
 void
-message::add_to_header( const header &heder )
+message::add_to_header( const header &heeder )
 {
-	for ( header::const_iterator it = heder.begin(); it != heder.end(); it++ )
+	for ( auto it = heeder.begin(); it != heeder.end(); it++ )
 	{
 		add_to_header( it->first, it->second );
 	}
@@ -535,6 +535,8 @@ void
 message::add_to_header( const std::string &key, const std::string &val )
 {
 	m_header[ key ] = val;
+
+	fprintf( stderr, "add_to_header: key = %s, val = %s\n", key.c_str(), val.c_str() );
 
 	if ( key == "Content-Length" )
 	{
@@ -591,7 +593,7 @@ message::send_body( connection_ref conn ) const
 #	pragma mark request implementation
 #endif
 
-request::request( std::uint16_t major, std::uint16_t minor, int method, const netkit::uri::ref &uri )
+request::request( int method, std::uint16_t major, std::uint16_t minor, const netkit::uri::ref &uri )
 :
 	message( major, minor ),
 	m_method( method ),
@@ -737,21 +739,11 @@ response::send_prologue( connection::ref conn ) const
 #endif
 
 
-connection::connection()
-:
-	m_secure( false ),
-	m_okay( true )
-{
-	init();
-}
-
-
-connection::connection( handler::ref h, type t )
+connection::connection( handler::ref h )
 :
 	m_secure( false ),
 	m_okay( true ),
-	m_handler( h ),
-	m_type( t )
+	m_handler( h )
 {
 	init();
 }
@@ -798,17 +790,31 @@ connection::set_secure( bool val )
 {
 	if ( !m_secure && val )
 	{
-		if ( m_type == type::server )
+//		if ( m_type == type::server )
 		{
 			m_source->add( tls::server::create() );
 		}
-		else
+//		else
 		{
-			m_source->add( tls::client::create() );
+//			m_source->add( tls::client::create() );
 		}
 
 		m_secure = true;
 	}
+}
+
+
+int
+connection::method() const
+{
+	return m_parser->method;
+}
+
+
+int
+connection::status_code() const
+{
+	return m_parser->status_code;
 }
 
 
@@ -831,7 +837,7 @@ connection::put( message::ref message )
 {
 	message->send_prologue( this );
 	
-	for ( message::header::const_iterator it = message->heder().begin(); it != message->heder().end(); it++ )
+	for ( auto it = message->heeder().begin(); it != message->heeder().end(); it++ )
 	{
 		*this << it->first << ": " << it->second << http::endl;
 	}
@@ -871,10 +877,7 @@ connection::flush()
 bool
 connection::process( const std::uint8_t *buf, size_t len )
 {
-	if ( m_type == type::server )
-	{
-		server::set_active_connection( this );
-	}
+	m_handler->process_will_begin( this );
 
 	std::streamsize processed	= http_parser_execute( m_parser, m_settings, ( const char* ) buf, len );
 	bool			ok			= true;
@@ -885,11 +888,8 @@ connection::process( const std::uint8_t *buf, size_t len )
 		ok = false;
 	}
 
-	if ( m_type == type::server )
-	{
-		server::set_active_connection( nullptr );
-	}
-	
+	m_handler->process_did_end( this );
+
 	return ok;
 }
 
@@ -913,19 +913,19 @@ int
 connection::message_will_begin( http_parser *parser )
 {
 	connection *self = reinterpret_cast< connection* >( parser->data );
+	assert( self );
+	assert( self->m_handler );
 	
 	nklog( log::verbose, "reading new message" );
 
 	self->m_parser->upgrade = 0;
 	self->m_parse_state	= NONE;
 	
-	self->m_uri_value.clear();
-	self->m_content_type.clear();
 	self->m_header_field.clear();
 	self->m_header_value.clear();
 	self->m_header.clear();
-	
-	self->m_request = nullptr;
+
+	self->m_handler->message_will_begin( self );
 	
 	return 0;
 }
@@ -934,19 +934,11 @@ connection::message_will_begin( http_parser *parser )
 int
 connection::uri_was_received( http_parser *parser, const char *buf, size_t len )
 {
-	connection	*self = reinterpret_cast< connection* >( parser->data );
-	std::string	str( buf, len );
-	
-	nklog( log::verbose, "uri was received: %s", str.c_str() );
-	
-	self->m_uri_value.append( str );
+	connection *self = reinterpret_cast< connection* >( parser->data );
+	assert( self );
+	assert( self->m_handler );
 
-	if ( self->m_handler )
-	{
-		self->m_handler->uri_was_received( parser, buf, len );
-	}
-	
-	return 0;
+	return self->m_handler->uri_was_received( self, buf, len );
 }
 
 
@@ -954,59 +946,45 @@ int
 connection::header_field_was_received( http_parser *parser, const char *buf, size_t len )
 {
 	connection	*self = reinterpret_cast< connection* >( parser->data );
-	int			ret = 0;
-	std::string	str( buf, len );
-	
+	assert( self );
+	assert( self->m_handler );
+
 	if ( self->m_parse_state != FIELD )
 	{
 		if ( ( self->m_header_field.size() > 0 ) && ( self->m_header_value.size() > 0 ) )
 		{
 			self->m_header[ self->m_header_field ] = self->m_header_value;
-
-			if ( self->m_header_field == "Content-Type" )
-			{
-				self->m_content_type = self->m_header_value;
-			}
 		}
 		
-		self->m_header_field.assign( str );
+		self->m_header_field.assign( buf, buf + len );
 		self->m_parse_state = FIELD;
 	}
 	else
 	{
-		self->m_header_field.append( str );
+		self->m_header_field.append( buf, buf + len );
 	}
 
-	if ( self->m_handler )
-	{
-		self->m_handler->header_field_was_received( parser, buf, len );
-	}
-
-	return ret;
+	return 0;
 }
 
 
 int
 connection::header_value_was_received( http_parser *parser, const char *buf, size_t len )
 {
-	connection	*self = reinterpret_cast< connection* >( parser->data );
-	std::string	str( buf, len );
-	
+	connection *self = reinterpret_cast< connection* >( parser->data );
+	assert( self );
+	assert( self->m_handler );
+
 	if ( self->m_parse_state != VALUE )
 	{
-		self->m_header_value.assign( str );
+		self->m_header_value.assign( buf, buf + len );
 		self->m_parse_state = VALUE;
 	}
 	else
 	{
-		self->m_header_value.append( str );
+		self->m_header_value.append( buf, buf + len );
 	}
 
-	if ( self->m_handler )
-	{
-		self->m_handler->header_value_was_received( parser, buf, len );
-	}
-	
 	return 0;
 }
 
@@ -1014,72 +992,11 @@ connection::header_value_was_received( http_parser *parser, const char *buf, siz
 int
 connection::headers_were_received( http_parser *parser )
 {
-	connection	*self	= reinterpret_cast< connection* >( parser->data );
-	int			ret		= 0;
-	
-	if ( !self->m_handler )
-	{
-		if ( !server::resolve( self ) )
-		{
-			response::ref response = http::response::create( self->http_major(), self->http_minor(), http::status::not_found, false );
-			response->add_to_header( "Connection", "Close" );
-			response->add_to_header( "Content-Type", "text/html" );
-			*response << "<html>Error 404: Content Not Found</html>";
-			self->put( response.get() );
-			ret = -1;
-			goto exit;
-		}
-	}
-	
-	/*
-	for ( message::header::const_iterator it = self->m_request->heade().begin(); it != self->m_request->heade().end(); it++ )
-	{
-		nklog( log::verbose, "%s %s\n", it->first.c_str(), it->second.c_str() );
-	
-		if ( it->first == TEXT( "Content-Length" ) )
-		{
-			self->m_request->set_content_length( atoi( it->second.c_str() ) );
-		}
-		else if ( it->first == TEXT( "Content-Type" ) )
-		{
-			self->m_request->set_content_type( it->secoond );
-		}
-		else if ( it->first == "Host" )
-		{
-			self->m_request->set_host( it->second );
-		}
-		else if ( it->first == "Expect" )
-		{
-			m_message->set_expect( it->second );
-		}
-		else if ( *it1 == "Authorization" )
-		{
-			std::string base64_encoded;
-			std::string decoded;
-			size_t		pos;
-			
-			m_authorization	= *it2;
-			base64_encoded	= m_authorization.substr( m_authorization.find( ' ' ) + 1 );
-			decoded			= codec::base64::decode( base64_encoded );
-			pos				= decoded.find( ':' );
-			
-			if ( pos != -1 )
-			{
-				m_username	= decoded.substr( 0, pos );
-				m_password	= decoded.substr( pos + 1 );
-			}
-		}
-	}
-	*/
+	connection *self = reinterpret_cast< connection* >( parser->data );
+	assert( self );
+	assert( self->m_handler );
 
-exit:
-
-	if ( self->m_handler )
-	{
-		self->m_handler->headers_were_received( parser, self->m_header );
-	}
-
-	return ret;
+	return self->m_handler->headers_were_received( self, self->m_header );
 }
 
 	
@@ -1087,8 +1004,10 @@ int
 connection::body_was_received( http_parser *parser, const char *buf, size_t len )
 {
 	connection *self = reinterpret_cast< connection* >( parser->data );
+	assert( self );
+	assert( self->m_handler );
 
-	return self->m_handler->body_was_received( parser, buf, len );
+	return self->m_handler->body_was_received( self, buf, len );
 }
 
 	
@@ -1096,8 +1015,10 @@ int
 connection::message_was_received( http_parser *parser )
 {
 	connection *self = reinterpret_cast< connection* >( parser->data );
+	assert( self );
+	assert( self->m_handler );
 
-	return self->m_handler->message_was_received( parser );
+	return self->m_handler->message_was_received( self );
 }
 
 
@@ -1107,7 +1028,7 @@ connection::message_was_received( http_parser *parser )
 
 connection::ref			server::m_active_connection;
 connection::list		*server::m_connections;
-server::handlers		server::m_handlers;
+server::bindings		server::m_bindings;
 
 netkit::sink::ref
 server::adopt( netkit::source::ref source, const std::uint8_t *buf, size_t len )
@@ -1120,7 +1041,7 @@ server::adopt( netkit::source::ref source, const std::uint8_t *buf, size_t len )
 	       ( std::strncasecmp( ( const char* ) buf, "opt", 3 ) == 0 ) ||
 	       ( std::strncasecmp( ( const char* ) buf, "hea", 3 ) == 0 ) ) )
 	{
-		sink = new connection( new server::handler() );
+		sink = new connection( new server::handler );
 
 		m_connections->push_back( sink );
 
@@ -1144,126 +1065,104 @@ server::adopt( netkit::source::ref source, const std::uint8_t *buf, size_t len )
 void
 server::bind( std::uint8_t m, const std::string &path, const std::string &type, request_f r )
 {
-	handler::ref h = new handler( path, type, r );
+	binding::ref b = new binding( path, type, r );
 	
-	bind( m, h );
+	bind( m, b );
 }
 
 
 void
 server::bind( std::uint8_t m, const std::string &path, const std::string &type, request_body_was_received_f rbwr, request_f r )
 {
-	handler::ref h = new handler( path, type, rbwr, r );
+	binding::ref b = new binding( path, type, rbwr, r );
 	
-	bind( m, h );
+	bind( m, b );
 }
 
 
 void
 server::bind( std::uint8_t m, const std::string &path, const std::string &type, request_will_begin_f rwb, request_body_was_received_f rbwr, request_f r )
 {
-	handler::ref h = new handler( path, type, rwb, rbwr, r );
+	binding::ref b = new binding( path, type, rwb, rbwr, r );
 	
-	bind( m, h );
+	bind( m, b );
 }
 
 
 void
 server::bind( std::uint8_t m, const std::string &path, netkit::sink::ref s )
 {
-	handler::ref h = new handler( path, s );
+//	binding::ref b = new binding( path, s );
 	
-	bind( m, h );
+//	bind( m, b );
 }
 
 
 void
-server::bind( std::uint8_t m, handler::ref h )
+server::bind( std::uint8_t m, binding::ref b )
 {
-	handlers::iterator it = m_handlers.find( m );
+	bindings::iterator it = m_bindings.find( m );
 	
-	if ( it != m_handlers.end() )
+	if ( it != m_bindings.end() )
 	{
-		it->second.push_back( h );
+		it->second.push_back( b );
 	}
 	else
 	{
-		handler::list l;
+		binding::list l;
 		
-		l.push_back( h );
+		l.push_back( b );
 		
-		m_handlers[ m ] = l;
+		m_bindings[ m ] = l;
 	}
 }
 
 
-bool
-server::resolve( connection::ref conn )
+server::binding::ref
+server::resolve( connection::ref conn, const message::header &header )
 {
-	server::handler::ref handler;
-	bool resolved = false;
+	server::binding::ref	binding;
+//	handler::ref	handler = dynamic_pointer_cast< handler::ref >( conn->handler() );
+	handler::ref			handler = dynamic_cast< server::handler* >( conn->handler().get() );
 	
-	conn->m_method = conn->m_parser->method;
+	auto it1 = m_bindings.find( conn->m_parser->method );
 	
-	auto it = m_handlers.find( conn->m_parser->method );
-	
-	if ( it != m_handlers.end() )
+	if ( it1 != m_bindings.end() )
 	{
-		for ( handler::list::iterator it2 = it->second.begin(); it2 != it->second.end(); it2++ )
-		{
-			try
-			{
-				std::regex regex1( regexify( ( *it2 )->m_path ) );
-				std::regex regex2( regexify( ( *it2 )->m_type ) );
+		auto it2 = header.find( "Content-Type" );
 
-				if ( std::regex_search( conn->m_uri_value, regex1 ) && std::regex_search( conn->m_content_type, regex2 ) )
-				{
-					conn->m_handler =   ( *it2 ).get();
-					handler = *it2;
-					break;
-				}
-			}
-			catch ( std::exception &exc )
+		if ( it2 != header.end() )
+		{
+			for ( auto it3 = it1->second.begin(); it3 != it1->second.end(); it3++ )
 			{
-				nklog( log::error, "caught exception in regex: %s", exc.what() );
+				try
+				{
+					std::regex	regex1( regexify( ( *it3 )->m_path ) );
+					std::regex	regex2( regexify( ( *it3 )->m_type ) );
+
+					if ( std::regex_search( handler->m_uri, regex1 ) && std::regex_search( it2->second, regex2 ) )
+					{
+						binding = ( *it3 ).get();
+						break;
+					}
+				}
+				catch ( std::exception &exc )
+				{
+					nklog( log::error, "caught exception in regex: %s", exc.what() );
+				}
 			}
 		}
 	}
 	
-	if ( !handler )
+	if ( !binding )
 	{
-		nklog( log::error, "unable to find binding for method %d -> %s", conn->m_method, conn->m_uri_value.c_str() );
+		nklog( log::error, "unable to find binding for method %d -> %s", conn->method(), handler->m_uri.c_str() );
 		goto exit;
 	}
 	
-	if ( handler->m_rwb )
-	{
-		conn->m_request = handler->m_rwb( conn->http_major(), conn->http_minor(), conn->m_parser->method, new uri( conn->m_uri_value ) );
-	}
-	else
-	{
-		conn->m_request = http::request::create( conn->http_major(), conn->http_minor(), conn->m_parser->method, new uri( conn->m_uri_value ) );
-	}
-
-	if ( !conn->m_request )
-	{
-		nklog( log::error, "unable to create request for method %d -> %s", conn->m_method, conn->m_uri_value.c_str() );
-		goto exit;
-	}
-	
-	conn->m_request->add_to_header( conn->m_header );
-	
-	if ( conn->m_request->expect() == "100-continue" )
-	{
-		response::ref response = http::response::create( conn->http_major(), conn->http_minor(), http::status::cont, false );
-		conn->put( response.get() );
-	}
-	
-	resolved = true;
-
 exit:
 
-	return resolved;
+	return binding;
 }
 
 
@@ -1305,65 +1204,128 @@ server::replace( std::string& str, const std::string& oldStr, const std::string&
 }
 
 
-int
-server::handler::uri_was_received( http_parser *parser, const char *buf, size_t len )
+void
+server::handler::process_will_begin( connection::ref connection )
 {
+	server::set_active_connection( connection.get() );
+}
+
+
+void
+server::handler::message_will_begin( connection::ref connection )
+{
+	m_binding = nullptr;
+	m_uri.clear();
+}
+
+
+int
+server::handler::uri_was_received( connection::ref connection, const char *buf, size_t len )
+{
+	nklog( log::verbose, "uri was received" );
+	
+	m_uri.append( buf, buf + len );
+
 	return 0;
 }
 
 
 int
-server::handler::header_field_was_received( http_parser *parser, const char *buf, size_t len )
+server::handler::headers_were_received( connection::ref connection, message::header &header )
 {
-	return 0;
-}
+	int ret = -1;
 
-
-int
-server::handler::header_value_was_received( http_parser *parser, const char *buf, size_t len )
-{
-	return 0;
-}
-
-
-int
-server::handler::headers_were_received( http_parser *parser, message::header &header )
-{
-	return 0;
-}
-
-
-int
-server::handler::body_was_received( http_parser *parser, const char *buf, size_t len )
-{
-	connection *conn = reinterpret_cast< connection* >( parser->data );
-
-	return m_rbwr( conn->m_request, ( const uint8_t* ) buf, len, [=]( response::ref response, bool close )
+	m_binding = server::resolve( connection, header );
+	
+	if ( !m_binding )
 	{
-		conn->put( response.get() );
+		response::ref response = new http::response( connection->http_major(), connection->http_minor(), http::status::not_found, false );
+		response->add_to_header( "Connection", "Close" );
+		response->add_to_header( "Content-Type", "text/html" );
+		*response << "<html>Error 404: Content Not Found</html>";
+		connection->put( response.get() );
+		goto exit;
+	}
+
+	m_request = m_binding->m_rwb( connection->method(), connection->http_major(), connection->http_minor(), new uri( m_uri ) );
+
+	if ( !m_request )
+	{
+		response::ref response = new http::response( connection->http_major(), connection->http_minor(), http::status::not_found, false );
+		response->add_to_header( "Connection", "Close" );
+		response->add_to_header( "Content-Type", "text/html" );
+		*response << "<html>Error 404: Content Not Found</html>";
+		connection->put( response.get() );
+		goto exit;
+	}
+
+	/*
+	if ( handler->m_rwb )
+	{
+		conn->m_request = handler->m_rwb( conn->http_major(), conn->http_minor(), conn->m_parser->method, new uri( conn->m_uri_value ) );
+	}
+	else
+	{
+		conn->m_request = http::request::create( conn->http_major(), conn->http_minor(), conn->m_parser->method, new uri( conn->m_uri_value ) );
+	}
+	*/
+
+	m_request->add_to_header( header );
+	
+	if ( m_request->expect() == "100-continue" )
+	{
+		response::ref response = new http::response( connection->http_major(), connection->http_minor(), http::status::cont, false );
+		connection->put( response.get() );
+	}
+
+	ret = 0;
+
+exit:
+
+	return ret;
+}
+
+
+int
+server::handler::body_was_received( connection::ref connection, const char *buf, size_t len )
+{
+	assert( m_binding );
+	assert( m_request );
+
+	return m_binding->m_rbwr( m_request, ( const uint8_t* ) buf, len, [=]( response::ref response, bool close ) mutable
+	{
+		connection->put( response.get() );
 		
 		if ( close )
 		{
-			conn->close();
+			connection->close();
 		}
 	} );
 }
 
 
 int
-server::handler::message_was_received( http_parser *parser )
+server::handler::message_was_received( connection::ref connection )
 {
-	connection *conn = reinterpret_cast< connection* >( parser->data );
+	assert( m_binding );
+	assert( m_request );
 
-	return m_r( conn->m_request, [=]( response::ref response, bool close )
+	return m_binding->m_r( m_request, [=]( response::ref response, bool close ) mutable
 	{
-		conn->put( response.get() );
+		connection->put( response.get() );
 
 		if ( close )
 		{
-			conn->close();
+			connection->close();
 		}
 	} );
+}
+
+
+void
+server::handler::process_did_end( connection::ref connection )
+{
+	server::set_active_connection( nullptr );
 }
 
 
@@ -1371,12 +1333,12 @@ server::handler::message_was_received( http_parser *parser )
 #	pragma mark client implementation
 #endif
 
-client::client( const request::ref &request, auth_f auth_func, response_f response_func, uri_recv_f uri_func, header_field_recv_f header_field_func, header_value_recv_f header_value_func, headers_recv_f headers_func )
+client::client( const request::ref &request, auth_f auth_func, headers_reply_f headers_reply, body_reply_f body_reply, reply_f reply )
 :
 	m_request( request )
 {
-	m_handler = new handler( response_func, uri_func, header_field_func, header_value_func, headers_func );
-	m_connection = new connection( m_handler.get(), connection::type::client );
+	m_handler		= new handler( headers_reply, body_reply, reply );
+	m_connection	= new connection( m_handler.get() );
 }
 
 
@@ -1386,32 +1348,60 @@ client::~client()
 
 
 void
-client::send( const request::ref &request, response_f response_func )
+client::send( const request::ref &request, reply_f reply )
 {
 	client *self = new client( request, [=]( request::ref &request, uint32_t status )
 	{
 		return false;
-	}, response_func, [=]( std::string& )
+	},
+	
+	[=]( message::header &header )
 	{
-	}, [=]( std::string& )
+	},
+	
+	[=]( const char *buf, size_t len )
 	{
-	}, [=] ( std::string& )
+	},
+
+	reply );
+	
+	self->send_request();
+}
+
+
+void
+client::send( const request::ref &request, headers_reply_f headers_reply, reply_f reply )
+{
+	client *self = new client( request, [=]( request::ref &request, uint32_t status )
 	{
-	}, [=] ( message::header& )
+		return false;
+	},
+	
+	headers_reply,
+	
+	[=]( const char *buf, std::size_t len )
 	{
-	});
+	},
+	
+	reply );
 
 	self->send_request();
 }
 
 
 void
-client::send( const request::ref &request, response_f response_func, uri_recv_f uri_func, header_field_recv_f header_field_func, header_value_recv_f header_value_func, headers_recv_f headers_func )
+client::send( const request::ref &request, headers_reply_f headers_reply, body_reply_f body_reply, reply_f reply )
 {
 	client *self = new client( request, [=]( request::ref &request, uint32_t status )
 	{
 		return false;
-	}, response_func, uri_func, header_field_func, header_value_func, headers_func );
+	},
+	
+	headers_reply,
+
+	body_reply,
+	
+	reply );
 
 	self->send_request();
 }
@@ -1443,42 +1433,32 @@ client::send_request()
 }
 
 
-int
-client::handler::uri_was_received( http_parser *parser, const char *buf, size_t len )
+void
+client::handler::process_will_begin( connection::ref connection )
 {
-	std::string uri( buf, len );
-	m_uri_recv_func( uri );
+}
 
+
+void
+client::handler::message_will_begin( connection::ref connection )
+{
+}
+
+
+int
+client::handler::uri_was_received( connection::ref connection, const char *buf, size_t len )
+{
+	assert( 0 );
 	return 0;
 }
 
 
 int
-client::handler::header_field_was_received( http_parser *parser, const char *buf, size_t len )
+client::handler::headers_were_received( connection::ref connection, message::header &header )
 {
-	std::string field( buf, len );
-	m_header_field_recv_func( field );
+	m_headers_reply( header );
 
-	return 0;
-}
-
-
-int
-client::handler::header_value_was_received( http_parser *parser, const char *buf, size_t len )
-{
-	std::string value( buf, len );
-	m_header_value_recv_func( value );
-
-	return 0;
-}
-
-
-int
-client::handler::headers_were_received( http_parser *parser, message::header &header )
-{
-	m_headers_recv_func( header );
-
-	m_response = response::create( parser->http_major, parser->http_minor, parser->status_code, false );
+	m_response = new response( connection->http_major(), connection->http_minor(), connection->status_code(), false );
 	m_response->add_to_header( header );
 
 	return 0;
@@ -1486,18 +1466,26 @@ client::handler::headers_were_received( http_parser *parser, message::header &he
 
 
 int
-client::handler::body_was_received( http_parser *parser, const char *buf, size_t len )
+client::handler::body_was_received( connection::ref connection, const char *buf, size_t len )
 {
-	m_response->write( reinterpret_cast< const uint8_t* >( buf ), len );
+	m_body_reply( buf, len );
+
+	//m_response->write( reinterpret_cast< const uint8_t* >( buf ), len );
 
 	return 0;
 }
 
 
 int
-client::handler::message_was_received( http_parser *parser )
+client::handler::message_was_received( connection::ref connection )
 {
-	m_response_func( m_response );
+	m_reply( m_response );
 
 	return 0;
+}
+
+
+void
+client::handler::process_did_end( connection::ref connection )
+{
 }

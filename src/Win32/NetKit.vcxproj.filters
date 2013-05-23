@@ -78,9 +78,6 @@
     <ClCompile Include=".\EventLog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include=".\NKHTTP_Win32.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include=".\NKPlatform_Win32.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
