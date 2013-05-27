@@ -103,9 +103,13 @@ ip::address::address( const std::string &val )
 {
 	memset( &m_addr, 0, sizeof( m_addr ) );
 	
-	if ( inet_pton( AF_INET, val.c_str(), &m_addr ) != 1 )
+	if ( inet_pton( AF_INET, val.c_str(), &m_addr ) == 1 )
 	{
-		inet_pton( AF_INET6, val.c_str(), &m_addr );
+		m_type = v4;
+	}
+	else if ( inet_pton( AF_INET6, val.c_str(), &m_addr ) == 1 )
+	{
+		m_type = v6;
 	}
 }
 
@@ -264,10 +268,10 @@ ip::address::to_string() const
 		DWORD			buf_size = sizeof( buf );
 
 		memset( &addr, 0, sizeof( addr ) );
-		addr.sin6_family	= AF_INET;
+		addr.sin6_family	= AF_INET6;
 		addr.sin6_addr		= m_addr.m_v6;
 
-		if ( WSAAddressToStringA( ( LPSOCKADDR ) &m_addr, sizeof( m_addr ), NULL, buf, &buf_size ) != 0 )
+		if ( WSAAddressToStringA( ( LPSOCKADDR ) &addr, sizeof( addr ), NULL, buf, &buf_size ) != 0 )
 
 #else
 

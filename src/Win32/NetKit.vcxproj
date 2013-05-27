@@ -218,6 +218,7 @@ IF EXIST ..\..\ThirdParty\uriparser GOTO DONE
     <ClCompile Include="..\NKHTTP.cpp" />
     <ClCompile Include="..\NKJSON.cpp" />
     <ClCompile Include="..\NKMIME.cpp" />
+    <ClCompile Include="..\NKNetworkInterface.cpp" />
     <ClCompile Include="..\NKOAuth.cpp" />
     <ClCompile Include="..\NKObject.cpp" />
     <ClCompile Include="..\NKProxy.cpp" />
@@ -234,6 +235,7 @@ IF EXIST ..\..\ThirdParty\uriparser GOTO DONE
     <ClCompile Include=".\EventLog.cpp" />
     <ClCompile Include=".\NKPlatform_Win32.cpp" />
     <ClCompile Include=".\NKRunLoop_Win32.cpp" />
+    <ClCompile Include="NKNetworkInterface_Win32.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\NetKit\cstring.h" />
@@ -252,6 +254,7 @@ IF EXIST ..\..\ThirdParty\uriparser GOTO DONE
     <ClInclude Include="..\..\include\NetKit\NKJSON.h" />
     <ClInclude Include="..\..\include\NetKit\NKLog.h" />
     <ClInclude Include="..\..\include\NetKit\NKMIME.h" />
+    <ClInclude Include="..\..\include\NetKit\NKNetworkInterface.h" />
     <ClInclude Include="..\..\include\NetKit\NKOAuth.h" />
     <ClInclude Include="..\..\include\NetKit\NKObject.h" />
     <ClInclude Include="..\..\include\NetKit\NKOutputFilter.h" />

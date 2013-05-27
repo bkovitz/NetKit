@@ -29,6 +29,7 @@
  */
  
 #include <NetKit/NKEndpoint.h>
+#include <NetKit/NKJSON.h>
 #include <NetKit/NKPlatform.h>
 #include <NetKit/NKLog.h>
 #include <sstream>
@@ -113,6 +114,12 @@ ip::endpoint::endpoint( const address::ref &addr, uint16_t port )
 	m_addr( addr ),
 	m_port( port )
 {
+}
+
+
+ip::endpoint::endpoint( const json::value::ref &json )
+{
+	inflate( json );
 }
 
 
@@ -220,4 +227,20 @@ ip::endpoint::equals( const object &that ) const
 	}
 	
 	return ret;
+}
+
+
+void
+ip::endpoint::flatten( json::value_ref &root ) const
+{
+	root[ "address" ] = m_addr->to_string();
+	root[ "port" ] = m_port;
+}
+
+
+void
+ip::endpoint::inflate( const json::value_ref &root )
+{
+	m_addr = new ip::address( root[ "address" ]->as_string() );
+	m_port = root[ "port" ]->as_uint16();
 }

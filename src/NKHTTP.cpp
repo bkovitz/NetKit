@@ -1259,17 +1259,6 @@ server::handler::headers_were_received( connection::ref connection, message::hea
 		goto exit;
 	}
 
-	/*
-	if ( handler->m_rwb )
-	{
-		conn->m_request = handler->m_rwb( conn->http_major(), conn->http_minor(), conn->m_parser->method, new uri( conn->m_uri_value ) );
-	}
-	else
-	{
-		conn->m_request = http::request::create( conn->http_major(), conn->http_minor(), conn->m_parser->method, new uri( conn->m_uri_value ) );
-	}
-	*/
-
 	m_request->add_to_header( header );
 	
 	if ( m_request->expect() == "100-continue" )

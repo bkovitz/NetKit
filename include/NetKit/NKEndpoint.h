@@ -69,6 +69,8 @@ public:
 	endpoint( const uri::ref &uri );
 	
 	endpoint( const address::ref &host, uint16_t port );
+
+	endpoint( const netkit::json::value_ref &json );
 	
 	virtual ~endpoint();
 	
@@ -92,6 +94,12 @@ public:
 	
 	virtual bool
 	equals( const object &that ) const;
+
+	virtual void
+	flatten( json::value_ref &root ) const;
+
+	void
+	inflate( const json::value_ref &root );
 
 protected:
 

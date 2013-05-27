@@ -44,6 +44,7 @@
 #	include <netinet/in.h>
 #	include <netdb.h>
 #endif
+#include <vector>
 #include <deque>
 
 
@@ -70,6 +71,7 @@ public:
 
 	typedef smart_ref< address > ref;
 	typedef std::deque< ref > list;
+	typedef std::vector< ref > array;
 	typedef std::function< void ( int status, const list &addrs ) > resolve_reply_f;
 	
 	enum type
@@ -92,6 +94,12 @@ public:
 	address( const std::string &val );
 	
 	virtual ~address();
+
+	inline std::int32_t
+	type() const
+	{
+		return m_type;
+	}
 	
 	inline bool
 	is_v4() const
@@ -119,7 +127,7 @@ public:
 
 protected:
 
-	type m_type;
+	std::int32_t m_type;
 	
 	union
 	{

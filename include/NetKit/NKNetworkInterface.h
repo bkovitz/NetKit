@@ -28,104 +28,88 @@
  *
  */
  
-#ifndef _netkit_component_h
-#define _netkit_component_h
+#ifndef _netkit_network_interface_h
+#define _netkit_network_interface_h
 
-#include <NetKit/NKObject.h>
-#include <NetKit/NKError.h>
+#include <NetKit/NKAddress.h>
 #include <vector>
-#include <list>
 
 namespace netkit {
 
-class NETKIT_DLL component : public object
+class NETKIT_DLL nic : public object
 {
 public:
 
-	typedef smart_ref< component >	ref;
-	typedef std::list< ref >		list;
-	
-	static bool
-	initialize( const std::vector< std::string > &command_line );
-	
-	static void
-	finalize();
-
-	inline static list::iterator
-	begin()
+	struct flags
 	{
-		return m_instances->begin();
-	}
-	
-	inline static list::iterator
-	end()
+		enum
+		{
+			up				= ( 1 << 0 ),
+			loopback		= ( 1 << 1 ),
+			point_to_point	= ( 1 << 2 ),
+			multicast		= ( 1 << 3 ),
+			broadcast		= ( 1 << 4 )
+		};
+	};
+		
+	typedef smart_ref< nic > ref;
+	typedef std::vector< ref > array;
+
+	static array
+	instances();
+
+	nic( const json::value_ref &root );
+
+	inline const std::string&
+	name() const
 	{
-		return m_instances->end();
+		return m_name;
 	}
 
-	virtual status
-	will_initialize( const std::vector< std::string > &command_line ) = 0;
-	
-	virtual status
-	did_initialize() = 0;
-	
+	inline const std::string&
+	display_name() const
+	{
+		return m_display_name;
+	}
+
+	inline const std::string&
+	dns_suffix() const
+	{
+		return m_dns_suffix;
+	}
+
+	inline const netkit::ip::address::array&
+	addresses() const
+	{
+		return m_addresses;
+	}
+
+	inline std::int32_t
+	flags() const
+	{
+		return m_flags;
+	}
+
+	virtual bool
+	equals( const object &that ) const;
+
 	virtual void
-	will_terminate() = 0;
-	
-	inline status
-	status() const
-	{
-		return m_status;
-	}
-	
+	flatten( json::value_ref &root ) const;
+
+	void
+	inflate( const json::value_ref &root );
+
 protected:
-	
-	component();
-	
-	virtual
-	~component();
-	
-	netkit::status m_status;
-	
-private:
 
-	friend void netkit::initialize();
+	nic();
 
-	static list *m_instances;
+	std::string 		m_name;
+	std::string			m_display_name;
+	std::string			m_dns_suffix;
+	ip::address::array	m_addresses;
+	std::int32_t		m_flags;
 };
 
-}
-
-#define DECLARE_COMPONENT( NAME )									\
-public:																\
-static NAME::ref													\
-instance();															\
-virtual netkit::status												\
-will_initialize( const std::vector< std::string > &command_line );	\
-virtual netkit::status												\
-did_initialize();													\
-virtual void														\
-will_terminate();
-
-#define DEFINE_COMPONENT1( NAME )				\
-static NAME g_instance;							\
-NAME::ref										\
-NAME::instance()								\
-{												\
-	return &g_instance;							\
-}
-
-#define DEFINE_COMPONENT2( PARENT, NAME )		\
-static NAME g_instance;							\
-PARENT::ref										\
-PARENT::instance()								\
-{												\
-	return NAME::instance();					\
-}												\
-NAME::ref										\
-NAME::instance()								\
-{												\
-	return &g_instance;							\
 }
 
 #endif
