@@ -119,9 +119,11 @@ log::put( log::level l, const char * filename, const char * function, int line, 
 {
 	if ( l <= g_logLevel )
 	{
-		char buf[ 1024 ];
-		char msg[ 2048 ];
-		char timeStr[ 1024 ];
+		std::lock_guard< std::mutex > guard( g_mutex );
+
+		static char buf[ 32000 ];
+		static char msg[ 32512 ];
+		static char timeStr[ 1024 ];
 		time_t t;
 		int n = 0; 
 		va_list ap;

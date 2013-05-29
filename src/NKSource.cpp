@@ -204,6 +204,7 @@ source::send( adapter *adapter, const std::uint8_t *in_buf, size_t in_len, send_
 		
 			if ( m_send_queue.size() == 1 )
 			{
+			nklog( log::info, "calling send_internal" );
 				send_internal();
 			}
 		}
@@ -218,32 +219,39 @@ source::send( adapter *adapter, const std::uint8_t *in_buf, size_t in_len, send_
 void
 source::send_internal()
 {
-	bool			would_block;
-	send_info		*info = m_send_queue.front();
-	std::streamsize ret;
-		
-	ret = start_send( &info->m_buf[ info->m_idx ], info->m_buf.size() - info->m_idx, would_block );
-		
-	if ( ret > 0 )
+	while ( !m_send_queue.empty() )
 	{
-		info->m_idx += ( std::size_t ) ret;
+		bool			would_block;
+		send_info		*info = m_send_queue.front();
+		std::streamsize ret;
 		
-		if ( info->m_idx == info->m_buf.size() )
+		ret = start_send( &info->m_buf[ info->m_idx ], info->m_buf.size() - info->m_idx, would_block );
+		
+		if ( ret > 0 )
 		{
-			m_send_queue.pop();
-			info->m_reply( 0 );
-			delete info;
+			info->m_idx += ( std::size_t ) ret;
+		
+			if ( info->m_idx == info->m_buf.size() )
+			{
+				m_send_queue.pop();
+				info->m_reply( 0 );
+				delete info;
+			}
 		}
-	}
-	else if ( would_block )
-	{
-		runloop::main()->schedule( m_send_event, [=]( runloop::event event )
+		else if ( would_block )
 		{
-			send_internal();
-		} );
-	}
-	else
-	{
+			runloop::main()->schedule( m_send_event, [=]( runloop::event event )
+			{
+				runloop::main()->suspend( m_send_event );
+				send_internal();
+			} );
+
+			break;
+		}
+		else
+		{
+			break;
+		}
 	}
 }
 

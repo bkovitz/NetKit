@@ -2991,7 +2991,7 @@ connection::process( const std::uint8_t *buf, std::size_t len )
 	{
 		add( len - num_bytes_unused() );
 	}
-		
+
 	memcpy( m_eptr, buf, len );
 		
 	m_eptr += len;
