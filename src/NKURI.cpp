@@ -291,6 +291,12 @@ uri::to_string() const
 		}
 	}
 
+	if ( !m_query.empty() )
+	{
+		uri.query.first			= m_query.c_str();
+		uri.query.afterLast		= m_query.c_str() + m_query.size();
+	}
+
 	if ( uriToStringCharsRequiredA( &uri, &len ) != URI_SUCCESS )
 	{
 		goto exit;
