@@ -674,7 +674,14 @@ request::add_to_header( const std::string &key, const std::string &val )
 void
 request::send_prologue( connection_ref conn ) const
 {
-	*conn << method::to_string( m_method ) << " " << m_uri->path() << " HTTP/1.1" << http::endl;
+	*conn << method::to_string( m_method ) << " " << m_uri->path();
+
+	if ( !m_uri->query().empty() )
+	{
+		*conn << "?" << m_uri->query();
+	}
+
+	*conn << " HTTP/1.1" << http::endl;
 }
 
 #if defined( __APPLE__ )
