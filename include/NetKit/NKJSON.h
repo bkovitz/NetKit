@@ -197,12 +197,6 @@ public:
 	const value::ref
 	at_index( std::size_t index ) const;
 
-	template< typename T> auto
-	operator[]( T index ) -> decltype( std::to_string( index ), value::ref() )  // uses comma operator
-	{
-		return at_index( index );
-	}
-
 	type
 	kind() const;
 
