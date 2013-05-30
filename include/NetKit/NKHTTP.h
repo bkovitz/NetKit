@@ -500,7 +500,7 @@ public:
 	}
 
 	void
-	set_secure( bool val );
+	set_secure( bool val, bool is_server = true );
 	
 	bool
 	put( message::ref message );
@@ -654,8 +654,11 @@ public:
 		request_f					m_r;
 	};
 
+	static connection::ref
+	adopt();
+
 	static sink::ref
-	adopt( source::ref source, const std::uint8_t *buf, size_t len );
+	try_adopt( source::ref source, const std::uint8_t *buf, size_t len );
 
 	static void
 	bind( std::uint8_t method, const std::string &path, const std::string &type, request_f r );
@@ -755,11 +758,11 @@ class NETKIT_DLL client : public object
 {
 public:
 
-	typedef std::function< bool ( request::ref &request, uint32_t status ) >	auth_f;
-	typedef std::function< void ( message::header &headers ) >					headers_reply_f;
-	typedef std::function< void ( const char *buf, std::size_t len ) >			body_reply_f;
-	typedef std::function< void ( response::ref response ) >					reply_f;
-	typedef smart_ref< client >													ref;
+	typedef std::function< bool ( request::ref &request, uint32_t status ) >					auth_f;
+	typedef std::function< void ( response::ref response ) >									headers_reply_f;
+	typedef std::function< void ( response::ref response, const char *buf, std::size_t len ) >	body_reply_f;
+	typedef std::function< void ( response::ref response ) >									reply_f;
+	typedef smart_ref< client >																	ref;
 
 	static request::ref
 	request( int method, const uri::ref &uri );

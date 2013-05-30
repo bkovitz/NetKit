@@ -793,17 +793,17 @@ connection::init()
 
 
 void
-connection::set_secure( bool val )
+connection::set_secure( bool val, bool is_server )
 {
 	if ( !m_secure && val )
 	{
-//		if ( m_type == type::server )
+		if ( is_server )
 		{
 			m_source->add( tls::server::create() );
 		}
-//		else
+		else
 		{
-//			m_source->add( tls::client::create() );
+			m_source->add( tls::client::create() );
 		}
 
 		m_secure = true;
@@ -1037,8 +1037,17 @@ connection::ref			server::m_active_connection;
 connection::list		*server::m_connections;
 server::bindings		server::m_bindings;
 
+netkit::http::connection::ref
+server::adopt()
+{
+	connection::ref sink;
+	sink = new connection( new server::handler );
+
+	return sink;
+}
+
 netkit::sink::ref
-server::adopt( netkit::source::ref source, const std::uint8_t *buf, size_t len )
+server::try_adopt( netkit::source::ref source, const std::uint8_t *buf, size_t len )
 {
 	connection::ref sink;
 	
@@ -1136,27 +1145,31 @@ server::resolve( connection::ref conn, const message::header &header )
 	
 	if ( it1 != m_bindings.end() )
 	{
+		std::string content_type;
 		auto it2 = header.find( "Content-Type" );
 
 		if ( it2 != header.end() )
 		{
-			for ( auto it3 = it1->second.begin(); it3 != it1->second.end(); it3++ )
-			{
-				try
-				{
-					std::regex	regex1( regexify( ( *it3 )->m_path ) );
-					std::regex	regex2( regexify( ( *it3 )->m_type ) );
+			content_type = it2->second;
+		}
 
-					if ( std::regex_search( handler->m_uri, regex1 ) && std::regex_search( it2->second, regex2 ) )
-					{
-						binding = ( *it3 ).get();
-						break;
-					}
-				}
-				catch ( std::exception &exc )
+		for ( auto it3 = it1->second.begin(); it3 != it1->second.end(); it3++ )
+		{
+			try
+			{
+				std::regex	regex1( regexify( ( *it3 )->m_path ) );
+				std::regex	regex2( regexify( ( *it3 )->m_type ) );
+
+				if ( ( ( *it3 )->m_type == "*" && std::regex_search( handler->m_uri, regex1 ) ) ||
+					( std::regex_search( handler->m_uri, regex1 ) && std::regex_search( content_type, regex2 ) ) )
 				{
-					nklog( log::error, "caught exception in regex: %s", exc.what() );
+					binding = ( *it3 ).get();
+					break;
 				}
+			}
+			catch ( std::exception &exc )
+			{
+				nklog( log::error, "caught exception in regex: %s", exc.what() );
 			}
 		}
 	}
@@ -1351,12 +1364,13 @@ client::send( const request::ref &request, reply_f reply )
 		return false;
 	},
 	
-	[=]( message::header &header )
+	[=]( http::response::ref response )
 	{
 	},
 	
-	[=]( const char *buf, size_t len )
+	[=]( http::response::ref response, const char *buf, size_t len )
 	{
+		response->write( reinterpret_cast< const uint8_t* >( buf ), len );
 	},
 
 	reply );
@@ -1375,8 +1389,9 @@ client::send( const request::ref &request, headers_reply_f headers_reply, reply_
 	
 	headers_reply,
 	
-	[=]( const char *buf, std::size_t len )
+	[=]( http::response::ref response, const char *buf, std::size_t len )
 	{
+		response->write( reinterpret_cast< const uint8_t* >( buf ), len );
 	},
 	
 	reply );
@@ -1412,7 +1427,7 @@ client::send_request()
 		{
 			if ( m_request->uri()->scheme() == "https" )
 			{
-				m_connection->set_secure( true );
+				m_connection->set_secure( true, false );
 			}
 
 			m_request->add_to_header( "Host", m_request->uri()->host() );
@@ -1452,11 +1467,9 @@ client::handler::uri_was_received( connection::ref connection, const char *buf, 
 int
 client::handler::headers_were_received( connection::ref connection, message::header &header )
 {
-	m_headers_reply( header );
-
 	m_response = new response( connection->http_major(), connection->http_minor(), connection->status_code(), false );
 	m_response->add_to_header( header );
-
+	m_headers_reply( m_response );
 	return 0;
 }
 
@@ -1464,10 +1477,7 @@ client::handler::headers_were_received( connection::ref connection, message::hea
 int
 client::handler::body_was_received( connection::ref connection, const char *buf, size_t len )
 {
-	m_body_reply( buf, len );
-
-	//m_response->write( reinterpret_cast< const uint8_t* >( buf ), len );
-
+	m_body_reply( m_response, buf, len );
 	return 0;
 }
 
