@@ -64,6 +64,9 @@ machine_description();
 std::string NETKIT_DLL
 machine_id();
 
+std::string
+make_filesystem_safe( const std::string &name );
+
 bool NETKIT_DLL
 create_folder( const std::string& folder );
 

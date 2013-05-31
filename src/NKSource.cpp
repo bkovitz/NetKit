@@ -204,7 +204,6 @@ source::send( adapter *adapter, const std::uint8_t *in_buf, size_t in_len, send_
 		
 			if ( m_send_queue.size() == 1 )
 			{
-			nklog( log::info, "calling send_internal" );
 				send_internal();
 			}
 		}

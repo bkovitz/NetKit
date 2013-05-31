@@ -452,6 +452,36 @@ exit:
 }
 
 
+std::string
+platform::make_filesystem_safe( const std::string &name )
+{
+	std::string safe;
+
+	for ( auto it = name.begin(); it != name.end(); it++ )
+	{
+		if ( ( *it == '\\' )	||
+		     ( *it == '/' )		||
+			 ( *it == ':' )		||
+			 ( *it == '*' )		||
+			 ( *it == '?' )		||
+		     ( *it == '"' )		||
+			 ( *it == '<' )		||
+			 ( *it == '>' )		||
+			 ( *it == '|' )		||
+			 ( *it == '\n' ) )
+		{
+			safe.push_back( '_' );
+		}
+		else
+		{
+			safe.push_back( *it );
+		}
+	}
+
+	return safe;
+}
+
+
 bool
 platform::create_folder( const std::string &folder )
 {

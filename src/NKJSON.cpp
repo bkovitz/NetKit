@@ -1657,6 +1657,8 @@ exit:
 void
 value::assign( const value &v )
 {
+	clear();
+
 	m_kind = v.m_kind;
 	
 	switch ( m_kind )
@@ -3130,7 +3132,7 @@ connection::really_process()
 			goto exit;
 		}
 
-		msg.assign( ( const char* ) m_base, index + 1, len );
+		msg.assign( m_base + index + 1, m_base + index + 1 + len );
 	    
 		shift( index + len + 2 );
 
