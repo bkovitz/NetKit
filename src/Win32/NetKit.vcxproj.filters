@@ -239,9 +239,6 @@
     <ClInclude Include=".\EventLog.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include=".\NKHTTP_Win32.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include=".\NKRunLoop_Win32.h">
       <Filter>Header Files</Filter>
     </ClInclude>

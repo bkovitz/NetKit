@@ -286,7 +286,6 @@ IF EXIST ..\..\ThirdParty\uriparser GOTO DONE
     <ClInclude Include="..\NKDatabase_SQLite.h" />
     <ClInclude Include=".\CRC32.h" />
     <ClInclude Include=".\EventLog.h" />
-    <ClInclude Include=".\NKHTTP_Win32.h" />
     <ClInclude Include=".\NKRunLoop_Win32.h" />
   </ItemGroup>
   <ItemGroup>

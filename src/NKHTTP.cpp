@@ -536,8 +536,6 @@ message::add_to_header( const std::string &key, const std::string &val )
 {
 	m_header[ key ] = val;
 
-	fprintf( stderr, "add_to_header: key = %s, val = %s\n", key.c_str(), val.c_str() );
-
 	if ( key == "Content-Length" )
 	{
 		m_content_length = atoi( val.c_str() );
@@ -1440,6 +1438,10 @@ client::send_request()
 
 			m_connection->put( m_request.get() );
 		}
+		else
+		{
+			m_handler->m_reply( m_handler->m_response );
+		}
 	} );
 }
 
@@ -1486,7 +1488,6 @@ int
 client::handler::message_was_received( connection::ref connection )
 {
 	m_reply( m_response );
-
 	return 0;
 }
 

@@ -415,26 +415,17 @@ public:
 		m_status = status;
 	}
 
-	inline bool
-	good() const
-	{
-		return success;
-	}
-	
 	virtual void
 	send_prologue( connection_ref conn ) const;
 
 protected:
 
-	
 	response( const response &that );
 
 	void
 	init();
 	
 	std::uint16_t m_status;
-
-	bool success;
 };
 
 
