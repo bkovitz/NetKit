@@ -76,7 +76,8 @@ public:
 	
 	enum type
 	{
-		v4 = 0,
+		unknown = -1,
+		v4		= 0,
 		v6
 	};
 	

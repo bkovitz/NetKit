@@ -102,6 +102,25 @@ ip::address::address( struct in6_addr addr )
 ip::address::address( const std::string &val )
 {
 	memset( &m_addr, 0, sizeof( m_addr ) );
+
+#if defined( _WIN32 )
+
+	INT len = sizeof( m_addr );
+
+	if ( WSAStringToAddressA( ( LPSTR ) val.c_str(), AF_INET, nullptr, ( LPSOCKADDR ) &m_addr, &len ) == 0 )
+	{
+		m_type = v4;
+	}
+	else if ( WSAStringToAddressA( ( LPSTR ) val.c_str(), AF_INET6, nullptr, ( LPSOCKADDR ) &m_addr, &len ) == 0 )
+	{
+		m_type = v6;
+	}
+	else
+	{
+		m_type = unknown;
+	}
+
+#else
 	
 	if ( inet_pton( AF_INET, val.c_str(), &m_addr ) == 1 )
 	{
@@ -111,6 +130,12 @@ ip::address::address( const std::string &val )
 	{
 		m_type = v6;
 	}
+	else
+	{
+		m_type = unknown;
+	}
+
+#endif
 }
 
 
