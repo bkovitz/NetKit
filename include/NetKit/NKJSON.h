@@ -733,14 +733,20 @@ public:
 	:
 		m_ref( ref )
 	{
-		m_ref->retain();
+		if ( m_ref )
+		{
+			m_ref->retain();
+		}
 	}
 
 	inline smart_ref( const smart_ref<json::value> &that )
 	:
 		m_ref( that.m_ref )
 	{
-		m_ref->retain();
+		if ( m_ref )
+		{
+			m_ref->retain();
+		}
 	}
 
 	inline ~smart_ref()

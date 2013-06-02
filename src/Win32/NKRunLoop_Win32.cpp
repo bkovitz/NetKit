@@ -389,7 +389,7 @@ runloop_win32::suspend( event e )
 
 	if ( !a->m_scheduled )
 	{
-		nklog( log::error, "trying to suspend an event that has not been scheduled" );
+		nklog( log::warning, "trying to suspend an event that has not been scheduled" );
 		goto exit;
 	}
 
