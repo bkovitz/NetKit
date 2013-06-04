@@ -27,3 +27,46 @@
  * either expressed or implied, of the FreeBSD Project.
  *
  */
+
+#ifndef _netkit_oauth_h
+#define _netkit_oauth_h
+
+#include <cstdint>
+#include <chrono>
+#include <string>
+#include <functional>
+
+namespace netkit {
+
+class oauth
+{
+public:
+
+	struct token
+	{
+		std::chrono::system_clock::time_point	expire_time;
+		std::string								access_token;
+		std::string								refresh_token;
+	};
+
+	typedef std::function< void( bool, const token& ) > token_result_f;
+
+	oauth( const std::string &client_id, const std::string &client_secret, const std::string &auth_server_uri );
+
+	oauth( const std::string &client_id, const std::string &client_secret, const std::string &auth_server_uri, const std::string &refresh_token );
+
+	void
+	get_access_token( token_result_f result );
+
+private:
+
+	std::string m_client_id;
+	std::string m_client_secret;
+	std::string m_redirect_uri;
+	std::string m_auth_server_uri;
+	token		m_token;
+};
+
+}
+
+#endif

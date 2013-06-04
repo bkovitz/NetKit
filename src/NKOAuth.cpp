@@ -27,3 +27,91 @@
  * either expressed or implied, of the FreeBSD Project.
  *
  */
+
+#include <NetKit/NKOAuth.h>
+#include <NetKit/NKLog.h>
+#include <NetKit/NKHTTP.h>
+#include <NetKit/NKJSON.h>
+#include <chrono>
+
+using namespace netkit;
+using namespace std::chrono;
+
+oauth::oauth( const std::string &client_id, const std::string &client_secret, const std::string &auth_server_uri )
+:
+	m_client_id( client_id ),
+	m_client_secret( client_secret ),
+	m_auth_server_uri( auth_server_uri )
+{
+	m_token.refresh_token	= "";
+	m_token.expire_time		= system_clock::now() - seconds( 1 );
+}
+
+
+oauth::oauth( const std::string &client_id, const std::string &client_secret, const std::string &auth_server_uri, const std::string &refresh_token )
+:
+	m_client_id( client_id ),
+	m_client_secret( client_secret ),
+	m_auth_server_uri( auth_server_uri )
+{
+	m_token.refresh_token	= refresh_token;
+	m_token.expire_time		= system_clock::now() - seconds( 1 );
+}
+
+void
+oauth::get_access_token( token_result_f result )
+{
+	if ( m_token.expire_time < system_clock::now() )
+	{
+		http::request::ref request = new http::request( http::method::post, 1, 1, new uri( m_auth_server_uri ) );
+		request->add_to_header( "Content-Type", std::string( "application/x-www-form-urlencoded" ) );
+
+		*request << "client_id=" << m_client_id << "&client_secret=" << m_client_secret << "&refresh_token="
+		         << m_token.refresh_token << "&grant_type=" << "refresh_token";
+
+		http::client::send( request, [=]( http::response::ref response )
+		{
+			bool success = false;
+
+			m_token.expire_time = system_clock::now();
+
+			if ( response )
+			{
+				if ( response->status() == 200 )
+				{
+					json::value::ref root = new json::value();
+
+					root->load_from_string( response->body() );
+
+					if ( root->is_member( "access_token" ) && root[ "access_token" ]->is_string() )
+					{
+						m_token.access_token = root[ "access_token" ]->as_string();
+		
+						std::uint32_t seconds_until_expire = root[ "expires_in" ]->as_uint32();
+						m_token.expire_time = system_clock::now() + seconds( seconds_until_expire );
+		
+						success = true;
+					}
+					else
+					{
+						nklog( log::error, "bad json format: %s", root->to_string().c_str() );
+					}
+				}
+				else
+				{
+					nklog( log::error, "http error trying to refresh access token: %d", response->status() );
+				}
+			}
+			else
+			{
+				nklog( log::error, "no response from %s", request->uri()->to_string().c_str() );
+			}
+	
+			result( success, m_token );
+		} );
+	}
+	else
+	{
+		result( true, m_token );
+	}
+}
