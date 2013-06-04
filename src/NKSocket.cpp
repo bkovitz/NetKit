@@ -48,6 +48,15 @@ using namespace netkit;
 #	pragma mark socket implementation
 #endif
 
+
+
+socket::socket()
+:
+	m_fd( socket::null )
+{
+}
+
+
 socket::socket( int domain, int type )
 {
 	m_fd = ::socket( domain, type, 0 );
@@ -102,7 +111,7 @@ socket::start_connect( const endpoint::ref &peer, bool &would_block )
 	int					err;
 
 	len = peer->to_sockaddr( addr );
-
+	/*
 	auto it = map.find( this );
 
 	if ( it != map.end() )
@@ -113,14 +122,27 @@ socket::start_connect( const endpoint::ref &peer, bool &would_block )
 	{
 		map[ this ] = this;
 	}
+	*/
 	
+	m_fd		= ::socket( addr.ss_family, SOCK_STREAM, 0 );
+
+	if ( m_fd == socket::null )
+	{
+		nklog( log::error, "::socket() failed: %d", platform::error() );
+		goto exit;
+	}
+
+	init();
+
 	err			= ::connect( m_fd, ( struct sockaddr* ) &addr, len );
 	would_block = ( err < 0 ) && ( ( platform::error() == ( int ) socket::error::in_progress ) || ( platform::error() == ( int ) socket::error::would_block ) ) ? true : false;
 
-	if ( err && !would_block )
+	if ( err == -1 )
 	{
 		nklog( log::error, "::connect() failed: %d", platform::error() );
 	}
+
+exit:
 
 	return err;
 }
