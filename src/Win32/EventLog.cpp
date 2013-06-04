@@ -10,16 +10,16 @@
 
 using namespace netkit;
 
-static std::mutex	g_mutex;
+static std::mutex	*g_mutex		= nullptr;
 static log::level	g_logLevel		= log::info;
-static HANDLE		g_eventSource	= INVALID_HANDLE_VALUE;
+static HANDLE		g_eventSource	= nullptr;
 
 void
 log::init( LPCTSTR name )
 {
 	HKEY key = NULL;
 
-	if ( g_eventSource == INVALID_HANDLE_VALUE )
+	if ( g_eventSource == nullptr )
 	{
 		std::wstring	fullname;
 		TCHAR			path[ MAX_PATH ];
@@ -27,6 +27,8 @@ log::init( LPCTSTR name )
 		int				err;
 		int				n;
 	
+		g_mutex = new std::mutex;
+
 		// Build the path string using the fixed registry path and app name.
 	
 		fullname = std::wstring( TEXT( "SYSTEM\\CurrentControlSet\\Services\\EventLog\\Application\\" ) ) + name;
@@ -84,7 +86,7 @@ exit:
 log::level
 log::get_level()
 {
-	std::lock_guard< std::mutex > guard( g_mutex );
+	std::lock_guard< std::mutex > guard( *g_mutex );
 
 	return g_logLevel;
 }
@@ -93,7 +95,7 @@ log::get_level()
 void
 log::set_level( log::level l )
 {
-	std::lock_guard< std::mutex > guard( g_mutex );
+	std::lock_guard< std::mutex > guard( *g_mutex );
 
 	g_logLevel = l;
 }
@@ -119,7 +121,7 @@ log::put( log::level l, const char * filename, const char * function, int line, 
 {
 	if ( l <= g_logLevel )
 	{
-		std::lock_guard< std::mutex > guard( g_mutex );
+		std::lock_guard< std::mutex > guard( *g_mutex );
 
 		static char buf[ 32000 ];
 		static char msg[ 32512 ];

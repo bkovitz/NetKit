@@ -1440,6 +1440,7 @@ client::send_request()
 		}
 		else
 		{
+			nklog( log::error, "received error %d trying to connect to uri '%s'", status, m_request->uri()->to_string().c_str() );
 			m_handler->m_reply( m_handler->m_response );
 		}
 	} );

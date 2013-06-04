@@ -95,14 +95,32 @@ socket::init()
 int
 socket::start_connect( const endpoint::ref &peer, bool &would_block )
 {
+	static std::map< socket*, socket* > map;
+
 	sockaddr_storage	addr;
 	std::size_t			len;
 	int					err;
 
 	len = peer->to_sockaddr( addr );
+
+	auto it = map.find( this );
+
+	if ( it != map.end() )
+	{
+		assert( 0 );
+	}
+	else
+	{
+		map[ this ] = this;
+	}
 	
 	err			= ::connect( m_fd, ( struct sockaddr* ) &addr, len );
 	would_block = ( err < 0 ) && ( ( platform::error() == ( int ) socket::error::in_progress ) || ( platform::error() == ( int ) socket::error::would_block ) ) ? true : false;
+
+	if ( err && !would_block )
+	{
+		nklog( log::error, "::connect() failed: %d", platform::error() );
+	}
 
 	return err;
 }

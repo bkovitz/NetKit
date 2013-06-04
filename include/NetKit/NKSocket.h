@@ -241,6 +241,8 @@ class NETKIT_DLL acceptor : public netkit::acceptor
 {
 public:
 
+	typedef smart_ref< acceptor > ref;
+
 	acceptor( const ip::endpoint::ref &endpoint, int type );
 	
 	acceptor( socket::native fd );

@@ -133,9 +133,14 @@ source::connect_internal_1( const uri::ref &uri, connect_reply_f reply )
 {
 	ip::address::resolve( uri->host(), [=]( int status, const ip::address::list &addrs )
 	{
-		for ( auto it = addrs.begin(); it != addrs.end(); it++ )
+		/*
+		 * We should try all the addresses until we find one that works.
+		 * But for now, we'll just take the first one
+		 */
+
+		if ( addrs.size() > 0 )
 		{
-			ip::endpoint::ref	endpoint = new ip::endpoint( *it, uri->port() );
+			ip::endpoint::ref	endpoint = new ip::endpoint( addrs.front(), uri->port() );
 			bool				would_block;
 			int					ret;
 			

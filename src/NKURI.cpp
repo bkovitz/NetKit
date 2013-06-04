@@ -250,7 +250,7 @@ uri::to_string() const
 	UriUriStructA	uri;
 	std::string		port;
 	strings			components;
-	strings			encodedComponents;
+	strings			encoded_components;
 	char			*str	= NULL;
 	int				len;
 	
@@ -276,13 +276,16 @@ uri::to_string() const
 	{
 		UriPathSegmentA **path = &uri.pathHead;
 		int index = 0;
+
+		encoded_components.resize( components.size() );
 		
 		for ( auto it = components.begin(); it != components.end(); it++ )
 		{
-			encodedComponents.push_back( encode( *it ) );
+			encoded_components[ index ] = encode( *it );
+
 			*path = ( UriPathSegmentA* ) malloc( sizeof ( UriPathSegmentA ) );
-			( *path )->text.first = encodedComponents[ index ].c_str();
-			( *path )->text.afterLast = encodedComponents[ index ].c_str() + encodedComponents[ index ].size();
+			( *path )->text.first = encoded_components[ index ].c_str();
+			( *path )->text.afterLast = encoded_components[ index ].c_str() + encoded_components[ index ].size();
 			( *path )->next = NULL;
 			
 			path = &( *path )->next;
