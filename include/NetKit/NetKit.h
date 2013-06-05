@@ -55,6 +55,7 @@
 #include <NetKit/NKWebSocket.h>
 #include <NetKit/NKProxy.h>
 #include <NetKit/NKNetworkInterface.h>
+#include <NetKit/NKOAuth.h>
 #include <NetKit/NKLog.h>
 #include <NetKit/NKMacros.h>
 
