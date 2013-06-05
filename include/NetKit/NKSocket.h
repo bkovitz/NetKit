@@ -125,7 +125,6 @@ protected:
 	{
 	public:
 	
-	
 		typedef adapter						*ref;
 		typedef intrusive_list< adapter >	list;
 		
@@ -164,7 +163,7 @@ protected:
 	
 	void
 	init();
-	
+
 	virtual int
 	start_connect( const endpoint::ref &peer, bool &would_block );
 	

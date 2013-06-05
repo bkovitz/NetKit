@@ -96,8 +96,8 @@ socket::init()
 {
 	set_blocking( m_fd, false );
 	
-	m_send_event	= runloop::main()->create( m_fd, runloop::event_mask::write );
-	m_recv_event	= runloop::main()->create( m_fd, runloop::event_mask::read );
+	m_send_event = runloop::main()->create( ( int ) m_fd, runloop::event_mask::write );
+	m_recv_event = runloop::main()->create( ( int ) m_fd, runloop::event_mask::read );
 }
 
 
@@ -111,20 +111,8 @@ socket::start_connect( const endpoint::ref &peer, bool &would_block )
 	int					err;
 
 	len = peer->to_sockaddr( addr );
-	/*
-	auto it = map.find( this );
-
-	if ( it != map.end() )
-	{
-		assert( 0 );
-	}
-	else
-	{
-		map[ this ] = this;
-	}
-	*/
 	
-	m_fd		= ::socket( addr.ss_family, SOCK_STREAM, 0 );
+	m_fd = ::socket( addr.ss_family, SOCK_STREAM, 0 );
 
 	if ( m_fd == socket::null )
 	{
@@ -134,10 +122,10 @@ socket::start_connect( const endpoint::ref &peer, bool &would_block )
 
 	init();
 
-	err			= ::connect( m_fd, ( struct sockaddr* ) &addr, len );
+	err			= ::connect( m_fd, ( struct sockaddr* ) &addr, ( int ) len );
 	would_block = ( err < 0 ) && ( ( platform::error() == ( int ) socket::error::in_progress ) || ( platform::error() == ( int ) socket::error::would_block ) ) ? true : false;
 
-	if ( err == -1 )
+	if ( ( err == -1 ) && ( !would_block ) )
 	{
 		nklog( log::error, "::connect() failed: %d", platform::error() );
 	}
@@ -158,11 +146,8 @@ socket::finish_connect()
 	
 	sockaddr_storage	addr;
 	socklen_t			len = sizeof( addr );
-	int					err;
 					
-	err = getpeername( m_fd, ( struct sockaddr* ) &addr, &len );
-	
-	return err;
+	return getpeername( m_fd, ( struct sockaddr* ) &addr, &len );
 }
 
 	
@@ -171,7 +156,7 @@ socket::start_send( const std::uint8_t *buf, std::size_t len, bool &would_block 
 {
 	std::streamsize num;
 	
-	num			= ::send( m_fd, reinterpret_cast< const_buf_t >( buf ), len, 0 );
+	num			= ::send( m_fd, reinterpret_cast< const_buf_t >( buf ), ( int ) len, 0 );
 	would_block = ( num < 0 ) && ( platform::error() == ( int ) socket::error::would_block ) ? true : false;
 
 	if ( ( num < 0 ) && ( !would_block ) )
@@ -188,7 +173,7 @@ socket::start_recv( std::uint8_t *buf, std::size_t len, bool &would_block )
 {
 	std::streamsize num;
 
-	num			= ::recv( m_fd, reinterpret_cast< buf_t >( buf ), len, 0 );
+	num			= ::recv( m_fd, reinterpret_cast< buf_t >( buf ), ( int ) len, 0 );
 	would_block = ( num < 0 ) && ( platform::error() == ( int ) socket::error::would_block ) ? true : false;
 	
 	if ( ( num < 0 ) && ( !would_block ) )
@@ -283,7 +268,7 @@ acceptor::listen( int size )
 	
 	len = m_endpoint->to_sockaddr( saddr );
 	
-	ret = ::bind( m_fd, ( struct sockaddr* ) &saddr, len );
+	ret = ::bind( m_fd, ( struct sockaddr* ) &saddr, ( int ) len );
 	
 	if ( ret != 0 )
 	{
@@ -431,7 +416,7 @@ ip::tcp::acceptor::accept( accept_reply_f reply )
 
 	if ( !m_event )
 	{
-		m_event = runloop::main()->create( m_fd, runloop::event_mask::read );
+		m_event = runloop::main()->create( ( int ) m_fd, runloop::event_mask::read );
 	
 		runloop::main()->schedule( m_event, [=]( runloop::event event )
 		{

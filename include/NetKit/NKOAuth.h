@@ -55,6 +55,8 @@ public:
 
 	oauth( const std::string &client_id, const std::string &client_secret, const std::string &auth_server_uri, const std::string &refresh_token );
 
+	oauth( const std::string &client_id, const std::string &client_secret, const std::string &auth_server_uri, const std::string &refresh_token, const std::string &access_token, const std::chrono::system_clock::time_point &expire_time );
+
 	void
 	get_access_token( token_result_f result );
 

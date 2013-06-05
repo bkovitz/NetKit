@@ -72,7 +72,7 @@ public:
 	typedef smart_ref< address > ref;
 	typedef std::deque< ref > list;
 	typedef std::vector< ref > array;
-	typedef std::function< void ( int status, const list &addrs ) > resolve_reply_f;
+	typedef std::function< void ( int status, list addrs ) > resolve_reply_f;
 	
 	enum type
 	{

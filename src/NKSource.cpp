@@ -131,50 +131,55 @@ source::connect( const uri::ref &in_uri, connect_reply_f reply )
 
 
 void
-source::handle_resolve( int status, const ip::address::list &addrs, const uri::ref &uri, connect_reply_f reply )
+source::handle_resolve( ip::address::list addrs, const uri::ref &uri, connect_reply_f reply )
 {
-	if ( addrs.size() > 0 )
+	assert( addrs.size() > 0 );
+
+	ip::endpoint::ref	endpoint = new ip::endpoint( addrs.front(), uri->port() );
+	bool				would_block;
+	int					ret;
+
+	ret = start_connect( endpoint.get(), would_block );
+
+	if ( ret == 0 )
 	{
-		ip::endpoint::ref	endpoint = new ip::endpoint( addrs.front(), uri->port() );
-		bool				would_block;
-		int					ret;
-
-		ret = start_connect( endpoint.get(), would_block );
-
-		if ( ret == 0 )
+		connect_internal_2( uri, endpoint.get(), reply );
+	}
+	else if ( would_block )
+	{
+		runloop::main()->schedule( m_send_event, [=]( runloop::event event ) mutable
 		{
-			connect_internal_2( uri, endpoint.get(), reply );
-		}
-		else if ( would_block )
-		{
-			runloop::main()->schedule( m_send_event, [=]( runloop::event event ) mutable
-			{
-				int ret;
+			int ret;
 
-				runloop::main()->suspend( event );
+			runloop::main()->suspend( event );
 				
-				ret = finish_connect();
+			ret = finish_connect();
 
-				if ( ret == 0 )
-				{
-					connect_internal_2( uri, endpoint.get(), reply );
-				}
-				else if ( addrs.size() > 0 )
-				{
-					ip::address::list addresses = addrs;
-					addresses.pop_front();
-					handle_resolve( status, addresses, uri, reply );
-				}
-				else
-				{
-					reply( ret, endpoint.get() );
-				}
-			} );
-		}
-		else
-		{
-			reply( ret, endpoint.get() );
-		}
+			if ( ret == 0 )
+			{
+				connect_internal_2( uri, endpoint.get(), reply );
+			}
+			else if ( addrs.size() > 1 )
+			{
+				close();
+				addrs.pop_front();
+				handle_resolve( addrs, uri, reply );
+			}
+			else
+			{
+				reply( ret, endpoint.get() );
+			}
+		} );
+	}
+	else if ( addrs.size() > 1 )
+	{
+		close();
+		addrs.pop_front();
+		handle_resolve( addrs, uri, reply );
+	}
+	else
+	{
+		reply( ret, endpoint.get() );
 	}
 }
 
@@ -182,9 +187,16 @@ source::handle_resolve( int status, const ip::address::list &addrs, const uri::r
 void
 source::connect_internal_1( const uri::ref &uri, connect_reply_f reply )
 {
-	ip::address::resolve( uri->host(), [=]( int status, const ip::address::list &addrs )
+	ip::address::resolve( uri->host(), [=]( int status, ip::address::list addrs )
 	{
-		handle_resolve( status, addrs, uri, reply );
+		if ( status == 0 )
+		{
+			handle_resolve( addrs, uri, reply );
+		}
+		else
+		{
+			reply( status, nullptr );
+		}
 	} );
 }
 

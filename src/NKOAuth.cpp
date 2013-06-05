@@ -58,6 +58,19 @@ oauth::oauth( const std::string &client_id, const std::string &client_secret, co
 	m_token.expire_time		= system_clock::now() - seconds( 1 );
 }
 
+
+oauth::oauth( const std::string &client_id, const std::string &client_secret, const std::string &auth_server_uri, const std::string &refresh_token, const std::string &access_token, const std::chrono::system_clock::time_point &expire_time )
+:
+	m_client_id( client_id ),
+	m_client_secret( client_secret ),
+	m_auth_server_uri( auth_server_uri )
+{
+	m_token.refresh_token	= refresh_token;
+	m_token.access_token	= access_token;
+	m_token.expire_time		= expire_time;
+}
+
+
 void
 oauth::get_access_token( token_result_f result )
 {
