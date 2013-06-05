@@ -160,6 +160,9 @@ protected:
 	start_recv( std::uint8_t *buf, std::size_t len, bool &would_block ) = 0;
 	
 	void
+	handle_resolve( int status, const ip::address::list &addrs, const uri::ref &uri, connect_reply_f reply );
+
+	void
 	connect_internal_1( const uri::ref &uri, connect_reply_f reply );
 	
 	void

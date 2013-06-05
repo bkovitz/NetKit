@@ -113,7 +113,7 @@ sink::cancel( cookie c )
 void
 sink::connect( const uri::ref &uri, source::connect_reply_f reply )
 {
-	source::ref source = new ip::tcp::socket;
+	source::ref source = new netkit::socket;
 
 	source->connect( uri, [=]( int status, const endpoint::ref &peer )
 	{

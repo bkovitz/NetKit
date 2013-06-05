@@ -117,6 +117,8 @@ public:
 		return m_fd;
 	}
 
+	socket();
+
 protected:
 
 	class adapter : public source::adapter
