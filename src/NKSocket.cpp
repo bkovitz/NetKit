@@ -201,7 +201,7 @@ socket::set_blocking( native fd, bool block )
 
 
 void
-socket::close()
+socket::close( bool notify )
 {
 	if ( m_fd != null )
 	{
@@ -212,8 +212,9 @@ socket::close()
 #endif
 		m_fd = null;
 
-		source::close();
 	}
+
+	source::close( notify );
 }
 
 

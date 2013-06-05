@@ -97,7 +97,7 @@ public:
 	is_open() const;
 	
 	virtual void
-	close();
+	close( bool notify = true );
 	
 	inline bool
 	connected() const

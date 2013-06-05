@@ -159,27 +159,35 @@ source::handle_resolve( ip::address::list addrs, const uri::ref &uri, connect_re
 			{
 				connect_internal_2( uri, endpoint.get(), reply );
 			}
-			else if ( addrs.size() > 1 )
-			{
-				close();
-				addrs.pop_front();
-				handle_resolve( addrs, uri, reply );
-			}
 			else
 			{
-				reply( ret, endpoint.get() );
+				close( false );
+
+				if ( addrs.size() > 1 )
+				{
+					addrs.pop_front();
+					handle_resolve( addrs, uri, reply );
+				}
+				else
+				{
+					reply( ret, endpoint.get() );
+				}
 			}
 		} );
 	}
-	else if ( addrs.size() > 1 )
-	{
-		close();
-		addrs.pop_front();
-		handle_resolve( addrs, uri, reply );
-	}
 	else
 	{
-		reply( ret, endpoint.get() );
+		close( false );
+
+		if ( addrs.size() > 1 )
+		{
+			addrs.pop_front();
+			handle_resolve( addrs, uri, reply );
+		}
+		else
+		{
+			reply( ret, endpoint.get() );
+		}
 	}
 }
 
@@ -397,7 +405,7 @@ source::recv_internal( std::uint8_t *in_buf, std::size_t in_len, bool peek_flag,
 
 
 void
-source::close()
+source::close( bool notify )
 {
 	if ( m_send_event )
 	{
@@ -411,9 +419,12 @@ source::close()
 		m_recv_event = nullptr;
 	}
 
-	for ( auto it = m_close_handlers.begin(); it != m_close_handlers.end(); it++ )
+	if ( notify )
 	{
-		it->second();
+		for ( auto it = m_close_handlers.begin(); it != m_close_handlers.end(); it++ )
+		{
+			it->second();
+		}
 	}
 }
 

@@ -116,7 +116,7 @@ public:
 	is_open() const = 0;
 	
 	virtual void
-	close();
+	close( bool notify = true );
 	
 	virtual cookie
 	on_close( close_f func );
