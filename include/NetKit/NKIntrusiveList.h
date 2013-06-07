@@ -93,8 +93,8 @@ public:
 		T *next;
 		T *prev;
 
-		next = GETLINK( elem, m_next_offset );
-		prev = GETLINK( elem, m_prev_offset );
+		next = ( T* ) GETLINK( elem, m_next_offset );
+		prev = ( T* ) GETLINK( elem, m_prev_offset );
 
 		if ( prev )
 		{

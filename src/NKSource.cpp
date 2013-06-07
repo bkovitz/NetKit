@@ -59,15 +59,6 @@ source::~source()
 	{
 		runloop::main()->cancel( m_recv_event );
 	}
-
-	auto adapter = m_adapters.head();
-
-	while ( adapter )
-	{
-		adapter::ref next = adapter->m_next;
-		delete adapter;
-		adapter = next;
-	}
 }
 
 
@@ -419,13 +410,41 @@ source::close( bool notify )
 		m_recv_event = nullptr;
 	}
 
-	if ( notify )
+	if ( m_close_handlers.size() > 0 )
 	{
-		for ( auto it = m_close_handlers.begin(); it != m_close_handlers.end(); it++ )
+		if ( notify )
 		{
-			it->second();
+			for ( auto it = m_close_handlers.begin(); it != m_close_handlers.end(); it++ )
+			{
+				it->second();
+			}
+		}
+
+		m_close_handlers.clear();
+	}
+
+	if ( m_adapters.head() )
+	{
+		source::ref self( this );
+
+		// This is kinda sketchy.  We must artificially bump up our ref count here
+		// to prevent the deletion of an adapter to cause our destructor to be 
+		// called.
+		//
+		// DO NOT MODIFY THIS CODE unless you know what you're doing.
+
+		while ( m_adapters.head() )
+		{
+			adapter::ref adapter = ( adapter::ref ) m_adapters.head();
+			m_adapters.remove( adapter );
+			delete adapter;
 		}
 	}
+
+	// DANGER DANGER DANGER
+
+	// Do not do anything here that references the socket as it could have been deleted
+	// out from under us when we deleted the adapters
 }
 
 

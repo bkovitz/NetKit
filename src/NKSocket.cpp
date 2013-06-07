@@ -87,6 +87,8 @@ socket::socket( native fd, const endpoint::ref peer )
 
 socket::~socket()
 {
+	nklog( log::verbose, "" );
+
 	close();
 }
 
@@ -211,7 +213,7 @@ socket::close( bool notify )
 		::close( m_fd );
 #endif
 		m_fd = null;
-
+	
 	}
 
 	source::close( notify );
@@ -373,22 +375,6 @@ ip::tcp::socket::~socket()
 }
 
 
-/*
-void
-ip::tcp::socket::close()
-{
-	if ( m_connected )
-	{
-		::shutdown( m_fd, SHUT_RDWR );
-		m_connected = false;
-	}
-	
-	socket::close();
-}
-*/
-
-
-	
 #if defined( __APPLE__ )
 #	pragma mark ip::tcp::acceptor implementation
 #endif
