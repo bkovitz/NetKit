@@ -82,7 +82,7 @@ oauth::get_access_token( token_result_f result )
 		*request << "client_id=" << m_client_id << "&client_secret=" << m_client_secret << "&refresh_token="
 		         << m_token.refresh_token << "&grant_type=" << "refresh_token";
 
-		http::client::send( request, [=]( http::response::ref response )
+		request->on_reply( [=]( http::response::ref response )
 		{
 			bool success = false;
 
@@ -122,6 +122,8 @@ oauth::get_access_token( token_result_f result )
 	
 			result( success, m_token );
 		} );
+
+		http::client::send( request );
 	}
 	else
 	{

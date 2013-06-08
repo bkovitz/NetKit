@@ -120,6 +120,10 @@ protected:
 			m_data( data, data + len )
 		{
 		}
+
+		inline ~buffer()
+		{
+		}
 	};
 	
 	inline void
@@ -147,10 +151,8 @@ protected:
 	std::queue< buffer* >	m_pending_read_list;
 	bool					m_read_required;
 	bool					m_error;
-	SSL_CTX					*m_ssl_context;
 	SSL						*m_ssl;
-	BIO						*m_out;
-	BIO						*m_in;
+	SSL_CTX					*m_ssl_context;
 };
 
 
@@ -179,9 +181,7 @@ tls_adapter::tls_adapter( type t )
 	m_sending( false ),
 	m_error( false ),
 	m_ssl_context( nullptr ),
-	m_ssl( nullptr ),
-	m_out( nullptr ),
-	m_in( nullptr )
+	m_ssl( nullptr )
 {
 	static bool init = false;
 	
@@ -212,30 +212,24 @@ tls_adapter::tls_adapter( type t )
 	{
 		case server:
 		{
-			m_ssl_context	= SSL_CTX_new( TLSv1_server_method() );
-			SSL_CTX_set_options( m_ssl_context, SSL_OP_NO_SSLv2 );
-			SSL_CTX_use_PrivateKey( m_ssl_context, m_pkey );
-			SSL_CTX_use_certificate( m_ssl_context, m_cert );
+			auto ssl_context = SSL_CTX_new( TLSv1_server_method() );
+			SSL_CTX_set_options( ssl_context, SSL_OP_NO_SSLv2 );
+			SSL_CTX_use_PrivateKey( ssl_context, m_pkey );
+			SSL_CTX_use_certificate( ssl_context, m_cert );
 	
-			m_ssl	= SSL_new( m_ssl_context );
-			m_in	= BIO_new( BIO_s_mem() );
-			m_out	= BIO_new( BIO_s_mem() );
-	
-			SSL_set_bio( m_ssl, m_in, m_out );
+			m_ssl = SSL_new( ssl_context );
+			SSL_set_bio( m_ssl, BIO_new( BIO_s_mem() ), BIO_new( BIO_s_mem() ) );
 			SSL_set_accept_state( m_ssl );
 		}
 		break;
 
 		case client:
 		{
-			m_ssl_context	= SSL_CTX_new( TLSv1_client_method() );
+			m_ssl_context = SSL_CTX_new( TLSv1_client_method() );
 			SSL_CTX_set_options( m_ssl_context, SSL_OP_NO_SSLv2 );
 	
-			m_ssl	= SSL_new( m_ssl_context );
-			m_in	= BIO_new( BIO_s_mem() );
-			m_out	= BIO_new( BIO_s_mem() );
-			
-			SSL_set_bio( m_ssl, m_in, m_out );
+			m_ssl = SSL_new( m_ssl_context );
+			SSL_set_bio( m_ssl, BIO_new( BIO_s_mem() ), BIO_new( BIO_s_mem() ) );
 			SSL_set_connect_state( m_ssl );
 		}
 	}
@@ -244,24 +238,16 @@ tls_adapter::tls_adapter( type t )
 
 tls_adapter::~tls_adapter()
 {
-	if ( m_out )
-	{
-		BIO_free( m_out );
-	}
-	
-	if ( m_in )
-	{
-		BIO_free( m_in );
-	}
-	
-	if ( m_ssl )
-	{
-		SSL_free( m_ssl );
-	}
-	
+	nklog( log::verbose, "" );
+
 	if ( m_ssl_context )
 	{
 		SSL_CTX_free( m_ssl_context );
+	}
+
+	if ( m_ssl )
+	{
+		SSL_free( m_ssl );
 	}
 }
 
@@ -403,7 +389,7 @@ tls_adapter::process()
 			}
 		}
 
-		if ( BIO_ctrl_pending( m_out ) )
+		if ( BIO_ctrl_pending( m_ssl->wbio ) )
 		{
 			send_pending_data();
 		}
@@ -439,7 +425,7 @@ std::streamsize
 tls_adapter::data_to_read( std::uint8_t *data, std::size_t len )
 {
 	std::uint8_t	buf[ 4192 ];
-	std::size_t		bytes_used	= BIO_write( m_in, data, ( int ) len );
+	std::size_t		bytes_used	= BIO_write( m_ssl->rbio, data, ( int ) len );
 	int				bytes_out	= 0;
    
 	m_read_required = false;
@@ -475,9 +461,9 @@ tls_adapter::send_pending_data()
 	std::uint8_t	buf[ 4192 ];
 	std::size_t		pending;
 
-	while ( ( pending = BIO_ctrl_pending( m_out ) ) > 0 )
+	while ( ( pending = BIO_ctrl_pending( m_ssl->wbio ) ) > 0 )
 	{
-		int bytes_to_send = BIO_read( m_out, ( void* ) buf, sizeof( buf ) );
+		int bytes_to_send = BIO_read( m_ssl->wbio, ( void* ) buf, sizeof( buf ) );
 
 		if ( bytes_to_send > 0 )
 		{
@@ -499,7 +485,7 @@ tls_adapter::send_pending_data()
 
 		if ( bytes_to_send <= 0 )
 		{
-			if ( !BIO_should_retry( m_out ) )
+			if ( !BIO_should_retry( m_ssl->wbio ) )
 			{
 				handle_error(bytes_to_send);
 			}

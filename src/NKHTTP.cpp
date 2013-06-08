@@ -618,6 +618,7 @@ request::request( const request &that )
 
 request::~request()
 {
+	nklog( log::verbose, "" );
 }
 
 
@@ -682,6 +683,51 @@ request::send_prologue( connection_ref conn ) const
 	*conn << " HTTP/1.1" << http::endl;
 }
 
+
+void
+request::auth( int status )
+{
+	if ( m_auth )
+	{
+		m_auth( status );
+	}
+}
+
+
+void
+request::headers_reply( response_ref response )
+{
+	if ( m_headers_reply )
+	{
+		m_headers_reply( response );
+	}
+}
+
+
+void
+request::body_reply( response_ref response, const std::uint8_t *buf, std::size_t len )
+{
+	if ( m_body_reply )
+	{
+		m_body_reply( response, buf, len );
+	}
+	else
+	{
+		response->write( buf, len );
+	}
+}
+
+
+void
+request::reply( response_ref response )
+{
+	if ( m_reply )
+	{
+		m_reply( response );
+	}
+}
+
+
 #if defined( __APPLE__ )
 #	pragma mark response implementation
 #endif
@@ -706,6 +752,7 @@ response::response( const response &that )
 
 response::~response()
 {
+	nklog( log::verbose, "" );
 }
 
 
@@ -756,6 +803,8 @@ connection::connection( handler::ref h )
 
 connection::~connection()
 {
+	nklog( log::verbose, "" );
+
 	if ( m_settings )
 	{
 		delete m_settings;
@@ -1340,84 +1389,32 @@ server::handler::process_did_end( connection::ref connection )
 #	pragma mark client implementation
 #endif
 
-client::client( const request::ref &request, auth_f auth_func, headers_reply_f headers_reply, body_reply_f body_reply, reply_f reply )
+client::client( const request::ref &request )
 :
-	m_request( request )
+	m_connection( new connection( this ) ),
+	m_request( request ),
+	m_done( false )
 {
-	m_handler		= new handler( headers_reply, body_reply, reply );
-	m_connection	= new connection( m_handler.get() );
 }
 
 
 client::~client()
 {
+	nklog( log::verbose, "" );
 }
 
 
 void
-client::send( const request::ref &request, reply_f reply )
+client::send( const request::ref &request )
 {
-	client *self = new client( request, [=]( request::ref &request, uint32_t status )
-	{
-		return false;
-	},
+	client *self = new client( request );
 	
-	[=]( http::response::ref response )
-	{
-	},
-	
-	[=]( http::response::ref response, const char *buf, size_t len )
-	{
-		response->write( reinterpret_cast< const uint8_t* >( buf ), len );
-	},
-
-	reply );
-	
-	self->send_request();
+	self->really_send();
 }
 
 
 void
-client::send( const request::ref &request, headers_reply_f headers_reply, reply_f reply )
-{
-	client *self = new client( request, [=]( request::ref &request, uint32_t status )
-	{
-		return false;
-	},
-	
-	headers_reply,
-	
-	[=]( http::response::ref response, const char *buf, std::size_t len )
-	{
-		response->write( reinterpret_cast< const uint8_t* >( buf ), len );
-	},
-	
-	reply );
-
-	self->send_request();
-}
-
-
-void
-client::send( const request::ref &request, headers_reply_f headers_reply, body_reply_f body_reply, reply_f reply )
-{
-	client *self = new client( request, [=]( request::ref &request, uint32_t status )
-	{
-		return false;
-	},
-	
-	headers_reply,
-
-	body_reply,
-	
-	reply );
-
-	self->send_request();
-}
-
-
-void
-client::send_request()
+client::really_send()
 {
 	m_connection->connect( m_request->uri(), [=]( int status, const endpoint::ref &peer )
 	{
@@ -1441,26 +1438,26 @@ client::send_request()
 		else
 		{
 			nklog( log::error, "received error %d trying to connect to uri '%s'", status, m_request->uri()->to_string().c_str() );
-			m_handler->m_reply( m_handler->m_response );
+			m_request->reply( m_response );
 		}
 	} );
 }
 
 
 void
-client::handler::process_will_begin( connection::ref connection )
+client::process_will_begin( connection::ref connection )
 {
 }
 
 
 void
-client::handler::message_will_begin( connection::ref connection )
+client::message_will_begin( connection::ref connection )
 {
 }
 
 
 int
-client::handler::uri_was_received( connection::ref connection, const char *buf, size_t len )
+client::uri_was_received( connection::ref connection, const char *buf, size_t len )
 {
 	assert( 0 );
 	return 0;
@@ -1468,32 +1465,45 @@ client::handler::uri_was_received( connection::ref connection, const char *buf, 
 
 
 int
-client::handler::headers_were_received( connection::ref connection, message::header &header )
+client::headers_were_received( connection::ref connection, message::header &header )
 {
 	m_response = new response( connection->http_major(), connection->http_minor(), connection->status_code(), false );
 	m_response->add_to_header( header );
-	m_headers_reply( m_response );
+	m_request->headers_reply( m_response );
+	m_request->on_headers_reply( nullptr );
 	return 0;
 }
 
 
 int
-client::handler::body_was_received( connection::ref connection, const char *buf, size_t len )
+client::body_was_received( connection::ref connection, const char *buf, size_t len )
 {
-	m_body_reply( m_response, buf, len );
+	m_request->body_reply( m_response, ( std::uint8_t* ) buf, len );
 	return 0;
 }
 
 
 int
-client::handler::message_was_received( connection::ref connection )
+client::message_was_received( connection::ref connection )
 {
-	m_reply( m_response );
+	m_request->reply( m_response );
+
+	m_request->on_auth( nullptr );
+	m_request->on_body_reply( nullptr );
+	m_request->on_reply( nullptr );
+
+	m_done = true;
+
 	return 0;
 }
 
 
 void
-client::handler::process_did_end( connection::ref connection )
+client::process_did_end( connection::ref connection )
 {
+	if ( m_done )
+	{
+		m_connection->close();
+		m_connection = nullptr;
+	}
 }

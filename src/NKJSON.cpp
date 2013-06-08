@@ -3060,10 +3060,10 @@ connection::send( value::ref request )
 std::string
 connection::encode( const std::string &msg )
 {
-	char buf[ 64 ];
-	
-	std::sprintf_s( buf, sizeof( buf ), sizeof( buf ), "%lu:", msg.size() );
-	return std::string( buf ) + msg + ",";
+	std::ostringstream os;
+
+	os << msg.size() << ":" << msg << ",";
+	return os.str();
 }
 
 
@@ -3097,6 +3097,12 @@ connection::really_process()
 			// If we have more than 10 bytes and no ':', then let's assume this buffer is no good
 
 			ok = num_bytes_used() < 10;
+
+			if ( !ok )
+			{
+				nklog( log::error, "bad header" );
+			}
+
 			goto exit;
 		}
 
@@ -3110,29 +3116,31 @@ connection::really_process()
 			}
 			else
 			{
+				nklog( log::error, "header contains non-digit" );
 				ok = false;
 				goto exit;
 			}
 		}
-		
-		if ( size() < ( index + len + 2 ) )
+
+		if ( size() < ( index + len + 1 ) )
 		{
-			add( ( index + len + 2 ) - size() );
+			add( ( index + len + 1 ) - size() );
 			goto exit;
 		}
 		
-		if ( num_bytes_used() < len )
+		if ( num_bytes_used() < ( index + len + 1 ) )
 		{
 			goto exit;
 		}
 
 		if ( m_base[ index + len + 1 ] != ',' )
 		{
+			nklog( log::error, "cannot find ','" );
 			ok = false;
 			goto exit;
 		}
 
-		msg.assign( m_base + index + 1, m_base + index + 1 + len );
+		msg.assign( m_base + index + 1, m_base + index + len + 1 );
 	    
 		shift( index + len + 2 );
 
@@ -3140,6 +3148,7 @@ connection::really_process()
 		
 		if ( !ret.is_valid() )
 		{
+			nklog( log::error, "unable to parse %s", msg.c_str() );
 			ok = false;
 			goto exit;
 		}

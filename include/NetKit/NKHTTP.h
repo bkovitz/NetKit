@@ -267,11 +267,18 @@ protected:
 };
 
 
+class response;
+typedef smart_ref< response > response_ref;
+
 class NETKIT_DLL request : public message
 {
 public:
 
-	typedef smart_ref< request > ref;
+	typedef std::function< bool ( uint32_t status ) >													auth_f;
+	typedef std::function< void ( response_ref response ) >												headers_reply_f;
+	typedef std::function< void ( response_ref response, const std::uint8_t *buf, std::size_t len ) >	body_reply_f;
+	typedef std::function< void ( response_ref response ) >												reply_f;
+	typedef smart_ref< request >																		ref;
 
 	request( int method, std::uint16_t major, std::uint16_t minor, const uri::ref &uri );
 
@@ -284,8 +291,7 @@ public:
 	add_to_header( const std::string &key, const std::string &val );
 
 	template< class T > auto
-	add_to_header( const std::string &key, const T &val )
-	-> decltype( std::to_string( val ), void() )
+	add_to_header( const std::string &key, const T &val ) -> decltype( std::to_string( val ), void() )
 	{
 		add_to_header( key, std::to_string( val ) );
 	}
@@ -370,13 +376,54 @@ public:
 	{
 		++m_tries;
 	}
-	
+
+	void
+	auth( int status );
+
+	inline void
+	on_auth( auth_f auth )
+	{
+		m_auth = auth;
+	}
+
+	void
+	headers_reply( response_ref response );
+
+	inline void
+	on_headers_reply( headers_reply_f reply )
+	{
+		m_headers_reply = reply;
+	}
+
+	void
+	body_reply( response_ref response, const std::uint8_t *buf, std::size_t len );
+
+	inline void
+	on_body_reply( body_reply_f reply )
+	{
+		m_body_reply = reply;
+	}
+
+	void
+	reply( response_ref response );
+
+	inline void
+	on_reply( reply_f reply )
+	{
+		m_reply = reply;
+	}
+
 protected:
 
 	request( const request &that );
 
 	void
 	init();
+
+	auth_f			m_auth;
+	headers_reply_f	m_headers_reply;
+	body_reply_f	m_body_reply;
+	reply_f			m_reply;
 
 	std::string		m_peer_host;
 	std::string		m_peer_ethernet_addr;
@@ -441,7 +488,6 @@ public:
 	public:
 
 		typedef smart_ref< handler > ref;
-		typedef std::list< ref > list;
 
 		virtual void
 		process_will_begin( connection::ref connection ) = 0;
@@ -695,10 +741,9 @@ protected:
 	class handler : public connection::handler
 	{
 	public:
-	
+
 		typedef smart_ref< handler > ref;
-		typedef std::list< ref > list;
-		
+	
 		virtual void
 		process_will_begin( connection::ref connection );
 
@@ -745,88 +790,52 @@ protected:
 };
 
 
-class NETKIT_DLL client : public object
+class NETKIT_DLL client : public connection::handler
 {
 public:
 
-	typedef std::function< bool ( request::ref &request, uint32_t status ) >					auth_f;
-	typedef std::function< void ( response::ref response ) >									headers_reply_f;
-	typedef std::function< void ( response::ref response, const char *buf, std::size_t len ) >	body_reply_f;
-	typedef std::function< void ( response::ref response ) >									reply_f;
-	typedef smart_ref< client >																	ref;
+	typedef smart_ref< client > ref;
 
 	static request::ref
 	request( int method, const uri::ref &uri );
 
 	static void
-	send( const request::ref &request, reply_f reply );
-
-	static void
-	send( const request::ref &request, auth_f auth_func, reply_f reply );
-
-	static void
-	send( const request::ref &request, headers_reply_f headers_reply, reply_f reply );
-
-	static void
-	send( const request::ref &request, headers_reply_f headers_reply, body_reply_f body_reply, reply_f reply );
+	send( const request::ref &request );
 
 protected:
 
-	client( const request::ref &request, auth_f auth_func, headers_reply_f headers_reply, body_reply_f body_reply, reply_f reply );
+	client( const request::ref &request );
 
 	void
-	send_request();
+	really_send();
 
 	virtual ~client();
 
-	class handler : public connection::handler
-	{
-	public:
+	virtual void
+	process_will_begin( connection::ref connection );
 
-		typedef smart_ref< handler > ref;
-		typedef std::list< ref > list;
+	virtual void
+	message_will_begin( connection::ref connection );
 
-		handler( headers_reply_f headers_reply, body_reply_f body_reply, reply_f reply )
-		:
-			m_headers_reply( headers_reply ),
-			m_body_reply( body_reply ),
-			m_reply( reply )
-		{
-		}
+	virtual int
+	uri_was_received( connection::ref connection, const char *buf, size_t len );
 
-		virtual void
-		process_will_begin( connection::ref connection );
+	virtual int
+	headers_were_received( connection::ref connection, message::header &header );
 
-		virtual void
-		message_will_begin( connection::ref connection );
+	virtual int
+	body_was_received( connection::ref connection, const char *buf, size_t len );
 
-		virtual int
-		uri_was_received( connection::ref connection, const char *buf, size_t len );
+	virtual int
+	message_was_received( connection::ref connection );
 
-		virtual int
-		headers_were_received( connection::ref connection, message::header &header );
+	virtual void
+	process_did_end( connection::ref connection );
 
-		virtual int
-		body_was_received( connection::ref connection, const char *buf, size_t len );
-
-		virtual int
-		message_was_received( connection::ref connection );
-
-		virtual void
-		process_did_end( connection::ref connection );
-
-		auth_f					m_auth_func;
-		headers_reply_f			m_headers_reply;
-		body_reply_f			m_body_reply;
-		reply_f					m_reply;
-
-		response::ref			m_response;
-	};
-
-	request::ref	m_request;
-
-	handler::ref	m_handler;
 	connection::ref	m_connection;
+	request::ref	m_request;
+	response::ref	m_response;
+	bool			m_done;
 };
 
 
