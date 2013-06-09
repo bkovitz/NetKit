@@ -309,7 +309,7 @@ tls_adapter::send( const std::uint8_t *data, std::size_t len, send_reply_f reply
 void
 tls_adapter::recv( const std::uint8_t *in_buf, std::size_t in_len, recv_reply_f reply )
 {
-	m_next->recv( in_buf, in_len, [=]( int status, const std::uint8_t *out_buf, std::size_t out_len )
+	m_next->recv( in_buf, in_len, [=]( int status, const std::uint8_t *out_buf, std::size_t out_len, bool more_coming )
 	{
 		if ( status == 0 )
 		{
@@ -326,20 +326,20 @@ tls_adapter::recv( const std::uint8_t *in_buf, std::size_t in_len, recv_reply_f 
 		
 			if ( m_recv_data.size() > 0 )
 			{
-				reply( 0, &m_recv_data[ 0 ], m_recv_data.size() );
+				reply( 0, &m_recv_data[ 0 ], m_recv_data.size(), false );
 			}
 			else if ( m_error )
 			{
-				reply( -1, nullptr, 0 );
+				reply( -1, nullptr, 0, false );
 			}
 			else
 			{
-				reply( 0, nullptr, 0 );
+				reply( 0, nullptr, 0, false );
 			}
 		}
 		else
 		{
-			reply( status, nullptr, 0 );
+			reply( status, nullptr, 0, false );
 		}
 	} );
 }

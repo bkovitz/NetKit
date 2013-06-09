@@ -56,7 +56,7 @@ enum class status
 	invalid_params		= -32602,
 	uninitialized		= -32603,
 	not_logged_in		= -32604,
-	internal_error		= -32604
+	internal_error		= -32605
 };
 
 std::string NETKIT_DLL

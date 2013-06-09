@@ -2946,10 +2946,6 @@ netkit::json::operator<<(std::ostream &output, const value &v)
 std::atomic< std::int32_t >	connection::m_id( 1 );
 
 connection::connection()
-:
-	m_base( NULL ),
-	m_eptr( NULL ),
-	m_end( NULL )
 {
 	init();
 }
@@ -2957,7 +2953,7 @@ connection::connection()
 
 connection::~connection()
 {
-	free( m_base );
+	nklog( log::verbose, "" );
 }
 
 
@@ -2978,31 +2974,85 @@ connection::init()
 			it->second( reply );
 		}
 	} );
-
-	add( 4192 );
 }
-
 
 
 bool
 connection::process( const std::uint8_t *buf, std::size_t len )
 {
-	bool ok = true;
+	value::ref		root;
+	value::ref		error;
+	std::string		msg;
+	bool			ok = true;
 
-	if ( num_bytes_unused() < len )
-	{
-		add( len - num_bytes_unused() );
-	}
-
-	memcpy( m_eptr, buf, len );
+	msg.assign( buf, buf + len );
+	    
+	auto ret = value::load( msg.c_str() );
 		
-	m_eptr += len;
-
-	if ( !really_process() )
+	if ( !ret.is_valid() )
 	{
-		shutdown();
+		nklog( log::error, "unable to parse %s", msg.c_str() );
 		ok = false;
+		goto exit;
 	}
+		
+	nklog( log::verbose, "msg = %s", msg.c_str() );
+	root = ret.get();
+		
+	if ( !root[ "method" ]->is_null() )
+	{
+		auto id = root[ "id" ];
+				
+		if ( validate( root, error ) )
+		{
+			if ( id->is_null() )
+			{
+				server::set_active_connection( this );
+					
+				server::route_notification( root );
+					
+				server::set_active_connection( nullptr );
+			}
+			else
+			{
+				server::set_active_connection( this );
+					
+				server::route_request( root, [=]( value::ref reply, bool close ) mutable
+				{
+					server::set_active_connection( nullptr );
+	
+					reply[ "jsonrpc" ]	= "2.0";
+					reply[ "id" ]		= id;
+							
+					send( reply );
+								
+					if ( close )
+					{
+						shutdown();
+					}
+				} );
+			}
+		}
+		else if ( !id->is_null() )
+		{
+			error[ "id" ] = id;
+				
+			send( error );
+		}
+	}
+	else
+	{
+		auto it = m_reply_handlers.find( root[ "id" ]->as_uint64() );
+				
+		if ( it != m_reply_handlers.end() )
+		{
+			it->second( root );
+	
+			m_reply_handlers.erase( it );
+		}
+	}
+
+exit:
 
 	return ok;
 }
@@ -3047,172 +3097,12 @@ connection::send( value::ref request )
 	std::string msg;
 	
 	msg = request->to_string();
-    msg = encode( msg );
     
 	sink::send( ( const std::uint8_t* ) msg.c_str(), msg.size(), [=]( int status )
 	{
 	} );
 
 	return true;
-}
-
-
-std::string
-connection::encode( const std::string &msg )
-{
-	std::ostringstream os;
-
-	os << msg.size() << ":" << msg << ",";
-	return os.str();
-}
-
-
-bool
-connection::really_process()
-{
-	value::ref		root;
-	value::ref		error;
-    unsigned long	len = 0;
-	std::size_t		index = 0;
-	std::size_t		i = 0;
-	std::uint8_t	*colon;
-	std::string		msg;
-	bool			ok = true;
-
-	while ( num_bytes_used() )
-	{
-		index = -1;
-	    
-		for ( colon = m_base; colon != m_eptr; colon++ )
-		{
-			if ( *colon == ':' )
-			{
-				index = colon - m_base;
-				break;
-			}
-		}
-		
-		if ( index == -1 )
-		{
-			// If we have more than 10 bytes and no ':', then let's assume this buffer is no good
-
-			ok = num_bytes_used() < 10;
-
-			if ( !ok )
-			{
-				nklog( log::error, "bad header" );
-			}
-
-			goto exit;
-		}
-
-		len = 0;
-
-		for ( i = 0 ; i < index ; i++ )
-		{
-			if ( isdigit( m_base[i] ) )
-			{
-        		len = len * 10 + ( m_base[ i ] - ( char ) 0x30 );
-			}
-			else
-			{
-				nklog( log::error, "header contains non-digit" );
-				ok = false;
-				goto exit;
-			}
-		}
-
-		if ( size() < ( index + len + 1 ) )
-		{
-			add( ( index + len + 1 ) - size() );
-			goto exit;
-		}
-		
-		if ( num_bytes_used() < ( index + len + 1 ) )
-		{
-			goto exit;
-		}
-
-		if ( m_base[ index + len + 1 ] != ',' )
-		{
-			nklog( log::error, "cannot find ','" );
-			ok = false;
-			goto exit;
-		}
-
-		msg.assign( m_base + index + 1, m_base + index + len + 1 );
-	    
-		shift( index + len + 2 );
-
-		auto ret = value::load( msg.c_str() );
-		
-		if ( !ret.is_valid() )
-		{
-			nklog( log::error, "unable to parse %s", msg.c_str() );
-			ok = false;
-			goto exit;
-		}
-		
-		nklog( log::verbose, "msg = %s", msg.c_str() );
-		root = ret.get();
-		
-		if ( !root[ "method" ]->is_null() )
-		{
-			auto id = root[ "id" ];
-				
-			if ( validate( root, error ) )
-			{
-				if ( id->is_null() )
-				{
-					server::set_active_connection( this );
-					
-					server::route_notification( root );
-					
-					server::set_active_connection( nullptr );
-				}
-				else
-				{
-					server::set_active_connection( this );
-					
-					server::route_request( root, [=]( value::ref reply, bool close ) mutable
-					{
-						server::set_active_connection( nullptr );
-	
-						reply[ "jsonrpc" ]	= "2.0";
-						reply[ "id" ]		= id;
-							
-						send( reply );
-								
-						if ( close )
-						{
-							shutdown();
-						}
-					} );
-				}
-			}
-			else if ( !id->is_null() )
-			{
-				error[ "id" ] = id;
-				
-				send( error );
-			}
-		}
-		else
-		{
-			auto it = m_reply_handlers.find( root[ "id" ]->as_uint64() );
-				
-			if ( it != m_reply_handlers.end() )
-			{
-				it->second( root );
-	
-				m_reply_handlers.erase( it );
-			}
-		}
-	}
-		
-exit:
-
-	return ok;
 }
 
 

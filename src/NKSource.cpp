@@ -41,8 +41,10 @@ using namespace netkit;
 
 source::source()
 :
+	m_recv_buf( 8192 ),
 	m_send_event( nullptr ),
-	m_recv_event( nullptr )
+	m_recv_event( nullptr ),
+	m_closed( false )
 {
 	add( new adapter );
 }
@@ -282,115 +284,89 @@ source::send_internal()
 
 
 void
-source::peek( std::uint8_t *buf, std::size_t len, recv_reply_f reply )
+source::peek( recv_reply_f reply )
 {
-	if ( m_recv_buf.size() > 0 )
+	if ( !m_recv_queue.empty() )
 	{
-		std::size_t min = std::min( m_recv_buf.size(), len );
-		
-		memcpy( buf, &m_recv_buf[ 0 ], min );
-		
-		reply( 0, min );
+		buf_t buf = m_recv_queue.front();
+		reply( 0, &buf[ 0 ], buf.size() );
 	}
 	else
 	{
-		recv_internal( buf, len, true, reply );
+		recv_internal( true, reply );
 	}
 }
 
 	
 void
-source::recv( std::uint8_t *buf, std::size_t len, recv_reply_f reply )
+source::recv( recv_reply_f reply )
 {
-	if ( m_recv_buf.size() > 0 )
+	if ( !m_recv_queue.empty() )
 	{
-		std::size_t min = std::min( m_recv_buf.size(), len );
+		buf_t buf = m_recv_queue.front();
+		m_recv_queue.pop();
 		
-		memcpy( buf, &m_recv_buf[ 0 ], min );
-		
-		if ( m_recv_buf.size() == min )
-		{
-			m_recv_buf.clear();
-		}
-		else
-		{
-			m_recv_buf.resize( m_recv_buf.size() - min );
-		}
-		
-		reply( 0, min );
+		reply( 0, &buf[ 0 ], buf.size() );
 	}
 	else
 	{
-		recv_internal( buf, len, false, reply );
+		recv_internal( false, reply );
 	}
 }
 
 
 void
-source::recv_internal( std::uint8_t *in_buf, std::size_t in_len, bool peek_flag, recv_reply_f reply )
+source::recv_internal( bool peek_flag, recv_reply_f reply )
 {
 	bool			would_block	= false;
 	std::streamsize num			= 0;
 	
-	num = start_recv( in_buf, in_len, would_block );
+	num = start_recv( &m_recv_buf[ 0 ], m_recv_buf.size(), would_block );
 	
 	if ( num > 0 )
 	{
-		m_adapters.head()->recv( in_buf, num, [=]( int status, const std::uint8_t *out_buf, std::size_t out_len )
+		m_adapters.head()->recv( &m_recv_buf[ 0 ], num, [=]( int status, const std::uint8_t *out_buf, std::size_t out_len, bool more_coming )
 		{
 			if ( status == 0 )
 			{
-				std::size_t min = std::min( out_len, in_len );
-				
 				if ( out_len )
 				{
-					memcpy( in_buf, out_buf, min );
-				
+					m_recv_queue.push( buf_t( out_buf, out_buf + out_len ) );
+				}
+
+				if ( !more_coming )
+				{
 					if ( peek_flag )
 					{
-						m_recv_buf.resize( min );
-						memmove( &m_recv_buf[ 0 ], out_buf, min );
+						peek( reply );
 					}
-	
-					if ( out_len > in_len )
+					else
 					{
-						std::size_t old = m_recv_buf.size();
-						m_recv_buf.resize( old + ( out_len - in_len ) );
-						memcpy( &m_recv_buf[ old ], out_buf + in_len, out_len - in_len );
+						recv( reply );
 					}
-					
-					reply( 0, min );
-				}
-				else if ( peek_flag )
-				{
-					peek( in_buf, in_len, reply );
-				}
-				else
-				{
-					recv( in_buf, in_len, reply );
 				}
 			}
 			else
 			{
-				reply( -1, 0 );
+				reply( status, nullptr, 0 );
 			}
 		} );
-	}
-	else if ( num == 0 )
-	{
-		reply( -1, 0 );
 	}
 	else if ( would_block )
 	{
 		runloop::main()->schedule( m_recv_event, [=]( runloop::event event )
 		{
 			runloop::main()->suspend( event );
-			recv_internal( in_buf, in_len, peek_flag, reply );
+			recv_internal( peek_flag, reply );
 		} );
+	}
+	else if ( num == 0 )
+	{
+		reply( -2, nullptr, 0 );
 	}
 	else
 	{
-		reply( -1, 0 );
+		reply( -1, nullptr, 0 );
 	}
 }
 
@@ -398,6 +374,8 @@ source::recv_internal( std::uint8_t *in_buf, std::size_t in_len, bool peek_flag,
 void
 source::close( bool notify )
 {
+	m_closed = true;
+
 	if ( m_send_event )
 	{
 		runloop::main()->cancel( m_send_event );
@@ -492,5 +470,5 @@ source::adapter::send( const std::uint8_t *in_buf, std::size_t in_len, send_repl
 void
 source::adapter::recv( const std::uint8_t *in_buf, std::size_t in_len, recv_reply_f reply )
 {
-	reply( 0, in_buf, in_len );
+	reply( 0, in_buf, in_len, false );
 }

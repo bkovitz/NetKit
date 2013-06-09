@@ -30,6 +30,7 @@
  
 #include <NetKit/NKHTTP.h>
 #include <NetKit/NKSource.h>
+#include <NetKit/NKWebSocket.h>
 #include <NetKit/NKTLS.h>
 #include <NetKit/NKBase64.h>
 #include <NetKit/cstring.h>
@@ -153,6 +154,71 @@ const std::uint16_t status::authorized_cancelled	= 1000;
 const std::uint16_t status::pki_error				= 1001;
 const std::uint16_t status::webif_disabled			= 1002;
 
+/*
+case 100: $string = 'Continue'; break;
+		case 101: $string = 'Switching Protocols'; break;
+		case 102: $string = 'Processing'; break; // WebDAV
+		case 122: $string = 'Request-URI too long'; break; // Microsoft
+
+		// 2xx Success
+		case 200: $string = 'OK'; break;
+		case 201: $string = 'Created'; break;
+		case 202: $string = 'Accepted'; break;
+		case 203: $string = 'Non-Authoritative Information'; break; // HTTP/1.1
+		case 204: $string = 'No Content'; break;
+		case 205: $string = 'Reset Content'; break;
+		case 206: $string = 'Partial Content'; break;
+		case 207: $string = 'Multi-Status'; break; // WebDAV
+
+		// 3xx Redirection
+		case 300: $string = 'Multiple Choices'; break;
+		case 301: $string = 'Moved Permanently'; break;
+		case 302: $string = 'Found'; break;
+		case 303: $string = 'See Other'; break; //HTTP/1.1
+		case 304: $string = 'Not Modified'; break;
+		case 305: $string = 'Use Proxy'; break; // HTTP/1.1
+		case 306: $string = 'Switch Proxy'; break; // Depreciated
+		case 307: $string = 'Temporary Redirect'; break; // HTTP/1.1
+
+		// 4xx Client Error
+		case 400: $string = 'Bad Request'; break;
+		case 401: $string = 'Unauthorized'; break;
+		case 402: $string = 'Payment Required'; break;
+		case 403: $string = 'Forbidden'; break;
+		case 404: $string = 'Not Found'; break;
+		case 405: $string = 'Method Not Allowed'; break;
+		case 406: $string = 'Not Acceptable'; break;
+		case 407: $string = 'Proxy Authentication Required'; break;
+		case 408: $string = 'Request Timeout'; break;
+		case 409: $string = 'Conflict'; break;
+		case 410: $string = 'Gone'; break;
+		case 411: $string = 'Length Required'; break;
+		case 412: $string = 'Precondition Failed'; break;
+		case 413: $string = 'Request Entity Too Large'; break;
+		case 414: $string = 'Request-URI Too Long'; break;
+		case 415: $string = 'Unsupported Media Type'; break;
+		case 416: $string = 'Requested Range Not Satisfiable'; break;
+		case 417: $string = 'Expectation Failed'; break;
+		case 422: $string = 'Unprocessable Entity'; break; // WebDAV
+		case 423: $string = 'Locked'; break; // WebDAV
+		case 424: $string = 'Failed Dependency'; break; // WebDAV
+		case 425: $string = 'Unordered Collection'; break; // WebDAV
+		case 426: $string = 'Upgrade Required'; break;
+		case 449: $string = 'Retry With'; break; // Microsoft
+		case 450: $string = 'Blocked'; break; // Microsoft
+
+		// 5xx Server Error
+		case 500: $string = 'Internal Server Error'; break;
+		case 501: $string = 'Not Implemented'; break;
+		case 502: $string = 'Bad Gateway'; break;
+		case 503: $string = 'Service Unavailable'; break;
+		case 504: $string = 'Gateway Timeout'; break;
+		case 505: $string = 'HTTP Version Not Supported'; break;
+		case 506: $string = 'Variant Also Negotiates'; break;
+		case 507: $string = 'Insufficient Storage'; break; // WebDAV
+		case 509: $string = 'Bandwidth Limit Exceeded'; break; // Apache
+		case 510: $string = 'Not Extended'; break;
+*/
 std::string
 status::to_string( std::uint16_t val )
 {
@@ -167,7 +233,7 @@ status::to_string( std::uint16_t val )
 
 		case status::cont:
 		{
-			static std::string s( "Error" );
+			static std::string s( "Continue" );
 			return s;
 		}
 		break;
@@ -188,35 +254,35 @@ status::to_string( std::uint16_t val )
 
 		case status::created:
 		{
-			static std::string s( "Error" );
+			static std::string s( "Created" );
 			return s;
 		}
 		break;
 
 		case status::accepted:
 		{
-			static std::string s( "Error" );
+			static std::string s( "Accepted" );
 			return s;
 		}
 		break;
 
 		case status::not_authoritative:
 		{
-			static std::string s( "Error" );
+			static std::string s( "Non-Authoritative Information" );
 			return s;
 		}
 		break;
 
 		case status::no_content:
 		{
-			static std::string s( "Error" );
+			static std::string s( "No Content" );
 			return s;
 		}
 		break;
 
 		case status::reset_content:
 		{
-			static std::string s( "Error" );
+			static std::string s( "Reset Content" );
 			return s;
 		}
 		break;
@@ -948,18 +1014,56 @@ connection::process( const std::uint8_t *buf, size_t len )
 }
 
 
-void
-connection::upgrade_to_websocket( sink::ref new_sink )
+bool
+connection::upgrade_to_ws( const request::ref &request, server::response_f reply )
 {
-	new_sink->bind( m_source );
-	m_source = nullptr;
+	http::response::ref response;
+
+	nklog( log::verbose, "upgrading http connection to websocket" );
+
+	response = new http::response( 1, 1, http::status::switching_protocols, false );
+	response->add_to_header( "Upgrade", "websocket" );
+	response->add_to_header( "Connection", "Upgrade" );
+	response->add_to_header( "Sec-WebSocket-Accept", ws::server::accept_key( request->ws_key() ) );
+
+	reply( response, false );
+
+	m_source->add( ws::server::create() );
+
+	return true;
+}
+
+
+bool
+connection::upgrade_to_tls( const request::ref &request, server::response_f reply )
+{
+	http::response::ref response;
+
+	nklog( log::verbose, "upgrading http connection to tls" );
+
+	response = new http::response( 1, 1, http::status::switching_protocols, false );
+	response->add_to_header( "Connection", "Upgrade" );
+	response->add_to_header( "Upgrade", "TLS/1.0, HTTP/1.1" );
+
+	reply( response, false );
+
+	m_source->add( tls::server::create() );
+
+	return true;
 }
 
 
 void
-connection::upgrade_to_tls()
+connection::upgrade( sink::ref sink )
 {
-	set_secure( true );
+	for ( auto it = attrs_begin(); it != attrs_end(); it++ )
+	{
+		sink->set_value_for_key( it->first, it->second );
+	}
+
+	sink->bind( m_source );
+
+	unbind();
 }
 
 
@@ -1050,6 +1154,11 @@ connection::headers_were_received( http_parser *parser )
 	assert( self );
 	assert( self->m_handler );
 
+	if ( ( self->m_header_field.size() > 0 ) && ( self->m_header_value.size() > 0 ) )
+	{
+		self->m_header[ self->m_header_field ] = self->m_header_value;
+	}
+
 	return self->m_handler->headers_were_received( self, self->m_header );
 }
 
@@ -1084,42 +1193,26 @@ connection::ref			server::m_active_connection;
 connection::list		*server::m_connections;
 server::bindings		server::m_bindings;
 
-netkit::http::connection::ref
-server::adopt()
-{
-	connection::ref sink;
-	sink = new connection( new server::handler );
-
-	return sink;
-}
-
 netkit::sink::ref
-server::try_adopt( netkit::source::ref source, const std::uint8_t *buf, size_t len )
+server::adopt( netkit::source::ref source )
 {
 	connection::ref sink;
 	
-	if ( ( len >= 3 ) &&
-	     ( ( std::strncasecmp( ( const char* ) buf, "get", 3 ) == 0 ) ||
-	       ( std::strncasecmp( ( const char* ) buf, "pos", 3 ) == 0 ) ||
-	       ( std::strncasecmp( ( const char* ) buf, "opt", 3 ) == 0 ) ||
-	       ( std::strncasecmp( ( const char* ) buf, "hea", 3 ) == 0 ) ) )
+	sink = new connection( new server::handler );
+
+	m_connections->push_back( sink );
+
+	sink->on_close( [=]()
 	{
-		sink = new connection( new server::handler );
-
-		m_connections->push_back( sink );
-
-		sink->on_close( [=]()
+		auto it = std::find_if( m_connections->begin(), m_connections->end(), [=]( connection::ref inserted )
 		{
-			auto it = std::find_if( m_connections->begin(), m_connections->end(), [=]( connection::ref inserted )
-			{
-				return ( inserted.get() == sink.get() );
-			} );
-
-			assert( it != m_connections->end() );
-
-			m_connections->erase( it );
+			return ( inserted.get() == sink.get() );
 		} );
-	}
+
+		assert( it != m_connections->end() );
+
+		m_connections->erase( it );
+	} );
 	
 	return sink.get();
 }
@@ -1270,6 +1363,20 @@ server::replace( std::string& str, const std::string& oldStr, const std::string&
 	}
 }
 
+#if defined( __APPLE__ )
+#	pragma mark server::handler implementation
+#endif
+
+server::handler::handler()
+{
+}
+
+
+server::handler::~handler()
+{
+	nklog( log::verbose, "" );
+}
+
 
 void
 server::handler::process_will_begin( connection::ref connection )
@@ -1356,6 +1463,8 @@ server::handler::body_was_received( connection::ref connection, const char *buf,
 		{
 			connection->close();
 		}
+
+		m_request = nullptr;
 	} );
 }
 
@@ -1374,6 +1483,8 @@ server::handler::message_was_received( connection::ref connection )
 		{
 			connection->close();
 		}
+
+		m_request = nullptr;
 	} );
 }
 
@@ -1420,11 +1531,6 @@ client::really_send()
 	{
 		if ( status == 0 )
 		{
-			if ( m_request->uri()->scheme() == "https" )
-			{
-				m_connection->set_secure( true, false );
-			}
-
 			m_request->add_to_header( "Host", m_request->uri()->host() );
 			m_request->add_to_header( "User-Agent", "NetKit/2 " + platform::machine_description() );
 

@@ -54,6 +54,9 @@ public:
 	
 	virtual void
 	bind( source::ref source );
+
+	virtual void
+	unbind();
 	
 	void
 	connect( const uri::ref &uri, source::connect_reply_f reply );
@@ -82,11 +85,15 @@ protected:
 
 	virtual bool
 	process( const std::uint8_t *buf, std::size_t len ) = 0;
-	
+
 	void
 	run();
 
+	void
+	source_was_closed();
+	
 	close_handlers	m_close_handlers;
+	netkit::cookie	m_on_close;
 	source::ref		m_source;
 	std::uint8_t	m_buf[ 4192 ];
 };

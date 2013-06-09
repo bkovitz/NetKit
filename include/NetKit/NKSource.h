@@ -45,13 +45,12 @@ class NETKIT_DLL source : public object
 {
 public:
 
-	typedef std::function< void ( int status, const endpoint::ref &peer ) >	connect_reply_f;
-	typedef std::function< void ( int status ) >							send_reply_f;
-	typedef std::function< void ( int status, const std::size_t len ) >		peek_reply_f;
-	typedef std::function< void ( int status, const std::size_t len ) >		recv_reply_f;
-	typedef std::function< void ( void ) >									close_f;
-	typedef smart_ref< source >												ref;
-	typedef std::vector< std::uint8_t >										buf_t;
+	typedef std::function< void ( int status, const endpoint::ref &peer ) >					connect_reply_f;
+	typedef std::function< void ( int status ) >											send_reply_f;
+	typedef std::function< void ( int status, const std::size_t len ) >						peek_reply_f;
+	typedef std::function< void ( int status, const std::uint8_t *buf, std::size_t len ) >	recv_reply_f;
+	typedef std::function< void ( void ) >													close_f;
+	typedef smart_ref< source >																ref;
 	
 	class adapter
 	{
@@ -59,10 +58,10 @@ public:
 	
 		DECLARE_INTRUSIVE_LIST_OBJECT( adapter )
 		
-		typedef std::function< void ( int status, const uri::ref &out_uri ) >							preflight_reply_f;
-		typedef std::function< void ( int status ) >													connect_reply_f;
-		typedef std::function< void ( int status, const std::uint8_t *out_buf, std::size_t out_len ) >	send_reply_f;
-		typedef std::function< void ( int status, const std::uint8_t *out_buf, std::size_t out_len ) >	recv_reply_f;
+		typedef std::function< void ( int status, const uri::ref &out_uri ) >												preflight_reply_f;
+		typedef std::function< void ( int status ) >																		connect_reply_f;
+		typedef std::function< void ( int status, const std::uint8_t *out_buf, std::size_t out_len ) >						send_reply_f;
+		typedef std::function< void ( int status, const std::uint8_t *out_buf, std::size_t out_len, bool more_coming ) >	recv_reply_f;
 	
 		typedef adapter						*ref;
 		typedef intrusive_list< adapter >	list;
@@ -101,16 +100,16 @@ public:
 	connect( const uri::ref &uri, connect_reply_f reply );
 		
 	void
-	peek( std::uint8_t *buf, std::size_t len, peek_reply_f reply );
-	
-	void
 	send( const std::uint8_t *buf, std::size_t len, send_reply_f reply );
 	
 	void
 	send( adapter *adapter, const std::uint8_t *buf, std::size_t len, send_reply_f reply );
 	
 	void
-	recv( std::uint8_t *buf, std::size_t len, recv_reply_f reply );
+	peek( recv_reply_f reply );
+	
+	void
+	recv( recv_reply_f reply );
 	
 	virtual bool
 	is_open() const = 0;
@@ -126,11 +125,18 @@ public:
 
 	virtual endpoint::ref
 	peer() const;
+
+	inline bool
+	closed() const
+	{
+		return m_closed;
+	}
 	
 protected:
 
-	typedef std::list< std::pair< std::uint32_t, close_f > > close_handlers;
-	
+	typedef std::list< std::pair< std::uint32_t, close_f > >	close_handlers;
+	typedef std::vector< std::uint8_t >							buf_t;
+
 	struct send_info
 	{
 		send_info( const std::uint8_t *buf, std::size_t len, send_reply_f reply )
@@ -169,19 +175,24 @@ protected:
 	connect_internal_2( const uri::ref &uri, const endpoint::ref &to, connect_reply_f reply );
 	
 	void
-	recv_internal( std::uint8_t *in_buf, std::size_t in_len, bool peek, recv_reply_f reply );
+	recv_internal( bool peek, recv_reply_f reply );
 	
 	void
 	send_internal();
 	
+	typedef std::queue< send_info* >	send_queue;
+	typedef std::queue< buf_t >			recv_queue;
+
 	adapter::list	m_adapters;
 	close_handlers	m_close_handlers;
 	runloop::event	m_send_event;
 	runloop::event	m_recv_event;
 	
-	typedef std::queue< send_info* > send_queue;
 	send_queue		m_send_queue;
+	recv_queue		m_recv_queue;
 	buf_t			m_recv_buf;
+
+	bool			m_closed;
 };
 
 }

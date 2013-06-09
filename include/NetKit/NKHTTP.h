@@ -524,11 +524,14 @@ public:
 	virtual bool
 	process( const std::uint8_t *buf, std::size_t len );
 
-	void
-	upgrade_to_websocket( sink::ref new_sink );
+	bool
+	upgrade_to_ws( const request::ref &request, std::function< void ( http::response::ref response, bool close ) > reply );
+
+	bool
+	upgrade_to_tls( const request::ref &request, std::function< void ( http::response::ref response, bool close ) > reply );
 
 	void
-	upgrade_to_tls();
+	upgrade( sink::ref sink );
 
 	inline bool
 	secure() const
@@ -615,7 +618,6 @@ protected:
 	std::vector< std::uint8_t >	m_body;
 	
 	bool						m_secure;
-	bool						m_is_web_socket;
 	http_parser_settings		*m_settings;
 	http_parser					*m_parser;
 	int							m_parse_state;
@@ -691,11 +693,8 @@ public:
 		request_f					m_r;
 	};
 
-	static connection::ref
-	adopt();
-
 	static sink::ref
-	try_adopt( source::ref source, const std::uint8_t *buf, size_t len );
+	adopt( source::ref source );
 
 	static void
 	bind( std::uint8_t method, const std::string &path, const std::string &type, request_f r );
@@ -743,6 +742,10 @@ protected:
 	public:
 
 		typedef smart_ref< handler > ref;
+
+		handler();
+
+		virtual ~handler();
 	
 		virtual void
 		process_will_begin( connection::ref connection );

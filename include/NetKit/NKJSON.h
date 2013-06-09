@@ -420,58 +420,6 @@ protected:
 	virtual bool
 	send( value::ref request );
 	
-	inline std::size_t
-    num_bytes_used()
-    {
-		return m_eptr - m_base;
-    }
-	
-	inline std::size_t
-	num_bytes_unused()
-	{
-		return m_end - m_eptr;
-	}
-
-    inline std::size_t
-    size()
-    {
-        return m_end - m_base;
-    }
-
-    inline void
-    add( std::size_t numBytes )
-    {
-        std::size_t bytesUsed = num_bytes_used();
-        std::size_t oldSize = size();
-        std::size_t newSize = oldSize + numBytes;
-
-        m_base = ( unsigned char* ) realloc( m_base, newSize );
-
-        m_eptr = m_base + bytesUsed;
-        m_end = m_base + newSize;
-    }
-
-    inline void
-    shift( std::size_t index )
-    {
-        if ( ( m_base + index ) < m_eptr )
-        {
-            int delta = ( int ) ( ( m_eptr - ( m_base + index ) ) );
-            std::memmove_s( m_base, size(), m_base + index, delta );
-            m_eptr = m_base + delta;
-        }
-        else
-        {
-            m_eptr = m_base;
-        }
-    }
-	
-	std::string
-	encode( const std::string &s );
-	
-	bool
-	really_process();
-	
 	bool
 	validate( const value::ref &root, value::ref error );
 	
@@ -480,10 +428,6 @@ protected:
 	
 	reply_handlers						m_reply_handlers;
 	static std::atomic< std::int32_t >	m_id;
-	
-	std::uint8_t						*m_base;
-	std::uint8_t						*m_eptr;
-	std::uint8_t						*m_end;
 };
 
 

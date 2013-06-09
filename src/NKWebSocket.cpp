@@ -50,6 +50,53 @@
 using namespace netkit;
 
 
+static std::uint64_t
+ntohll( std::uint64_t val )
+{
+	static const int	one = 1;
+	static const char	sig = *( char* ) &one; 
+
+	if ( sig == 0 )
+	{
+		return val;
+	}
+	else
+	{
+		std::uint64_t ret;
+
+        char* src = ( char* ) &val + 7;
+        char* dst = ( char* ) &ret;
+
+		for ( auto i = 8; i > 0; i-- )
+		{
+			*dst++ = *src--;
+		}
+
+		return ret;
+	}
+}
+
+
+static std::uint64_t
+htonll( std::uint64_t val )
+{
+	static const int	one = 1;
+	static const char	sig = *( char* ) &one; 
+
+	if ( sig == 0 )
+	{
+		return val;
+	}
+	else
+    {
+		const uint32_t high_part	= htonl( static_cast< std::uint32_t >( val >> 32 ) );
+		const uint32_t low_part		= htonl( static_cast< std::uint32_t >( val & 0xFFFFFFFFLL ) );
+
+		return ( static_cast<uint64_t>(low_part) << 32) | high_part;
+	}
+}
+
+
 class frame
 {
 public:
@@ -68,6 +115,7 @@ public:
 		text				= 0x81,
 		binary				= 0x82,
 
+		close				= 0x18,
 		ping				= 0x19,
 		pong				= 0x1A
 	};
@@ -105,17 +153,11 @@ private:
 	frame::type
 	parse_server_handshake( const std::uint8_t *buf, std::size_t in_len, std::size_t *out_len );
 	
-	frame::type
-	parse_client_handshake( unsigned char* input_frame, int input_len );
-
-	std::string
-	answer_client_handshake();
-
-	int
-	make_frame( frame::type type, unsigned char* msg, int msg_len, unsigned char* buffer, int buffer_len);
+	std::size_t
+	make_frame( frame::type type, std::uint8_t *msg, std::size_t msg_len, std::uint8_t *buffer, std::size_t buffer_len);
 
 	frame::type
-	get_frame( unsigned char* in_buffer, int in_length, unsigned char* out_buffer, int out_size, int* out_length);
+	get_frame( std::uint8_t *in_buffer, std::size_t in_length, std::uint8_t *out_buffer, std::size_t out_size, std::size_t *out_length, std::size_t *out_parsed );
 
 	std::string
 	trim( std::string str );
@@ -126,11 +168,9 @@ private:
 	bool							m_handshake;
 	std::vector< std::uint8_t >		m_handshake_data;
 	std::string						m_expected_key;
-	std::uint8_t					m_buffer[ 4192 ];
 	std::vector< std::uint8_t >		m_send_data;
 	bool							m_sending;
 	std::vector< std::uint8_t >		m_unparsed_recv_data;
-	std::vector< std::uint8_t >		m_parsed_recv_data;
 	
 protected:
 
@@ -217,6 +257,7 @@ ws_adapter::ws_adapter( type t )
 	{
 		case server:
 		{
+			m_handshake = true;
 		}
 		break;
 
@@ -229,6 +270,7 @@ ws_adapter::ws_adapter( type t )
 
 ws_adapter::~ws_adapter()
 {
+	nklog( log::verbose, "" );
 }
 
 
@@ -253,7 +295,7 @@ ws_adapter::connect( const uri::ref &uri, const endpoint::ref &to, connect_reply
 	{
 		if ( status == 0 )
 		{
-			uuid::ref			uuid = uuid::create();
+			std::string			key		= uuid::create()->to_base64();
 			std::string			handshake;
 			std::ostringstream	os;
 
@@ -261,7 +303,7 @@ ws_adapter::connect( const uri::ref &uri, const endpoint::ref &to, connect_reply
 			os << "Upgrade: websocket\r\n";
 			os << "Connection: Upgrade\r\n";
 			os << "Host: " << uri->host() << "\r\n";
-			os << "Sec-WebSocket-Key: " << uuid->to_base64() << "\r\n";
+			os << "Sec-WebSocket-Key: " << key << "\r\n";
 			os << "Sec-WebSocket-Version: 13\r\n\r\n";
 
 			handshake = os.str();
@@ -270,7 +312,7 @@ ws_adapter::connect( const uri::ref &uri, const endpoint::ref &to, connect_reply
 			{
 			} );
 			
-			m_expected_key = ws::server::accept_key( uuid->to_string( "" ) );
+			m_expected_key = ws::server::accept_key( key );
 		}
 		
 		reply( status );
@@ -282,7 +324,7 @@ void
 ws_adapter::send( const std::uint8_t *data, std::size_t len, send_reply_f reply )
 {
 	std::vector< std::uint8_t > raw( len * 2 );
-	auto						actual = make_frame( frame::type::text, ( unsigned char* ) data, len, &raw[ 0 ], raw.size() );
+	auto						actual = make_frame( frame::type::text, ( std::uint8_t* ) data, len, &raw[ 0 ], raw.size() );
 
 	if ( actual > 0 )
 	{
@@ -307,19 +349,19 @@ ws_adapter::send( const std::uint8_t *data, std::size_t len, send_reply_f reply 
 void
 ws_adapter::recv( const std::uint8_t *in_buf, std::size_t in_len, recv_reply_f reply )
 {
-	m_next->recv( in_buf, in_len, [=]( int status, const std::uint8_t *out_buf, std::size_t out_len )
+	m_next->recv( in_buf, in_len, [=]( int status, const std::uint8_t *out_buf, std::size_t out_len, bool more_coming )
 	{
 		if ( status == 0 )
 		{
-			frame::type type	= frame::type::incomplete;
-			int			len		= 0;
+			frame::type type		= frame::type::incomplete;
+			std::size_t	payload_len	= 0;
+			std::size_t parsed_len	= 0;
 			
 			if ( m_handshake )
 			{
 				if ( out_len )
 				{
-					m_unparsed_recv_data.insert( m_unparsed_recv_data.begin(), out_buf, out_buf + out_len );
-					m_parsed_recv_data.resize( m_unparsed_recv_data.size() );
+					m_unparsed_recv_data.insert( m_unparsed_recv_data.end(), out_buf, out_buf + out_len );
 				}
 			}
 			else if ( out_len > 0 )
@@ -338,7 +380,6 @@ ws_adapter::recv( const std::uint8_t *in_buf, std::size_t in_len, recv_reply_f r
 					{
 						std::rotate( m_unparsed_recv_data.begin(), m_unparsed_recv_data.begin() + out_header_len, m_unparsed_recv_data.end() );
 						m_unparsed_recv_data.resize( m_unparsed_recv_data.size() - out_header_len );
-						m_parsed_recv_data.resize( m_unparsed_recv_data.size() );
 					}
 					else
 					{
@@ -349,8 +390,10 @@ ws_adapter::recv( const std::uint8_t *in_buf, std::size_t in_len, recv_reply_f r
 					{
 						buffer *b = m_pending_send_list.front();
 						
-						m_next->send( &b->m_data[ 0 ], b->m_data.size(), b->m_reply );
-						
+						m_source->send( m_next, &b->m_data[ 0 ], b->m_data.size(), [=]( int status )
+						{
+						} );
+
 						m_pending_send_list.pop();
 						
 						delete b;
@@ -358,29 +401,57 @@ ws_adapter::recv( const std::uint8_t *in_buf, std::size_t in_len, recv_reply_f r
 				}
 			}
 			
-			if ( ( type != frame::type::error ) && ( m_unparsed_recv_data.size() > 0 ) )
+			if ( type != frame::type::error ) 
 			{
-				type = get_frame( &m_unparsed_recv_data[ 0 ], m_unparsed_recv_data.size(), &m_parsed_recv_data[ 0 ], m_parsed_recv_data.size(), &len );
-			}
+				while ( 1 )
+				{
+					if ( m_unparsed_recv_data.size() > 0 )
+					{
+						std::vector< std::uint8_t > parsed_data( m_unparsed_recv_data.size() );
+
+						type = get_frame( &m_unparsed_recv_data[ 0 ], m_unparsed_recv_data.size(), &parsed_data[ 0 ], parsed_data.size(), &payload_len, &parsed_len );
 			
-			if ( type == frame::type::text )
-			{
-				reply( 0, &m_parsed_recv_data[ 0 ], len );
-				m_unparsed_recv_data.clear();
-				m_parsed_recv_data.clear();
-			}
-			else if ( type != frame::type::error )
-			{
-				reply( 0, nullptr, 0 );
+						if ( type == frame::type::text )
+						{
+							reply( 0, &parsed_data[ 0 ], payload_len, true );
+							std::rotate( m_unparsed_recv_data.begin(), m_unparsed_recv_data.begin() + parsed_len, m_unparsed_recv_data.end() );
+							m_unparsed_recv_data.resize( m_unparsed_recv_data.size() - parsed_len );
+						}
+						else if ( ( type == frame::type::incomplete ) || ( type == frame::type::incomplete_text ) )
+						{
+							reply( 0, nullptr, 0, false );
+							break;
+						}
+						else if ( type == frame::type::close )
+						{
+							nklog( log::error, "received a close frame" );
+							reply( -2, nullptr, 0, false );
+							break;
+						}
+						else if ( type == frame::type::error )
+						{
+							nklog( log::error, "received a frame error...closing connection" );
+							reply( -1, nullptr, 0, false );
+							break;
+						}
+					}
+					else
+					{
+						reply( 0, nullptr, 0, false );
+						break;
+					}
+				}
 			}
 			else
 			{
-				reply( -1, nullptr, 0 );
+				nklog( log::error, "received a frame error...closing connection" );
+				reply( -1, nullptr, 0, false );
 			}
 		}
 		else
 		{
-			reply( status, nullptr, 0 );
+			nklog( log::error, "received error %d...closing connection", status );
+			reply( status, nullptr, 0, false );
 		}
 	} );
 }
@@ -460,78 +531,6 @@ exit:
 }
 
 
-frame::type
-ws_adapter::parse_client_handshake( unsigned char* input_frame, int input_len )
-{
-	std::string headers( ( char* ) input_frame, input_len ); 
-	std::size_t header_end = headers.find("\r\n\r\n");
-
-	if ( header_end == std::string::npos )
-	{
-		// end-of-headers not found - do not parse
-		return frame::type::incomplete;
-	}
-
-	// trim off any data we don't need after the headers
-
-	headers.resize(header_end);
-
-	std::vector< std::string > headers_rows = explode( headers, std::string( "\r\n" ) );
-
-	for ( int i = 0; i < headers_rows.size(); i++ )
-	{
-		std::string& header = headers_rows[ i ];
-
-		if ( header.find( "GET" ) == 0 )
-		{
-			std::vector< std::string > get_tokens = explode( header, std::string( " " ) );
-
-			if ( get_tokens.size() >= 2 )
-			{
-				m_resource = get_tokens[ 1 ];
-			}
-		}
-		else
-		{
-			std::size_t pos = header.find(":");
-
-			if ( pos != std::string::npos )
-			{
-				std::string header_key( header, 0, pos );
-				std::string header_value( header, pos + 1 );
-
-				header_value = trim(header_value);
-
-				if ( header_key == "Host" )
-				{
-					m_host = header_value;
-				}
-				else if ( header_key == "Origin" )
-				{
-					m_origin = header_value;
-				}
-				else if ( header_key == "Sec-WebSocket-Key" )
-				{
-					m_key = header_value;
-				}
-				else if ( header_key == "Sec-WebSocket-Protocol" )
-				{
-					m_protocol = header_value;
-				}
-			}
-		}
-	}
-
-	//this->key = "dGhlIHNhbXBsZSBub25jZQ==";
-	//printf("PARSED_KEY:%s \n", this->key.data());
-
-	//return FrameType::OPENING_FRAME;
-	printf("HANDSHAKE-PARSED\n");
-
-	return frame::type::opening;
-}
-
-
 std::string
 ws_adapter::trim( std::string str ) 
 {
@@ -560,9 +559,9 @@ std::vector< std::string >
 ws_adapter::explode( std::string the_string, std::string delim, bool include_empty_strings )
 {
 	std::vector< std::string > strings;
-	int start = 0;
-	int end = 0;
-	int length = 0;
+	std::size_t start	= 0;
+	std::size_t end		= 0;
+	std::size_t length	= 0;
 
 	while ( end != std::string::npos )
 	{
@@ -586,84 +585,60 @@ ws_adapter::explode( std::string the_string, std::string delim, bool include_emp
 }
 
 
-std::string
-ws_adapter::answer_client_handshake()
+std::size_t
+ws_adapter::make_frame( frame::type type, std::uint8_t *msg, std::size_t msg_length, std::uint8_t *buffer, std::size_t buffer_size)
 {
-	std::string answer;
+	int			pos		= 0;
+	std::size_t size	= msg_length; 
 
-	answer += "HTTP/1.1 101 Switching Protocols\r\n";
-	answer += "Upgrade: WebSocket\r\n";
-	answer += "Connection: Upgrade\r\n";
+	buffer[ pos++ ] = ( std::uint8_t ) frame::type::text; // text frame
 
-	if ( m_key.length() > 0 )
+	if ( size <= 125 )
 	{
-		answer += "Sec-WebSocket-Accept: "+ ws::server::accept_key( m_key ) + "\r\n";
+		buffer[ pos++ ] = ( std::uint8_t) size;
 	}
-
-	if ( m_protocol.length() > 0 )
+	else if ( size <= 65535 )
 	{
-		answer += "Sec-WebSocket-Protocol: "+ m_protocol + "\r\n";
-	}
+		std::uint16_t tmp = htons( ( std::uint16_t ) size );
 
-	answer += "\r\n";
+		buffer[ pos++ ] = 126;
 
-	return answer;
-}
-
-
-int
-ws_adapter::make_frame( frame::type type, unsigned char* msg, int msg_length, unsigned char* buffer, int buffer_size)
-{
-	int pos = 0;
-	int size = msg_length; 
-	buffer[ pos++ ] = (unsigned char)frame::type::text; // text frame
-
-	if ( size<=125 )
-	{
-		buffer[ pos++ ] = size;
-	}
-	else if ( size<=65535 )
-	{
-		buffer[ pos++ ] = 126;					// 16 bit length
-		buffer[ pos++ ] = ( size >> 8 ) & 0xFF; // rightmost first
-		buffer[ pos++ ] = size & 0xFF;
+		buffer[ pos++ ] = ( ( std::uint8_t* ) &tmp )[ 0 ];
+		buffer[ pos++ ] = ( ( std::uint8_t* ) &tmp )[ 1 ];
 	}
 	else
 	{
-		// >2^16-1
+		std::uint64_t tmp = htonll( size );
 
-		buffer[ pos++ ] = 127; //64 bit length
+		buffer[ pos++ ] = 127;
 
-		//TODO: write 8 bytes length
-		pos+=8;
+		for ( auto i = 0; i < 8; i++ )
+		{
+			buffer[ pos++ ] = ( ( std::uint8_t* ) &tmp )[ i ];
+		}
 	}
 
-	memcpy( ( void* )( buffer+pos ), msg, size );
+	memcpy( ( void* )( buffer + pos ), msg, size );
 
-	return ( size+pos );
+	return ( size + pos );
 }
 
 
 frame::type
-ws_adapter::get_frame(unsigned char* in_buffer, int in_length, unsigned char* out_buffer, int out_size, int* out_length)
+ws_adapter::get_frame( std::uint8_t *in_buffer, std::size_t in_length, std::uint8_t *out_buffer, std::size_t out_size, std::size_t *out_length, std::size_t *out_parsed )
 {
-	if ( in_length < 3 )
+	if ( in_length < 2 )
 	{
 		return frame::type::incomplete;
 	}
 
-	unsigned char msg_opcode	= in_buffer[ 0 ] & 0x0F;
-	unsigned char msg_fin		= ( in_buffer[ 0 ] >> 7 ) & 0x01;
-	unsigned char msg_masked	= ( in_buffer[ 1 ] >> 7 ) & 0x01;
-
-	// *** message decoding 
-
-	int payload_length = 0;
-	int pos = 2;
-	int length_field = in_buffer[1] & (~0x80);
-	unsigned int mask = 0;
-
-	//printf("IN:"); for(int i=0; i<20; i++) printf("%02x ",buffer[i]); printf("\n");
+	std::uint8_t	msg_opcode		= in_buffer[ 0 ] & 0x0F;
+	std::uint8_t	msg_fin			= ( in_buffer[ 0 ] >> 7 ) & 0x01;
+	std::uint8_t	msg_masked		= ( in_buffer[ 1 ] >> 7 ) & 0x01;
+	std::uint64_t	payload_length	= 0;
+	int				pos				= 2;
+	int				length_field	= in_buffer[ 1 ] & ( ~0x80 );
+	unsigned int	mask			= 0;
 
 	if ( length_field <= 125 )
 	{
@@ -671,19 +646,36 @@ ws_adapter::get_frame(unsigned char* in_buffer, int in_length, unsigned char* ou
 	}
 	else if ( length_field == 126 )
 	{
-		//msglen is 16bit!
-		payload_length = in_buffer[2] + (in_buffer[3]<<8);
-		pos += 2;
+		std::uint16_t tmp;
+
+		if ( in_length < 4 )
+		{
+			return frame::type::incomplete;
+		}
+
+		( ( std::uint8_t* ) &tmp )[ 0 ] = in_buffer[ pos++ ];
+		( ( std::uint8_t* ) &tmp )[ 1 ] = in_buffer[ pos++ ];
+		
+		payload_length = ntohs( tmp ); 
 	}
 	else if ( length_field == 127 )
 	{
-		//msglen is 64bit!
-		payload_length = in_buffer[2] + (in_buffer[3]<<8); 
-		pos += 8;
+		std::uint64_t tmp;
+
+		if ( in_length < 10 )
+		{
+			return frame::type::incomplete;
+		}
+
+		for ( auto i = 0; i < 8; i++ )
+		{
+			( ( std::uint8_t* ) &tmp )[ i ] = in_buffer[ pos++ ];
+		}
+
+		payload_length = ntohll( tmp );
 	}
 
-	//printf("PAYLOAD_LEN: %08x\n", payload_length);
-	if ( in_length < payload_length+pos )
+	if ( in_length < payload_length + pos )
 	{
 		return frame::type::incomplete;
 	}
@@ -691,32 +683,26 @@ ws_adapter::get_frame(unsigned char* in_buffer, int in_length, unsigned char* ou
 	if ( msg_masked )
 	{
 		mask = *( ( unsigned int* )( in_buffer + pos ) );
-		//printf("MASK: %08x\n", mask);
 		pos += 4;
 
-		// unmask data:
-		unsigned char* c = in_buffer + pos;
+		std::uint8_t* c = in_buffer + pos;
 
 		for ( int i = 0; i < payload_length; i++ )
 		{
-			c[i] = c[i] ^ ((unsigned char*)(&mask))[i%4];
+			c[ i ] = c[ i ] ^ ( ( std::uint8_t* )( &mask ) )[ i % 4 ];
 		}
 	}
 
-	if ( payload_length > out_size )
-	{
-		//TODO: if output buffer is too small -- ERROR or resize(free and allocate bigger one) the buffer ?
-	}
+	assert( payload_length <= out_size );
 
 	memcpy( ( void* ) out_buffer, ( void* )( in_buffer + pos ), payload_length );
 	out_buffer[ payload_length ] = 0;
 	*out_length = payload_length + 1;
+	*out_parsed = pos + payload_length;
 
-	//printf("TEXT: %s\n", out_buffer);
-
-	if (msg_opcode == 0x0 )
+	if ( msg_opcode == 0x0 )
 	{
-		return ( msg_fin ) ? frame::type::text : frame::type::incomplete_text;// continuation frame ?
+		return ( msg_fin ) ? frame::type::text : frame::type::incomplete_text;
 	}
 
 	if( msg_opcode == 0x1 )
@@ -727,6 +713,11 @@ ws_adapter::get_frame(unsigned char* in_buffer, int in_length, unsigned char* ou
 	if ( msg_opcode == 0x2 )
 	{
 		return ( msg_fin ) ? frame::type::binary : frame::type::incomplete_binary;
+	}
+
+	if ( msg_opcode == 0x8 )
+	{
+		return frame::type::close;
 	}
 
 	if ( msg_opcode == 0x9 )
@@ -747,11 +738,11 @@ std::string
 ws::server::accept_key( const std::string &input )
 {
 	std::string			output( input );
-    unsigned char		digest[ 20 ]; // 160 bit sha1 digest
+    unsigned char		digest[ 20 ];
 	crypto::hash::sha1	sha;
 
-	output += "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"; //RFC6544_MAGIC_KEY
-	sha.input( output.data(),  output.size() );
+	output += "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+	sha.input( output.data(), ( unsigned int ) output.size() );
 	sha.result(( unsigned* ) digest );
 
 	for ( int i = 0; i < 20; i += 4 )
@@ -767,7 +758,7 @@ ws::server::accept_key( const std::string &input )
 		digest[i+2] = c;
 	}
 
-	output = codec::base64::encode( std::string( digest, digest + 20 ) ); //160bit = 20 bytes/chars
+	output = codec::base64::encode( std::string( digest, digest + 20 ) );
 	
 	return output;
 }

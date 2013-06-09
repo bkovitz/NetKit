@@ -31,6 +31,8 @@
 #include <NetKit/NKSink.h>
 #include <NetKit/NKSource.h>
 #include <NetKit/NKSocket.h>
+#include <NetKit/NKWebSocket.h>
+#include <NetKit/NKTLS.h>
 #include <NetKit/NKLog.h>
 
 using namespace netkit;
@@ -64,23 +66,19 @@ sink::bind( source::ref source )
 {
 	m_source = source;
 
-	m_source->on_close( [=]()
-	{
-		// This can get kind of tricky. It's very possible for whatever code
-		// executes in these close_handlers to cause this sink to be deleted.
-		// 
-		// That is a bad thing. So to prevent it, we'll artifically bump up
-		// our reference count, and then release right after.
-
-		sink::ref artifical( this );
-
-		for ( auto it = m_close_handlers.begin(); it != m_close_handlers.end(); it++ )
-		{
-			it->second();
-		}
-	} );
+	m_on_close = m_source->on_close( std::bind( &sink::source_was_closed , this ) );
 	
 	run();
+}
+
+
+void
+sink::unbind()
+{
+	m_source->cancel( m_on_close );
+	m_source = nullptr;
+
+	source_was_closed();
 }
 
 
@@ -111,9 +109,39 @@ sink::cancel( cookie c )
 
 
 void
+sink::source_was_closed()
+{
+	// This can get kind of tricky. It's very possible for whatever code
+	// executes in these close_handlers to cause this sink to be deleted.
+	// 
+	// That is a bad thing. So to prevent it, we'll artifically bump up
+	// our reference count, and then release right after.
+
+	sink::ref artifical( this );
+
+	for ( auto it = m_close_handlers.begin(); it != m_close_handlers.end(); it++ )
+	{
+		it->second();
+	}
+
+	m_close_handlers.clear();
+}
+
+
+void
 sink::connect( const uri::ref &uri, source::connect_reply_f reply )
 {
-	source::ref source = new netkit::socket;
+	source::ref source = new ip::tcp::socket;
+
+	if ( ( uri->scheme() == "https" ) || ( uri->scheme() == "wss" ) )
+	{
+		source->add( tls::client::create() );
+	}
+
+	if ( ( uri->scheme() == "ws" ) || ( uri->scheme() == "wss" ) )
+	{
+		source->add( ws::client::create() );
+	}
 
 	source->connect( uri, [=]( int status, const endpoint::ref &peer )
 	{
@@ -137,7 +165,7 @@ sink::send( const std::uint8_t *buf, size_t len, source::send_reply_f reply )
 bool
 sink::is_open() const
 {
-	return m_source->is_open();
+	return m_source ? m_source->is_open() : false;
 }
 
 
@@ -153,7 +181,7 @@ sink::run()
 {
 	sink::ref artifical( this );
 
-	m_source->recv( m_buf, sizeof( m_buf ), [=]( int status, std::size_t len )
+	m_source->recv( [=]( int status, const std::uint8_t *buf, std::size_t len )
 	{
 		if ( artifical->m_source->is_open() )
 		{
@@ -161,7 +189,7 @@ sink::run()
 			{
 				if ( len > 0 )
 				{
-					if ( process( m_buf, len ) )
+					if ( process( buf, len ) )
 					{
 						if ( is_open() )
 						{
@@ -175,9 +203,14 @@ sink::run()
 					}
 				}
 			}
+			else if ( status == -2 )
+			{
+				nklog( log::verbose, "connection closed" );
+				close();
+			}
 			else
 			{
-				nklog( log::verbose, "source::recv() returned an error...closing connection", status );
+				nklog( log::verbose, "source::recv() returned an error (%d)...closing connection", status );
 				close();
 			}
 		}
