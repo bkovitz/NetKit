@@ -154,8 +154,6 @@ source::handle_resolve( ip::address::list addrs, const uri::ref &uri, connect_re
 			}
 			else
 			{
-				close( false );
-
 				if ( addrs.size() > 1 )
 				{
 					addrs.pop_front();
@@ -170,8 +168,6 @@ source::handle_resolve( ip::address::list addrs, const uri::ref &uri, connect_re
 	}
 	else
 	{
-		close( false );
-
 		if ( addrs.size() > 1 )
 		{
 			addrs.pop_front();
