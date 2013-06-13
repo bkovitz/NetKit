@@ -133,7 +133,7 @@ protected:
 		virtual ~adapter();
 		
 		virtual void
-		preflight( const uri::ref &uri, preflight_reply_f reply );
+		resolve( const uri::ref &uri, resolve_reply_f reply );
 	
 		virtual void
 		connect( const uri::ref &uri, const endpoint::ref &to, connect_reply_f reply );

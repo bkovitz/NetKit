@@ -29,6 +29,9 @@
  */
  
 #include <NetKit/NKSource.h>
+#include <NetKit/NKProxy.h>
+#include <NetKit/NKTLS.h>
+#include <NetKit/NKWebSocket.h>
 #include <NetKit/NKLog.h>
 
 #include <iostream>
@@ -109,15 +112,39 @@ source::cancel( cookie c )
 
 
 void
-source::connect( const uri::ref &in_uri, connect_reply_f reply )
+source::connect( const uri::ref &uri, connect_reply_f reply )
 {
-	endpoint::ref to;
-	
-	m_adapters.tail()->preflight( in_uri, [=]( int status, const uri::ref &out_uri )
+	if ( ( uri->scheme() == "http" ) || ( uri->scheme() == "xmpp" ) || ( uri->scheme() == "ws" ) )
 	{
+		if ( !proxy::get()->bypass( uri ) )
+		{
+			add( proxy::get()->create( false ) );
+		}
+	}
+	else if ( ( uri->scheme() == "https" ) || ( uri->scheme() == "xmpps" ) || ( uri->scheme() == "wss" ) )
+	{
+		if ( !proxy::get()->bypass( uri ) )
+		{
+			add( proxy::get()->create( true ) );
+		}
+
+		add( tls::client::create() );
+	}
+
+	if ( ( uri->scheme() == "ws" ) || ( uri->scheme() == "wss" ) )
+	{
+		add( ws::client::create() );
+	}
+
+	m_adapters.tail()->resolve( uri, [=]( int status, const uri::ref &out_uri, ip::address::list addrs )
+	{	
 		if ( status == 0 )
 		{
-			connect_internal_1( out_uri, reply );
+			handle_resolve( addrs, out_uri, reply );
+		}
+		else
+		{
+			reply( status, nullptr );
 		}
 	} );
 }
@@ -136,7 +163,7 @@ source::handle_resolve( ip::address::list addrs, const uri::ref &uri, connect_re
 
 	if ( ret == 0 )
 	{
-		connect_internal_2( uri, endpoint.get(), reply );
+		connect_internal( uri, endpoint.get(), reply );
 	}
 	else if ( would_block )
 	{
@@ -150,7 +177,7 @@ source::handle_resolve( ip::address::list addrs, const uri::ref &uri, connect_re
 
 			if ( ret == 0 )
 			{
-				connect_internal_2( uri, endpoint.get(), reply );
+				connect_internal( uri, endpoint.get(), reply );
 			}
 			else
 			{
@@ -181,6 +208,7 @@ source::handle_resolve( ip::address::list addrs, const uri::ref &uri, connect_re
 }
 
 
+#if 0
 void
 source::connect_internal_1( const uri::ref &uri, connect_reply_f reply )
 {
@@ -196,10 +224,11 @@ source::connect_internal_1( const uri::ref &uri, connect_reply_f reply )
 		}
 	} );
 }
+#endif
 
 
 void
-source::connect_internal_2( const uri::ref &uri, const endpoint::ref &to, connect_reply_f reply )
+source::connect_internal( const uri::ref &uri, const endpoint::ref &to, connect_reply_f reply )
 {
 	m_adapters.head()->connect( uri, to, [=]( int status )
 	{
@@ -443,9 +472,12 @@ source::adapter::~adapter()
 
 
 void
-source::adapter::preflight( const uri::ref &uri, preflight_reply_f reply )
+source::adapter::resolve( const uri::ref &uri, resolve_reply_f reply )
 {
-	reply( 0, uri );
+	ip::address::resolve( uri->host(), [=]( int status, ip::address::list addrs )
+	{
+		reply( status, uri, addrs );
+	} );
 }
 
 	

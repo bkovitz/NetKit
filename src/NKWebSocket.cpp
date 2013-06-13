@@ -137,7 +137,7 @@ public:
 	virtual ~ws_adapter();
 
 	virtual void
-	preflight( const uri::ref &uri, preflight_reply_f reply );
+	resolve( const uri::ref &uri, resolve_reply_f reply );
 	
 	virtual void
 	connect( const uri::ref &uri, const endpoint::ref &to, connect_reply_f reply );
@@ -275,16 +275,9 @@ ws_adapter::~ws_adapter()
 
 
 void
-ws_adapter::preflight( const uri::ref &uri, preflight_reply_f reply )
+ws_adapter::resolve( const uri::ref &uri, resolve_reply_f reply )
 {
-	if ( m_next )
-	{
-		m_next->preflight( uri, reply );
-	}
-	else
-	{
-		reply( 0, uri );
-	}
+	m_next->resolve( uri, reply );
 }
 
 

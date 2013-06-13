@@ -33,6 +33,7 @@
 
 #include <NetKit/NKSource.h>
 #include <NetKit/NKCookie.h>
+#include <NetKit/NKProxy.h>
 #include <NetKit/NKURI.h>
 #include <string>
 #include <ios>
@@ -45,10 +46,8 @@ public:
 
 	typedef std::function< void ( void ) >	close_f;
 	typedef smart_ref< sink >				ref;
-	
-	sink();
 
-	sink( const uri::ref &uri );
+	sink();
 
 	virtual ~sink();
 	

@@ -58,7 +58,7 @@ public:
 	
 		DECLARE_INTRUSIVE_LIST_OBJECT( adapter )
 		
-		typedef std::function< void ( int status, const uri::ref &out_uri ) >												preflight_reply_f;
+		typedef std::function< void ( int status, const uri::ref &uri,  ip::address::list &addrs ) >						resolve_reply_f;
 		typedef std::function< void ( int status ) >																		connect_reply_f;
 		typedef std::function< void ( int status, const std::uint8_t *out_buf, std::size_t out_len ) >						send_reply_f;
 		typedef std::function< void ( int status, const std::uint8_t *out_buf, std::size_t out_len, bool more_coming ) >	recv_reply_f;
@@ -71,7 +71,7 @@ public:
 		virtual ~adapter();
 		
 		virtual void
-		preflight( const uri::ref &uri, preflight_reply_f reply );
+		resolve( const uri::ref &uri, resolve_reply_f reply );
 	
 		virtual void
 		connect( const uri::ref &uri, const endpoint::ref &to, connect_reply_f reply );
@@ -81,7 +81,7 @@ public:
 		
 		virtual void
 		recv( const std::uint8_t *in_buf, std::size_t in_len, recv_reply_f reply );
-	
+
 	protected:
 	
 		friend class source;
@@ -169,10 +169,7 @@ protected:
 	handle_resolve( ip::address::list addrs, const uri::ref &uri, connect_reply_f reply );
 
 	void
-	connect_internal_1( const uri::ref &uri, connect_reply_f reply );
-	
-	void
-	connect_internal_2( const uri::ref &uri, const endpoint::ref &to, connect_reply_f reply );
+	connect_internal( const uri::ref &uri, const endpoint::ref &to, connect_reply_f reply );
 	
 	void
 	recv_internal( bool peek, recv_reply_f reply );

@@ -33,17 +33,32 @@
 
 #include <NetKit/NKSocket.h>
 #include <NetKit/NKURI.h>
+#include <vector>
 #include <string>
 
 namespace netkit {
 
-class NETKIT_DLL proxy : public object
+class NETKIT_DLL proxy : public object, public source::adapter
 {
 public:
 
-	typedef smart_ref< proxy > ref;
+	typedef std::function< bool ( smart_ref< proxy > proxy ) >	auth_challenge_f;
+	typedef smart_ref< proxy >									ref;
 
+	static proxy::ref
+	null();
+
+	static proxy::ref
+	get();
+
+	static void
+	set( proxy::ref proxy );
+
+	proxy();
+	
 	proxy( uri::ref uri );
+
+	proxy( const json::value_ref &root );
 
 	virtual ~proxy();
 
@@ -54,79 +69,82 @@ public:
 	}
 	
 	inline void
-	set_uri( const uri::ref &uri )
+	bypass_add( const std::string &val )
 	{
-		m_uri = uri;
+		auto it = std::find( m_bypass_list.begin(), m_bypass_list.end(), val );
+
+		if ( it == m_bypass_list.end() )
+		{
+			m_bypass_list.push_back( val );
+		}
 	}
+
+	inline const std::vector< std::string >&
+	bypass_list() const
+	{
+		return m_bypass_list;
+	}
+
+	inline void
+	bypass_remove( const std::string &val )
+	{
+		auto it = std::find( m_bypass_list.begin(), m_bypass_list.end(), val );
+
+		if ( it != m_bypass_list.end() )
+		{
+			m_bypass_list.erase( it );
+		}
+	}
+
+	bool
+	bypass( const uri::ref &uri );
+
+	void
+	encode_authorization( const std::string &username, const std::string &password );
 
 	inline const std::string&
-	host() const
+	authorization() const
 	{
-		return m_host;
+		return m_authorization;
 	}
+
+	void
+	decode_authorization( std::string &username, std::string &password ) const;
 
 	inline void
-	set_host( const std::string &host )
+	on_auth_challenge( auth_challenge_f handler )
 	{
-		m_host = host;
+		m_auth_challenge_handler = handler;
 	}
 
-	inline const std::string&
-	bypass() const
+	inline bool
+	auth_challenge()
 	{
-		return m_bypass;
+		bool ok = false;
+
+		if ( m_auth_challenge_handler )
+		{
+			ok = m_auth_challenge_handler( this );
+		}
+		
+		return ok; 
 	}
 
-	inline void
-	set_bypass( const std::string &bypass )
-	{
-		m_bypass = bypass;
-	}
+	source::adapter::ref
+	create( bool secure );
 
-	inline std::uint16_t
-	port() const
-	{
-		return m_port;
-	}
+	virtual void
+	flatten( json::value_ref &root ) const;
 
-	inline void
-	set_port( std::uint16_t port )
-	{
-		m_port = port;
-	}
+protected:
 
-	inline const std::string&
-	user() const
-	{
-		return m_user;
-	}
-
-	inline void
-	set_user( const std::string &user )
-	{
-		m_user = user;
-	}
-
-	inline const std::string&
-	password() const
-	{
-		return m_password;
-	}
-
-	inline void
-	set_password( const std::string &password )
-	{
-		m_password = password;
-	}
+	void
+	inflate( const json::value_ref &root );
 	
-private:
-
-	uri::ref		m_uri;
-	std::string		m_host;
-	std::string		m_bypass;
-	std::uint16_t	m_port;
-	std::string		m_user;
-	std::string		m_password;
+	uri::ref					m_uri;
+	std::vector< std::string >	m_bypass_list;
+	auth_challenge_f			m_auth_challenge_handler;
+	std::string					m_authorization;
 };
 
 }

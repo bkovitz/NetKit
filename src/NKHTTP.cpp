@@ -35,6 +35,7 @@
 #include <NetKit/NKBase64.h>
 #include <NetKit/cstring.h>
 #include <NetKit/NKPlatform.h>
+#include <NetKit/NKProxy.h>
 #include <NetKit/NKLog.h>
 #include <http_parser.h>
 #include <algorithm>
@@ -1534,6 +1535,11 @@ client::really_send()
 			m_request->add_to_header( "Host", m_request->uri()->host() );
 			m_request->add_to_header( "User-Agent", "NetKit/2 " + platform::machine_description() );
 
+			if ( proxy::get()->authorization().size() > 0 )
+			{
+				m_request->add_to_header( "Proxy-Authorization", "basic " + proxy::get()->authorization() );
+			}
+
 			if ( m_request->body().length() > 0 )
 			{
 				m_request->add_to_header( "Content-Length", m_request->body().length() );
@@ -1573,11 +1579,26 @@ client::uri_was_received( connection::ref connection, const char *buf, size_t le
 int
 client::headers_were_received( connection::ref connection, message::header &header )
 {
-	m_response = new response( connection->http_major(), connection->http_minor(), connection->status_code(), false );
-	m_response->add_to_header( header );
-	m_request->headers_reply( m_response );
-	m_request->on_headers_reply( nullptr );
-	return 0;
+	int ret = 0;
+
+	if ( connection->status_code() == http::status::proxy_authentication )
+	{
+		if ( proxy::get()->auth_challenge() )
+		{
+			m_request->add_to_header( "Proxy-Authorization", "basic " + proxy::get()->authorization() );
+			m_connection->put( m_request.get() );
+			ret = 1;
+		}
+	}
+	else
+	{
+		m_response = new response( connection->http_major(), connection->http_minor(), connection->status_code(), false );
+		m_response->add_to_header( header );
+		m_request->headers_reply( m_response );
+		m_request->on_headers_reply( nullptr );
+	}
+
+	return ret;
 }
 
 

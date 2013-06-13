@@ -42,20 +42,6 @@ sink::sink()
 }
 
 
-sink::sink( const uri::ref &uri )
-{
-	ip::tcp::socket::ref sock = new ip::tcp::socket;
-	
-	sock->connect( uri, [=]( int status, const endpoint::ref &endpoint )
-	{
-		if ( status == 0 )
-		{
-			m_source = sock.get();
-		}
-	} );
-}
-
-
 sink::~sink()
 {
 }
@@ -132,16 +118,6 @@ void
 sink::connect( const uri::ref &uri, source::connect_reply_f reply )
 {
 	source::ref source = new ip::tcp::socket;
-
-	if ( ( uri->scheme() == "https" ) || ( uri->scheme() == "wss" ) )
-	{
-		source->add( tls::client::create() );
-	}
-
-	if ( ( uri->scheme() == "ws" ) || ( uri->scheme() == "wss" ) )
-	{
-		source->add( ws::client::create() );
-	}
 
 	source->connect( uri, [=]( int status, const endpoint::ref &peer )
 	{

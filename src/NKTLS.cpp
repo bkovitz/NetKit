@@ -68,7 +68,7 @@ public:
 	virtual ~tls_adapter();
 
 	virtual void
-	preflight( const uri::ref &uri, preflight_reply_f reply );
+	resolve( const uri::ref &uri, resolve_reply_f reply );
 	
 	virtual void
 	connect( const uri::ref &uri, const endpoint::ref &to, connect_reply_f reply );
@@ -253,26 +253,16 @@ tls_adapter::~tls_adapter()
 
 
 void
-tls_adapter::preflight( const uri::ref &uri, preflight_reply_f reply )
+tls_adapter::resolve( const uri::ref &uri, resolve_reply_f reply )
 {
-	if ( m_next )
-	{
-		m_next->preflight( uri, reply );
-	}
-	else
-	{
-		reply( 0, uri );
-	}
+	m_next->resolve( uri, reply );
 }
 
 
 void
 tls_adapter::connect( const uri::ref &uri, const endpoint::ref &to, connect_reply_f reply )
 {
-	m_next->connect( uri, to, [=]( int status ) mutable
-	{
-		reply( status );
-	} );
+	m_next->connect( uri, to, reply );
 }
 
 
