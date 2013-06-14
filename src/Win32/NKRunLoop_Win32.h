@@ -40,8 +40,11 @@ public:
 	schedule( event e, event_f func );
 	
 	virtual void
+	schedule_oneshot_timer( std::time_t msec, event_f func );
+
+	virtual void
 	suspend( event e );
-	
+
 	virtual void
 	cancel( event e );
 	
@@ -73,6 +76,7 @@ private:
 		std::time_t		m_relative_time;
 		std::time_t		m_absolute_time;
 		bool			m_scheduled;
+		bool			m_oneshot;
 		source			*m_source;
 		event_f			m_func;
 

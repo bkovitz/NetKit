@@ -41,7 +41,7 @@ class proxy_adapter : public netkit::source::adapter
 {
 public:
 
-	proxy_adapter( const proxy::ref &proxy, bool secure );
+	proxy_adapter( bool secure );
 	
 	virtual ~proxy_adapter();
 
@@ -78,7 +78,6 @@ protected:
 	std::uint16_t
 	parse_server_handshake();
 
-	proxy::ref				m_proxy;
 	uri::ref				m_uri;
 	bool					m_secure;
 	bool					m_connected;
@@ -93,6 +92,61 @@ protected:
 
 static proxy::ref g_proxy;
 
+proxy::auth_challenge_f		proxy::m_auth_challenge_handler;
+std::list< proxy::set_f >	proxy::m_set_handlers;
+
+source::adapter::ref
+proxy::create( bool secure )
+{
+	return new proxy_adapter( secure );
+}
+
+void
+proxy::on_auth_challenge( auth_challenge_f handler )
+{
+	m_auth_challenge_handler = handler;
+}
+
+
+bool
+proxy::auth_challenge()
+{
+	bool ok = false;
+
+	if ( m_auth_challenge_handler )
+	{
+		ok = m_auth_challenge_handler();
+	}
+		
+	return ok; 
+}
+
+
+proxy::ref
+proxy::get()
+{
+	return ( g_proxy ) ? g_proxy : proxy::null();
+}
+
+
+void
+proxy::on_set( set_f handler )
+{
+	m_set_handlers.push_back( handler );
+}
+
+
+void
+proxy::set( proxy::ref val )
+{
+	g_proxy = val;
+
+	for ( auto it = m_set_handlers.begin(); it != m_set_handlers.end(); it++ )
+	{
+		( *it )( g_proxy );
+	}
+}
+
 
 proxy::ref
 proxy::null()
@@ -105,20 +159,6 @@ proxy::null()
 	}
 
 	return null;
-}
-
-
-proxy::ref
-proxy::get()
-{
-	return ( g_proxy ) ? g_proxy : proxy::null();
-}
-
-
-void
-proxy::set( proxy::ref val )
-{
-	g_proxy = val;
 }
 
 
@@ -142,6 +182,13 @@ proxy::proxy( const json::value::ref &json )
 
 proxy::~proxy()
 {
+}
+
+
+bool
+proxy::is_null() const
+{
+	return ( m_uri ) ? false : true;
 }
 
 
@@ -218,19 +265,14 @@ proxy::inflate( const json::value_ref &root )
 }
 
 
-source::adapter::ref
-proxy::create( bool secure )
-{
-	return new proxy_adapter( this, secure );
-}
+
 
 #if defined( __APPLE__ )
 #	pragma mark proxy_adapter implementation
 #endif
 
-proxy_adapter::proxy_adapter( const proxy::ref &proxy, bool secure )
+proxy_adapter::proxy_adapter( bool secure )
 :
-	m_proxy( proxy ),
 	m_secure( secure ),
 	m_connected( false )
 {
@@ -245,7 +287,7 @@ proxy_adapter::~proxy_adapter()
 void
 proxy_adapter::resolve( const uri::ref &uri, resolve_reply_f reply )
 {
-	m_next->resolve( m_proxy->uri(), [=]( int status, const netkit::uri::ref &uri, ip::address::list addrs )
+	m_next->resolve( proxy::get()->uri(), [=]( int status, const netkit::uri::ref &uri, ip::address::list addrs )
 	{
 		reply( status, uri, addrs );
 	} );
@@ -324,7 +366,7 @@ proxy_adapter::recv( const std::uint8_t *in_buf, std::size_t in_len, recv_reply_
 						}
 						else if ( http::status::proxy_authentication )
 						{
-							if ( m_proxy->auth_challenge() )
+							if ( proxy::auth_challenge() )
 							{
 								send_connect();
 							}
@@ -365,9 +407,9 @@ proxy_adapter::send_connect()
 	os << "CONNECT " << m_uri->host() << ":" << m_uri->port() << " HTTP/1.1\r\n";
 	os << "Host: " << m_uri->host() << "\r\n";
 
-	if ( m_proxy->authorization().size() > 0 )
+	if ( proxy::get()->authorization().size() > 0 )
 	{
-		os << "Proxy-Authorization: basic " << m_proxy->authorization() << "\r\n";
+		os << "Proxy-Authorization: basic " << proxy::get()->authorization() << "\r\n";
 	}
 
 	os << "\r\n";

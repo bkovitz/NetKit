@@ -38,21 +38,34 @@
 
 namespace netkit {
 
-class NETKIT_DLL proxy : public object, public source::adapter
+class NETKIT_DLL proxy : public object
 {
 public:
 
-	typedef std::function< bool ( smart_ref< proxy > proxy ) >	auth_challenge_f;
+	typedef std::function< bool () >							auth_challenge_f;
+	typedef std::function< void ( smart_ref< proxy > proxy ) >	set_f;
 	typedef smart_ref< proxy >									ref;
 
-	static proxy::ref
-	null();
+	static source::adapter::ref
+	create( bool secure );
+
+	static void
+	on_auth_challenge( auth_challenge_f handler );
+
+	static bool
+	auth_challenge();
 
 	static proxy::ref
 	get();
 
 	static void
+	on_set( set_f handler );
+
+	static void
 	set( proxy::ref proxy );
+
+	static proxy::ref
+	null();
 
 	proxy();
 	
@@ -61,6 +74,9 @@ public:
 	proxy( const json::value_ref &root );
 
 	virtual ~proxy();
+
+	bool
+	is_null() const;
 
 	inline const uri::ref&
 	uri() const
@@ -111,28 +127,6 @@ public:
 	void
 	decode_authorization( std::string &username, std::string &password ) const;
 
-	inline void
-	on_auth_challenge( auth_challenge_f handler )
-	{
-		m_auth_challenge_handler = handler;
-	}
-
-	inline bool
-	auth_challenge()
-	{
-		bool ok = false;
-
-		if ( m_auth_challenge_handler )
-		{
-			ok = m_auth_challenge_handler( this );
-		}
-		
-		return ok; 
-	}
-
-	source::adapter::ref
-	create( bool secure );
-
 	virtual void
 	flatten( json::value_ref &root ) const;
 
@@ -143,8 +137,9 @@ protected:
 	
 	uri::ref					m_uri;
 	std::vector< std::string >	m_bypass_list;
-	auth_challenge_f			m_auth_challenge_handler;
 	std::string					m_authorization;
+	static auth_challenge_f		m_auth_challenge_handler;
+	static std::list< set_f >	m_set_handlers;
 };
 
 }

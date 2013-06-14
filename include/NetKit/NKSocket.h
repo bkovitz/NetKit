@@ -274,6 +274,9 @@ public:
 	socket( native fd, const ip::endpoint::ref &peer );
 	
 	virtual ~socket();
+
+	void
+	set_keep_alive( bool val );
 	
 protected:
 

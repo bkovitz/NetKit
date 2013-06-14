@@ -1583,7 +1583,7 @@ client::headers_were_received( connection::ref connection, message::header &head
 
 	if ( connection->status_code() == http::status::proxy_authentication )
 	{
-		if ( proxy::get()->auth_challenge() )
+		if ( proxy::auth_challenge() )
 		{
 			m_request->add_to_header( "Proxy-Authorization", "basic " + proxy::get()->authorization() );
 			m_connection->put( m_request.get() );

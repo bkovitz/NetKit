@@ -207,6 +207,7 @@ runloop_win32::create( std::time_t msec )
 
 	a->m_source			= s;
 	a->m_relative_time	= msec;
+	a->m_oneshot		= false;
 
 	s->m_atoms.push_back( a );
 
@@ -367,6 +368,17 @@ exit:
 	{
 		delete w;
 	}
+}
+
+
+void
+runloop_win32::schedule_oneshot_timer( std::time_t msec, event_f func )
+{
+	atom *a = ( atom* ) create( msec );
+
+	a->m_oneshot = true;
+
+	schedule( a, func );
 }
 
 
@@ -832,6 +844,11 @@ runloop_win32::worker::run( mode how, bool &input_event )
 				a->m_scheduled				= false;
 				a->m_source->m_scheduled	= false;
 				a->m_source->dispatch();
+
+				if ( a->m_oneshot )
+				{
+					runloop::main()->cancel( a );
+				}
 			}
 		}
 	}

@@ -89,6 +89,9 @@ public:
 	
 	virtual void
 	schedule( event e, event_f func ) = 0;
+
+	virtual void
+	schedule_oneshot_timer( std::time_t msec, event_f func ) = 0;
 	
 	virtual void
 	suspend( event e ) = 0;

@@ -375,6 +375,15 @@ ip::tcp::socket::~socket()
 }
 
 
+void
+ip::tcp::socket::set_keep_alive( bool val )
+{
+	int toggle = ( val ) ? 1 : 0;
+
+	setsockopt( m_fd, SOL_SOCKET, SO_KEEPALIVE, ( char* ) &toggle, sizeof( toggle ) );
+}
+
+
 #if defined( __APPLE__ )
 #	pragma mark ip::tcp::acceptor implementation
 #endif
