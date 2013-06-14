@@ -289,9 +289,6 @@ IF EXIST ..\..\ThirdParty\uriparser GOTO DONE
     <ClInclude Include=".\NKRunLoop_Win32.h" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include=".\EventLog.rc" />
-  </ItemGroup>
-  <ItemGroup>
     <CustomBuild Include=".\EventLog.mc">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
       <FileType>Document</FileType>

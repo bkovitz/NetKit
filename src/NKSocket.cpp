@@ -353,6 +353,7 @@ ip::tcp::socket::socket()
 :
 	ip::socket( AF_INET, SOCK_STREAM )
 {
+	set_keep_alive( true );
 }
 
 
@@ -360,6 +361,7 @@ ip::tcp::socket::socket( native fd )
 :
 	ip::socket( fd )
 {
+	set_keep_alive( true );
 }
 
 
@@ -367,6 +369,7 @@ ip::tcp::socket::socket( native fd, const ip::endpoint::ref &peer )
 :
 	ip::socket( fd, peer )
 {
+	set_keep_alive( true );
 }
 
 
