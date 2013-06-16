@@ -3169,62 +3169,27 @@ server::request_handlers		*server::m_request_handlers;
 connection::ref					server::m_active_connection;
 connection::list				*server::m_connections;
 
-sink::ref
-server::adopt( source::ref source, const std::uint8_t *buf, std::size_t len )
+void
+server::adopt( connection::ref connection )
 {
-	connection::ref	sink;
-	unsigned		idx = 0;
-
-	while ( isdigit( buf[ idx ] ) && ( idx < len ) )
+	if ( !m_connections )
 	{
-		idx++;
-	}
-	
-	if ( idx == len )
-	{
-		goto exit;
-	}
-	
-	if ( buf[ idx++ ] != ':' )
-	{
-		goto exit;
-	}
-	
-	if ( idx == len )
-	{
-		goto exit;
-	}
-	
-	if ( buf[ idx ] != '{' )
-	{
-		goto exit;
+		m_connections = new connection::list;
 	}
 
-	try
-	{
-		sink = new connection;
-		m_connections->push_back( sink );
+	m_connections->push_back( connection );
 
-		sink->on_close( [=]()
+	connection->on_close( [=]()
+	{
+		auto it = std::find_if( m_connections->begin(), m_connections->end(), [=]( connection::ref inserted )
 		{
-			auto it = std::find_if( m_connections->begin(), m_connections->end(), [=]( connection::ref inserted )
-			{
-				return ( inserted.get() == sink.get() );
-			} );
-
-			assert( it != m_connections->end() );
-				
-			m_connections->erase( it );
+			return ( inserted.get() == connection.get() );
 		} );
-	}
-	catch ( ... )
-	{
-		// log this
-	}
-	
-exit:
 
-	return sink.get();
+		assert( it != m_connections->end() );
+				
+		m_connections->erase( it );
+	} );
 }
 
 

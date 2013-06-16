@@ -439,9 +439,9 @@ public:
 	typedef std::function< void ( value::ref result, bool close ) >		reply_f;
 	typedef std::function< void ( value::ref params ) >					notification_f;
 	typedef std::function< void ( value::ref params, reply_f func ) >	request_f;
-	
-	static sink::ref
-	adopt( source::ref source, const std::uint8_t *buf, std::size_t len );
+
+	static void
+	adopt( connection::ref connection );
 	
 	static void
 	preflight( preflight_f func );

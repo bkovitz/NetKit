@@ -257,6 +257,13 @@ acceptor::acceptor( socket::native fd )
 
 acceptor::~acceptor()
 {
+	nklog( log::verbose, "" );
+
+#if defined( WIN32 )
+	closesocket( m_fd );
+#else
+	close( m_fd );
+#endif
 }
 
 
@@ -401,6 +408,8 @@ ip::tcp::acceptor::acceptor( const ip::endpoint::ref &endpoint )
 
 ip::tcp::acceptor::~acceptor()
 {
+	nklog( log::verbose, "" );
+
 	if ( m_event )
 	{
 		runloop::main()->cancel( m_event );

@@ -41,7 +41,7 @@ class proxy_adapter : public netkit::source::adapter
 {
 public:
 
-	proxy_adapter( bool secure );
+	proxy_adapter( proxy::ref proxy, bool secure );
 	
 	virtual ~proxy_adapter();
 
@@ -78,7 +78,7 @@ protected:
 	std::uint16_t
 	parse_server_handshake();
 
-	uri::ref				m_uri;
+	proxy::ref				m_proxy;
 	bool					m_secure;
 	bool					m_connected;
 	std::string				m_handshake;
@@ -98,7 +98,7 @@ std::list< proxy::set_f >	proxy::m_set_handlers;
 source::adapter::ref
 proxy::create( bool secure )
 {
-	return new proxy_adapter( secure );
+	return new proxy_adapter( g_proxy, secure );
 }
 
 void
@@ -139,11 +139,14 @@ proxy::on_set( set_f handler )
 void
 proxy::set( proxy::ref val )
 {
-	g_proxy = val;
-
-	for ( auto it = m_set_handlers.begin(); it != m_set_handlers.end(); it++ )
+	if ( !g_proxy || !g_proxy->equals( *val ) )
 	{
-		( *it )( g_proxy );
+		g_proxy = val;
+
+		for ( auto it = m_set_handlers.begin(); it != m_set_handlers.end(); it++ )
+		{
+			( *it )( g_proxy );
+		}
 	}
 }
 
@@ -265,14 +268,32 @@ proxy::inflate( const json::value_ref &root )
 }
 
 
+bool
+proxy::equals( const object &that ) const
+{
+	const proxy *rhs = reinterpret_cast< const proxy* >( &that );
+	bool ok = false;
+
+	if ( rhs )
+	{
+		if ( ( !m_uri && !rhs->m_uri ) ||
+		     ( m_uri && rhs->m_uri && ( m_uri->to_string() == rhs->m_uri->to_string() ) ) )
+		{
+			ok = true;
+		}
+	}
+
+	return ok;
+}
 
 
 #if defined( __APPLE__ )
 #	pragma mark proxy_adapter implementation
 #endif
 
-proxy_adapter::proxy_adapter( bool secure )
+proxy_adapter::proxy_adapter( proxy::ref proxy, bool secure )
 :
+	m_proxy( proxy ),
 	m_secure( secure ),
 	m_connected( false )
 {
@@ -287,16 +308,27 @@ proxy_adapter::~proxy_adapter()
 void
 proxy_adapter::resolve( const uri::ref &uri, resolve_reply_f reply )
 {
+	nklog( log::verbose, "uri = %s", m_proxy->uri()->to_string().c_str() );
+
+	m_next->resolve( uri, reply );
+
+#if 0
 	m_next->resolve( proxy::get()->uri(), [=]( int status, const netkit::uri::ref &uri, ip::address::list addrs )
 	{
 		reply( status, uri, addrs );
 	} );
+#endif
 }
 
 	
 void
 proxy_adapter::connect( const uri::ref &uri, const endpoint::ref &to, connect_reply_f reply )
 {
+	nklog( log::verbose, "uri = %s", m_proxy->uri()->to_string().c_str() );
+
+	m_next->connect( uri, to, reply );
+
+#if 0
 	m_next->connect( uri, to, [=]( int status )
 	{
 		if ( ( status == 0 ) && m_secure )
@@ -308,12 +340,16 @@ proxy_adapter::connect( const uri::ref &uri, const endpoint::ref &to, connect_re
 
 		reply( status );
 	} );
-}
-
+#endif
+} 
 		
 void
 proxy_adapter::send( const std::uint8_t *in_buf, std::size_t in_len, send_reply_f reply )
 {
+	nklog( log::verbose, "uri = %s", m_proxy->uri()->to_string().c_str() );
+
+	m_next->send( in_buf, in_len, reply );
+#if 0
 	if ( m_secure && m_connected )
 	{
 		m_next->send( in_buf, in_len, reply );
@@ -324,12 +360,18 @@ proxy_adapter::send( const std::uint8_t *in_buf, std::size_t in_len, send_reply_
 
 		m_pending_send_list.push( buf );
 	}
+#endif
 }
 
 		
 void
 proxy_adapter::recv( const std::uint8_t *in_buf, std::size_t in_len, recv_reply_f reply )
 {
+	nklog( log::verbose, "uri = %s", m_proxy->uri()->to_string().c_str() );
+
+	m_next->recv( in_buf, in_len, reply );
+
+#if 0
 	m_next->recv( in_buf, in_len, [=]( int status, const std::uint8_t *out_buf, std::size_t out_len, bool more_coming )
 	{
 		if ( m_secure && !m_connected )
@@ -395,6 +437,7 @@ proxy_adapter::recv( const std::uint8_t *in_buf, std::size_t in_len, recv_reply_
 
 		reply( status, out_buf, out_len, more_coming );
 	} );
+#endif
 }
 
 
@@ -404,12 +447,12 @@ proxy_adapter::send_connect()
 	std::string			msg;
 	std::ostringstream	os;
 
-	os << "CONNECT " << m_uri->host() << ":" << m_uri->port() << " HTTP/1.1\r\n";
-	os << "Host: " << m_uri->host() << "\r\n";
+	os << "CONNECT " << m_proxy->uri()->host() << ":" << m_proxy->uri()->port() << " HTTP/1.1\r\n";
+	os << "Host: " << m_proxy->uri()->host() << "\r\n";
 
 	if ( proxy::get()->authorization().size() > 0 )
 	{
-		os << "Proxy-Authorization: basic " << proxy::get()->authorization() << "\r\n";
+		os << "Proxy-Authorization: basic " << m_proxy->authorization() << "\r\n";
 	}
 
 	os << "\r\n";

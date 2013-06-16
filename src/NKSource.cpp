@@ -208,63 +208,65 @@ source::handle_resolve( ip::address::list addrs, const uri::ref &uri, connect_re
 }
 
 
-#if 0
-void
-source::connect_internal_1( const uri::ref &uri, connect_reply_f reply )
-{
-	ip::address::resolve( uri->host(), [=]( int status, ip::address::list addrs )
-	{
-		if ( status == 0 )
-		{
-			handle_resolve( addrs, uri, reply );
-		}
-		else
-		{
-			reply( status, nullptr );
-		}
-	} );
-}
-#endif
-
-
 void
 source::connect_internal( const uri::ref &uri, const endpoint::ref &to, connect_reply_f reply )
 {
-	m_adapters.head()->connect( uri, to, [=]( int status )
+	if ( m_adapters.head() )
 	{
-		reply( status, to );
-	} );
+		m_adapters.head()->connect( uri, to, [=]( int status )
+		{
+			reply( status, to );
+		} );
+	}
+	else
+	{
+		reply( -1, to );
+	}
 }
 
 
 void
 source::send( const std::uint8_t *in_buf, size_t in_len, send_reply_f reply )
 {
-	send( m_adapters.head(), in_buf, in_len, reply );
+	if ( m_adapters.head() )
+	{
+		send( m_adapters.head(), in_buf, in_len, reply );
+	}
+	else
+	{
+		reply( -1 );
+	}
 }
 
 
 void
 source::send( adapter *adapter, const std::uint8_t *in_buf, size_t in_len, send_reply_f reply )
 {
-	adapter->send( in_buf, in_len, [=]( int status, const std::uint8_t *out_buf, std::size_t out_len ) mutable
+	if ( adapter )
 	{
-		if ( out_len > 0 )
+		adapter->send( in_buf, in_len, [=]( int status, const std::uint8_t *out_buf, std::size_t out_len ) mutable
 		{
-			send_info *info = new send_info( out_buf, out_len, reply );
-			
-			m_send_queue.push( info );
-		
-			if ( m_send_queue.size() == 1 )
+			if ( out_len > 0 )
 			{
-				send_internal();
+				send_info *info = new send_info( out_buf, out_len, reply );
+			
+				m_send_queue.push( info );
+		
+				if ( m_send_queue.size() == 1 )
+				{
+					send_internal();
+				}
 			}
-		}
-		else
-		{
-			reply( status );
-		}
-	} );
+			else
+			{
+				reply( status );
+			}
+		} );
+	}
+	else
+	{
+		reply( -1 );
+	}
 }
 
 
@@ -311,14 +313,21 @@ source::send_internal()
 void
 source::peek( recv_reply_f reply )
 {
-	if ( !m_recv_queue.empty() )
+	if ( m_adapters.head() )
 	{
-		buf_t buf = m_recv_queue.front();
-		reply( 0, &buf[ 0 ], buf.size() );
+		if ( !m_recv_queue.empty() )
+		{
+			buf_t buf = m_recv_queue.front();
+			reply( 0, &buf[ 0 ], buf.size() );
+		}
+		else
+		{
+			recv_internal( true, reply );
+		}
 	}
 	else
 	{
-		recv_internal( true, reply );
+		reply( -1, nullptr, 0 );
 	}
 }
 
@@ -326,16 +335,23 @@ source::peek( recv_reply_f reply )
 void
 source::recv( recv_reply_f reply )
 {
-	if ( !m_recv_queue.empty() )
+	if ( m_adapters.head() )
 	{
-		buf_t buf = m_recv_queue.front();
-		m_recv_queue.pop();
-		
-		reply( 0, &buf[ 0 ], buf.size() );
+		if ( !m_recv_queue.empty() )
+		{
+			buf_t buf = m_recv_queue.front();
+			m_recv_queue.pop();
+			
+			reply( 0, &buf[ 0 ], buf.size() );
+		}
+		else
+		{
+			recv_internal( false, reply );
+		}
 	}
 	else
 	{
-		recv_internal( false, reply );
+		reply( -1, nullptr, 0 );
 	}
 }
 

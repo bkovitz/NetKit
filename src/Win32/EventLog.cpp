@@ -5,19 +5,26 @@
 #include <windows.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <vector>
 #include <time.h>
 #include <mutex>
 
 using namespace netkit;
 
-static std::mutex	*g_mutex		= nullptr;
-static log::level	g_logLevel		= log::info;
-static HANDLE		g_eventSource	= nullptr;
+static std::recursive_mutex	*g_mutex		= nullptr;
+static log::level			g_logLevel		= log::info;
+static HANDLE				g_eventSource	= nullptr;
+std::vector< log::set_f >	*g_set_handlers;
 
 void
 log::init( LPCTSTR name )
 {
 	HKEY key = NULL;
+
+	if ( !g_set_handlers )
+	{
+		g_set_handlers = new std::vector< set_f >;
+	}
 
 	if ( g_eventSource == nullptr )
 	{
@@ -27,7 +34,7 @@ log::init( LPCTSTR name )
 		int				err;
 		int				n;
 	
-		g_mutex = new std::mutex;
+		g_mutex = new std::recursive_mutex;
 
 		// Build the path string using the fixed registry path and app name.
 	
@@ -86,7 +93,7 @@ exit:
 log::level
 log::get_level()
 {
-	std::lock_guard< std::mutex > guard( *g_mutex );
+	std::lock_guard< std::recursive_mutex > guard( *g_mutex );
 
 	return g_logLevel;
 }
@@ -95,16 +102,31 @@ log::get_level()
 void
 log::set_level( log::level l )
 {
-	std::lock_guard< std::mutex > guard( *g_mutex );
+	std::lock_guard< std::recursive_mutex > guard( *g_mutex );
 
-	g_logLevel = l;
+	if ( g_logLevel != l )
+	{
+		g_logLevel = l;
+
+		for ( auto it = g_set_handlers->begin(); it != g_set_handlers->end(); it++ )
+		{
+			( *it )( l );
+		}
+	}
+}
+
+
+void
+log::on_set( set_f handler )
+{
+	g_set_handlers->push_back( handler );
 }
 
 
 static const char*
 prune( const char *filename )
 {
-	for ( int i = strlen( filename ) - 1; i > 0; i-- )
+	for ( auto i = strlen( filename ) - 1; i > 0; i-- )
 	{
 		if ( filename[ i ] == '\\' )
 		{
@@ -121,7 +143,7 @@ log::put( log::level l, const char * filename, const char * function, int line, 
 {
 	if ( l <= g_logLevel )
 	{
-		std::lock_guard< std::mutex > guard( *g_mutex );
+		std::lock_guard< std::recursive_mutex > guard( *g_mutex );
 
 		static char buf[ 32000 ];
 		static char msg[ 32512 ];

@@ -62,6 +62,8 @@ public:
 		verbose	= 10
 	};
 		
+	typedef std::function< void ( level l ) > set_f;
+
 	static void
 #if defined( WIN32 )
 	init( LPCTSTR name );
@@ -74,6 +76,9 @@ public:
 
 	static void
 	set_level( level l );
+
+	static void
+	on_set( set_f handler );
 
 	static void
 	put( level l, const char * filename, const char * function, int line, const char * message, ... );

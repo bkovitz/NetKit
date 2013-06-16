@@ -130,6 +130,9 @@ public:
 	virtual void
 	flatten( json::value_ref &root ) const;
 
+	virtual bool
+	equals( const object &that ) const;
+
 protected:
 
 	void
