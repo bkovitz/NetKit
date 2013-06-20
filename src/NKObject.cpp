@@ -182,7 +182,7 @@ object::int32_for_key( const std::string &key ) const
 
 	if ( it != m_attrs.end() )
 	{
-		return ( it->second.length() > 0 ) ? std::stol( it->second ) : 0;
+		return ( it->second.length() > 0 ) ? ( std::int32_t ) std::stol( it->second ) : 0;
 	}
 	else
 	{
@@ -198,7 +198,7 @@ object::uint32_for_key( const std::string &key ) const
 
 	if ( it != m_attrs.end() )
 	{
-		return ( it->second.length() > 0 ) ? std::stoul( it->second ) : 0;
+		return ( it->second.length() > 0 ) ? ( std::uint32_t ) std::stoul( it->second ) : 0;
 	}
 	else
 	{
@@ -309,6 +309,15 @@ object::set_value_for_key( const std::string &key, std::uint64_t val )
 {
 	m_attrs[ key ] = std::to_string( val );
 }
+
+
+#if defined( __APPLE__ )
+void
+object::set_value_for_key( const std::string &key, std::time_t val )
+{
+	m_attrs[ key ] = std::to_string( val );
+}
+#endif
 
 
 void

@@ -183,6 +183,27 @@ platform::machine_id()
 }
 
 
+std::string
+platform::make_filesystem_safe( const std::string &name )
+{
+	std::string safe;
+
+    for ( auto it = name.begin(); it != name.end(); it++ )
+    {
+        if ( ( *it == ':' ) || ( *it == '\n' ) )
+        {
+            safe.push_back( '_' );
+        }
+        else
+        {
+            safe.push_back( *it );
+        }
+    }
+
+    return safe;
+}
+
+
 bool
 platform::create_folder( const std::string &folder )
 {
@@ -191,8 +212,6 @@ platform::create_folder( const std::string &folder )
 }
 
 
-
- 
 // Returns an iterator containing the primary (built-in) Ethernet interface. The caller is responsible for
 // releasing the iterator after the caller is done with it.
 static kern_return_t

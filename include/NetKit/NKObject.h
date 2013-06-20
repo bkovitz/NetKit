@@ -34,6 +34,7 @@
 #include <NetKit/NKSmartRef.h>
 #include <NetKit/NKExpected.h>
 #include <cstdint>
+#include <chrono>
 #include <atomic>
 #include <string>
 #include <list>
@@ -136,6 +137,11 @@ public:
 
 	void
 	set_value_for_key( const std::string &key, std::uint64_t val );
+	
+#if defined( __APPLE__ )
+	void
+	set_value_for_key( const std::string &key, std::time_t val );
+#endif
 	
 	void
 	set_value_for_key( const std::string &key, const std::string &val );

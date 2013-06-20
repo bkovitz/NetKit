@@ -85,11 +85,14 @@ manager_impl::is_connected() const
 
 
 netkit::status
-manager_impl::exec( const std::string &str )
+manager_impl::exec( const std::string &str, bool quiet )
 {
 	char *error = NULL;
 	
-	nklog( log::verbose, "exec: %s", str.c_str() );
+	if ( !quiet )
+	{
+		nklog( log::verbose, "exec: %s", str.c_str() );
+	}
 
 	int ret = sqlite3_exec( m_db, str.c_str(), 0, 0, &error );
 	

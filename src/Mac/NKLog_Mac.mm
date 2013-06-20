@@ -33,69 +33,59 @@
 #include <stdio.h>
 #include <time.h>
 #include <string.h>
+#include <pthread.h>
+#include <vector>
 #include <mutex>
 
 using namespace netkit;
 
-static std::mutex	g_mutex;
-static log::level	g_log_level = log::info;
-
 void
 log::init( const char *name )
 {
-}
-
-
-log::level
-log::get_level()
-{
-	std::lock_guard<std::mutex> lk( g_mutex );
-
-	return g_log_level;
-}
-
-
-void
-log::set_level( log::level l )
-{
-	std::lock_guard<std::mutex> lk( g_mutex );
-
-	g_log_level = l;
+	if ( !m_set_handlers )
+	{
+		m_set_handlers = new set_handlers;
+	}
+	
+	if ( !m_mutex )
+	{
+		m_mutex = new std::recursive_mutex;
+	}
 }
 
 
 void
 log::put( log::level l, const char * filename, const char * function, int line, const char * format, ... )
 {
-	std::lock_guard<std::mutex> lk( g_mutex );
-
-	if ( l <= g_log_level )
+	std::lock_guard<std::recursive_mutex> lock( *m_mutex );
+	
+	if ( l <= m_log_level )
 	{
-		char buf[ 1024 ];
-		char msg[ 2048 ];
-		char * timeStr;
-		time_t t;
-		va_list ap;
+		static char msg[ 32767 ];
+		static char buf[ 32767 ];
+		char		*time_str;
+		time_t		t;
+		va_list		ap;
 
 		va_start( ap, format );
 		vsnprintf( buf, sizeof( buf ), format, ap );
 		va_end( ap );
 		
 		t = time( NULL );
-		timeStr = ctime( &t );
+		time_str = ctime( &t );
 		
-		if ( timeStr )
+		if ( time_str )
 		{
-			for ( unsigned i = 0; i < strlen( timeStr ); i++ )
+			for ( unsigned i = 0; i < strlen( time_str ); i++ )
 			{
-				if ( timeStr[ i ] == '\n' )
+				if ( time_str[ i ] == '\n' )
 				{
-					timeStr[ i ] = '\0';
+					time_str[ i ] = '\0';
 				}
 			}
 		}
 		
-		snprintf( msg, sizeof( msg ), "%s %s:%d %s", timeStr, function, line, buf );
+		snprintf( msg, sizeof( msg ), "%d %s %s:%d %s", getpid(), time_str, function, line, buf );
 		fprintf( stderr, "%s\n", msg );
 	}
 }

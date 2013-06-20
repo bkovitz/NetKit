@@ -119,6 +119,21 @@ runloop_mac::schedule( event e, event_f f )
 
 
 void
+runloop_mac::schedule_oneshot_timer( std::time_t msec, event_f func )
+{
+	auto event = dispatch_source_create( DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue() );
+
+	dispatch_source_set_timer( event, dispatch_time( DISPATCH_TIME_NOW, msec * NSEC_PER_SEC ), msec * NSEC_PER_MSEC, 0 );
+	
+	dispatch_source_set_event_handler( event, ^()
+	{
+		func( event );
+		cancel( event );
+	} );
+}
+
+
+void
 runloop_mac::suspend( event e )
 {
 	auto event = reinterpret_cast< dispatch_source_t >( e );

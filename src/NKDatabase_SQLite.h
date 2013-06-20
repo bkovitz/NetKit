@@ -93,7 +93,7 @@ public:
 	cancel( cookie t );
 
 	virtual netkit::status
-	exec( const std::string &str );
+	exec( const std::string &str, bool quiet = false );
 
 	virtual statement::ref
 	select( const std::string &str );

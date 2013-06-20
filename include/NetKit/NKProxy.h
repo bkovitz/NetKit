@@ -58,8 +58,11 @@ public:
 	static proxy::ref
 	get();
 
-	static void
+	static netkit::cookie
 	on_set( set_f handler );
+	
+	static void
+	cancel( netkit::cookie cookie );
 
 	static void
 	set( proxy::ref proxy );
@@ -138,11 +141,13 @@ protected:
 	void
 	inflate( const json::value_ref &root );
 	
+	typedef std::vector< std::pair< netkit::cookie, set_f > > set_handlers;
+	
 	uri::ref					m_uri;
 	std::vector< std::string >	m_bypass_list;
 	std::string					m_authorization;
 	static auth_challenge_f		m_auth_challenge_handler;
-	static std::list< set_f >	m_set_handlers;
+	static set_handlers			m_set_handlers;
 };
 
 }

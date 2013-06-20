@@ -32,6 +32,9 @@
 #define _netkit_log_h
 
 #include <NetKit/NKObject.h>
+#include <NetKit/NKCookie.h>
+#include <vector>
+#include <mutex>
 
 #if defined( WIN32 )
 
@@ -77,11 +80,21 @@ public:
 	static void
 	set_level( level l );
 
-	static void
+	static netkit::cookie
 	on_set( set_f handler );
+	
+	static void
+	cancel( netkit::cookie cookie );
 
 	static void
 	put( level l, const char * filename, const char * function, int line, const char * message, ... );
+	
+private:
+
+	typedef std::vector< std::pair< netkit::cookie, set_f > >	set_handlers;
+	static log::level											m_log_level;
+	static set_handlers											*m_set_handlers;
+	static std::recursive_mutex									*m_mutex;
 };
 
 }

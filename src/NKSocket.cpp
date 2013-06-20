@@ -119,6 +119,7 @@ socket::start_connect( const endpoint::ref &peer, bool &would_block )
 	if ( m_fd == socket::null )
 	{
 		nklog( log::error, "::socket() failed: %d", platform::error() );
+		err = -1;
 		goto exit;
 	}
 

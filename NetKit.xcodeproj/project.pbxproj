@@ -16,8 +16,6 @@
 		D20ED13216D8379900177887 /* NKRunLoop_Mac.mm in Sources */ = {isa = PBXBuildFile; fileRef = D20ED13016D8379900177887 /* NKRunLoop_Mac.mm */; };
 		D20ED13416DB123300177887 /* NKProxy.h in Headers */ = {isa = PBXBuildFile; fileRef = D20ED13316DB123300177887 /* NKProxy.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D20ED13616DB123C00177887 /* NKProxy.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D20ED13516DB123B00177887 /* NKProxy.cpp */; };
-		D20ED13916DB366D00177887 /* NKHTTP_Mac.h in Headers */ = {isa = PBXBuildFile; fileRef = D20ED13716DB366C00177887 /* NKHTTP_Mac.h */; };
-		D20ED13A16DB366D00177887 /* NKHTTP_Mac.mm in Sources */ = {isa = PBXBuildFile; fileRef = D20ED13816DB366C00177887 /* NKHTTP_Mac.mm */; };
 		D20ED13E16DC0E9C00177887 /* SecurityFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D20ED13D16DC0E9C00177887 /* SecurityFoundation.framework */; };
 		D20ED14016DC0EF300177887 /* CoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D20ED13F16DC0EF200177887 /* CoreServices.framework */; };
 		D2171B85170E4387002E1119 /* NKAddress.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D23DF54B15F698F90027A8F1 /* NKAddress.cpp */; };
@@ -53,7 +51,6 @@
 		D23DF57015F698F90027A8F1 /* NKSocket.h in Headers */ = {isa = PBXBuildFile; fileRef = D23DF55815F698F90027A8F1 /* NKSocket.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D23DF57C15F69C4F0027A8F1 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D23DF52E15F698390027A8F1 /* Foundation.framework */; };
 		D23DF57E15F69D1E0027A8F1 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D23DF57D15F69D1E0027A8F1 /* CoreFoundation.framework */; };
-		D23DF58315F69D300027A8F1 /* NKLog.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D23DF57F15F69D300027A8F1 /* NKLog.cpp */; };
 		D23DF58815F69F980027A8F1 /* NKLog.h in Headers */ = {isa = PBXBuildFile; fileRef = D23DF58715F69F980027A8F1 /* NKLog.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D23DF58A15F6A3040027A8F1 /* (null) in Headers */ = {isa = PBXBuildFile; settings = {ATTRIBUTES = (Public, ); }; };
 		D23DF59015F6AC530027A8F1 /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D23DF58F15F6AC530027A8F1 /* SystemConfiguration.framework */; };
@@ -79,7 +76,6 @@
 		D26B0EAB16F7C744008379E0 /* NKError.h in Headers */ = {isa = PBXBuildFile; fileRef = D23DF54715F698F90027A8F1 /* NKError.h */; };
 		D26B0EAC16F7C744008379E0 /* NKExpected.h in Headers */ = {isa = PBXBuildFile; fileRef = D254EFB916C43DA500851E44 /* NKExpected.h */; };
 		D26B0EAE16F7C744008379E0 /* NKAddress.h in Headers */ = {isa = PBXBuildFile; fileRef = D23DF54C15F698F90027A8F1 /* NKAddress.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		D26B0EAF16F7C744008379E0 /* NKLog.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D23DF57F15F69D300027A8F1 /* NKLog.cpp */; };
 		D26B0EB016F7C744008379E0 /* NKLog.h in Headers */ = {isa = PBXBuildFile; fileRef = D23DF58715F69F980027A8F1 /* NKLog.h */; };
 		D26B0EB116F7C744008379E0 /* NKOAuth.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D20D20FC1608FF2B0037A994 /* NKOAuth.cpp */; };
 		D26B0EB216F7C744008379E0 /* NKOAuth.h in Headers */ = {isa = PBXBuildFile; fileRef = D20D21031608FF4F0037A994 /* NKOAuth.h */; };
@@ -107,8 +103,6 @@
 		D26B0ECB16F7C74C008379E0 /* NKDatabase_SQLite.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D2E25B9F16701A55009C6073 /* NKDatabase_SQLite.cpp */; };
 		D26B0ECC16F7C754008379E0 /* NKHTTP.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D23DF5D215F922170027A8F1 /* NKHTTP.cpp */; };
 		D26B0ECD16F7C754008379E0 /* NKHTTP.h in Headers */ = {isa = PBXBuildFile; fileRef = D23DF54A15F698F90027A8F1 /* NKHTTP.h */; };
-		D26B0ECE16F7C754008379E0 /* NKHTTP_Mac.mm in Sources */ = {isa = PBXBuildFile; fileRef = D20ED13816DB366C00177887 /* NKHTTP_Mac.mm */; };
-		D26B0ECF16F7C754008379E0 /* NKHTTP_Mac.h in Headers */ = {isa = PBXBuildFile; fileRef = D20ED13716DB366C00177887 /* NKHTTP_Mac.h */; };
 		D26B0ED016F7C75C008379E0 /* NKJSON.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D254EFC316C43DB500851E44 /* NKJSON.cpp */; };
 		D26B0ED116F7C75C008379E0 /* NKJSON.h in Headers */ = {isa = PBXBuildFile; fileRef = D254EFBA16C43DA500851E44 /* NKJSON.h */; };
 		D26F050A15FA5BA5003F7389 /* UriCommon.c in Sources */ = {isa = PBXBuildFile; fileRef = D26F04F815FA5BA5003F7389 /* UriCommon.c */; };
@@ -161,6 +155,18 @@
 		D2A8BA41162BC0B900D0C09A /* libxml2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D2A8BA40162BC0B900D0C09A /* libxml2.dylib */; };
 		D2B09C79170238C9002EE020 /* NKError.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D2B09C78170238C9002EE020 /* NKError.cpp */; };
 		D2B09C7A170238C9002EE020 /* NKError.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D2B09C78170238C9002EE020 /* NKError.cpp */; };
+		D2C33E76177118A800DAC202 /* NKMacros.h in Headers */ = {isa = PBXBuildFile; fileRef = D2C33E74177118A800DAC202 /* NKMacros.h */; };
+		D2C33E77177118A800DAC202 /* NKMacros.h in Headers */ = {isa = PBXBuildFile; fileRef = D2C33E74177118A800DAC202 /* NKMacros.h */; };
+		D2C33E78177118A800DAC202 /* NKNetworkInterface.h in Headers */ = {isa = PBXBuildFile; fileRef = D2C33E75177118A800DAC202 /* NKNetworkInterface.h */; };
+		D2C33E79177118A800DAC202 /* NKNetworkInterface.h in Headers */ = {isa = PBXBuildFile; fileRef = D2C33E75177118A800DAC202 /* NKNetworkInterface.h */; };
+		D2C33E7B177118BD00DAC202 /* NKNetworkInterface.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D2C33E7A177118BD00DAC202 /* NKNetworkInterface.cpp */; };
+		D2C33E7C177118BD00DAC202 /* NKNetworkInterface.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D2C33E7A177118BD00DAC202 /* NKNetworkInterface.cpp */; };
+		D2C33E7E17711DC000DAC202 /* NKNetworkInterface_Mac.mm in Sources */ = {isa = PBXBuildFile; fileRef = D2C33E7D17711DC000DAC202 /* NKNetworkInterface_Mac.mm */; };
+		D2C33E7F17711DC000DAC202 /* NKNetworkInterface_Mac.mm in Sources */ = {isa = PBXBuildFile; fileRef = D2C33E7D17711DC000DAC202 /* NKNetworkInterface_Mac.mm */; };
+		D2C33E861771F30B00DAC202 /* NKLog.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D2C33E851771F30B00DAC202 /* NKLog.cpp */; };
+		D2C33E871771F30B00DAC202 /* NKLog.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D2C33E851771F30B00DAC202 /* NKLog.cpp */; };
+		D2C33E891771F31800DAC202 /* NKLog_Mac.mm in Sources */ = {isa = PBXBuildFile; fileRef = D2C33E881771F31800DAC202 /* NKLog_Mac.mm */; };
+		D2C33E8A1771F31800DAC202 /* NKLog_Mac.mm in Sources */ = {isa = PBXBuildFile; fileRef = D2C33E881771F31800DAC202 /* NKLog_Mac.mm */; };
 		D2E10009173418D8009938D2 /* NKSmartRef.h in Headers */ = {isa = PBXBuildFile; fileRef = D2E10008173418D8009938D2 /* NKSmartRef.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D2E1000A173418D8009938D2 /* NKSmartRef.h in Headers */ = {isa = PBXBuildFile; fileRef = D2E10008173418D8009938D2 /* NKSmartRef.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D2E1000C173418E5009938D2 /* NKCookie.h in Headers */ = {isa = PBXBuildFile; fileRef = D2E1000B173418E5009938D2 /* NKCookie.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -219,8 +225,6 @@
 		D20ED13016D8379900177887 /* NKRunLoop_Mac.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = NKRunLoop_Mac.mm; path = src/Mac/NKRunLoop_Mac.mm; sourceTree = "<group>"; };
 		D20ED13316DB123300177887 /* NKProxy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NKProxy.h; path = include/NetKit/NKProxy.h; sourceTree = "<group>"; };
 		D20ED13516DB123B00177887 /* NKProxy.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = NKProxy.cpp; path = src/NKProxy.cpp; sourceTree = "<group>"; };
-		D20ED13716DB366C00177887 /* NKHTTP_Mac.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NKHTTP_Mac.h; path = src/Mac/NKHTTP_Mac.h; sourceTree = "<group>"; };
-		D20ED13816DB366C00177887 /* NKHTTP_Mac.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = NKHTTP_Mac.mm; path = src/Mac/NKHTTP_Mac.mm; sourceTree = "<group>"; };
 		D20ED13D16DC0E9C00177887 /* SecurityFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SecurityFoundation.framework; path = System/Library/Frameworks/SecurityFoundation.framework; sourceTree = SDKROOT; };
 		D20ED13F16DC0EF200177887 /* CoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreServices.framework; path = System/Library/Frameworks/CoreServices.framework; sourceTree = SDKROOT; };
 		D223BA3B1717336E000C2C44 /* NKWebSocket.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NKWebSocket.h; path = include/NetKit/NKWebSocket.h; sourceTree = "<group>"; };
@@ -252,7 +256,6 @@
 		D23DF55115F698F90027A8F1 /* NKObject.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NKObject.h; path = include/NetKit/NKObject.h; sourceTree = "<group>"; };
 		D23DF55815F698F90027A8F1 /* NKSocket.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NKSocket.h; path = include/NetKit/NKSocket.h; sourceTree = "<group>"; };
 		D23DF57D15F69D1E0027A8F1 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
-		D23DF57F15F69D300027A8F1 /* NKLog.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = NKLog.cpp; path = src/Mac/NKLog.cpp; sourceTree = "<group>"; };
 		D23DF58715F69F980027A8F1 /* NKLog.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NKLog.h; path = include/NetKit/NKLog.h; sourceTree = "<group>"; };
 		D23DF58F15F6AC530027A8F1 /* SystemConfiguration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SystemConfiguration.framework; path = System/Library/Frameworks/SystemConfiguration.framework; sourceTree = SDKROOT; };
 		D23DF59115F6AC920027A8F1 /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = System/Library/Frameworks/IOKit.framework; sourceTree = SDKROOT; };
@@ -316,6 +319,12 @@
 		D2A1180E16FD111700FAD80F /* NKPlatform.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = NKPlatform.mm; path = src/Mac/NKPlatform.mm; sourceTree = "<group>"; };
 		D2A8BA40162BC0B900D0C09A /* libxml2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libxml2.dylib; path = usr/lib/libxml2.dylib; sourceTree = SDKROOT; };
 		D2B09C78170238C9002EE020 /* NKError.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = NKError.cpp; path = src/NKError.cpp; sourceTree = "<group>"; };
+		D2C33E74177118A800DAC202 /* NKMacros.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NKMacros.h; path = include/NetKit/NKMacros.h; sourceTree = "<group>"; };
+		D2C33E75177118A800DAC202 /* NKNetworkInterface.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NKNetworkInterface.h; path = include/NetKit/NKNetworkInterface.h; sourceTree = "<group>"; };
+		D2C33E7A177118BD00DAC202 /* NKNetworkInterface.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = NKNetworkInterface.cpp; path = src/NKNetworkInterface.cpp; sourceTree = "<group>"; };
+		D2C33E7D17711DC000DAC202 /* NKNetworkInterface_Mac.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = NKNetworkInterface_Mac.mm; path = src/Mac/NKNetworkInterface_Mac.mm; sourceTree = "<group>"; };
+		D2C33E851771F30B00DAC202 /* NKLog.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = NKLog.cpp; path = src/NKLog.cpp; sourceTree = "<group>"; };
+		D2C33E881771F31800DAC202 /* NKLog_Mac.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = NKLog_Mac.mm; path = src/Mac/NKLog_Mac.mm; sourceTree = "<group>"; };
 		D2E10008173418D8009938D2 /* NKSmartRef.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NKSmartRef.h; path = include/NetKit/NKSmartRef.h; sourceTree = "<group>"; };
 		D2E1000B173418E5009938D2 /* NKCookie.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NKCookie.h; path = include/NetKit/NKCookie.h; sourceTree = "<group>"; };
 		D2E25B9516701A45009C6073 /* NKDatabase.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NKDatabase.h; path = include/NetKit/NKDatabase.h; sourceTree = "<group>"; };
@@ -437,9 +446,10 @@
 		D23DF52F15F698390027A8F1 /* NetKit */ = {
 			isa = PBXGroup;
 			children = (
-				D2E1000B173418E5009938D2 /* NKCookie.h */,
-				D2E10008173418D8009938D2 /* NKSmartRef.h */,
 				D23DF5D115F922160027A8F1 /* cstring.h */,
+				D2E25BAC16701A88009C6073 /* Database */,
+				D257A0C316CD73A80003C945 /* HTTP */,
+				D254EFC916C43DC300851E44 /* JSON */,
 				D2740F3C15FBAA8600589649 /* NetKit.h */,
 				D23DF54B15F698F90027A8F1 /* NKAddress.cpp */,
 				D23DF54C15F698F90027A8F1 /* NKAddress.h */,
@@ -448,16 +458,22 @@
 				D2A1180516FCD7E300FAD80F /* NKComponent.cpp */,
 				D2A117FF16FCD7CE00FAD80F /* NKComponent.h */,
 				D2A1180B16FCF1E500FAD80F /* NKConcurrent.h */,
+				D2E1000B173418E5009938D2 /* NKCookie.h */,
 				D223BA531718CFBA000C2C44 /* NKEndpoint.cpp */,
 				D223BA501718CFAE000C2C44 /* NKEndpoint.h */,
 				D2B09C78170238C9002EE020 /* NKError.cpp */,
 				D23DF54715F698F90027A8F1 /* NKError.h */,
 				D254EFB916C43DA500851E44 /* NKExpected.h */,
 				D2597C041725E5BB00FD3D63 /* NKIntrusiveList.h */,
-				D23DF57F15F69D300027A8F1 /* NKLog.cpp */,
+				D2C33E851771F30B00DAC202 /* NKLog.cpp */,
 				D23DF58715F69F980027A8F1 /* NKLog.h */,
+				D2C33E881771F31800DAC202 /* NKLog_Mac.mm */,
+				D2C33E74177118A800DAC202 /* NKMacros.h */,
 				D2A1180616FCD7E300FAD80F /* NKMIME.cpp */,
 				D2A1180016FCD7CE00FAD80F /* NKMIME.h */,
+				D2C33E7A177118BD00DAC202 /* NKNetworkInterface.cpp */,
+				D2C33E75177118A800DAC202 /* NKNetworkInterface.h */,
+				D2C33E7D17711DC000DAC202 /* NKNetworkInterface_Mac.mm */,
 				D20D20FC1608FF2B0037A994 /* NKOAuth.cpp */,
 				D20D21031608FF4F0037A994 /* NKOAuth.h */,
 				D23DF55015F698F90027A8F1 /* NKObject.cpp */,
@@ -474,6 +490,7 @@
 				D28BEE211739AEEE00BD7587 /* NKSHA1.h */,
 				D239D38216D6A8B2007FB101 /* NKSink.cpp */,
 				D239D37E16D69451007FB101 /* NKSink.h */,
+				D2E10008173418D8009938D2 /* NKSmartRef.h */,
 				D23DF5BF15F6D5490027A8F1 /* NKSocket.cpp */,
 				D23DF55815F698F90027A8F1 /* NKSocket.h */,
 				D239D38316D6A8B2007FB101 /* NKSource.cpp */,
@@ -486,12 +503,9 @@
 				D23DF5D815F964C20027A8F1 /* NKURI.h */,
 				D28BEE281739AEFB00BD7587 /* NKUUID.cpp */,
 				D28BEE221739AEEE00BD7587 /* NKUUID.h */,
-				D223BA3A1717293B000C2C44 /* WebSocket */,
-				D2E25BAC16701A88009C6073 /* Database */,
-				D257A0C316CD73A80003C945 /* HTTP */,
-				D254EFC916C43DC300851E44 /* JSON */,
-				D20ED13B16DB425C00177887 /* XMPP */,
 				D23DF53015F698390027A8F1 /* Supporting Files */,
+				D223BA3A1717293B000C2C44 /* WebSocket */,
+				D20ED13B16DB425C00177887 /* XMPP */,
 			);
 			name = NetKit;
 			sourceTree = "<group>";
@@ -536,8 +550,6 @@
 			children = (
 				D23DF5D215F922170027A8F1 /* NKHTTP.cpp */,
 				D23DF54A15F698F90027A8F1 /* NKHTTP.h */,
-				D20ED13816DB366C00177887 /* NKHTTP_Mac.mm */,
-				D20ED13716DB366C00177887 /* NKHTTP_Mac.h */,
 			);
 			name = HTTP;
 			sourceTree = "<group>";
@@ -621,7 +633,6 @@
 				D239D38116D69451007FB101 /* NKSource.h in Headers */,
 				D20ED13116D8379900177887 /* NKRunLoop_Mac.h in Headers */,
 				D20ED13416DB123300177887 /* NKProxy.h in Headers */,
-				D20ED13916DB366D00177887 /* NKHTTP_Mac.h in Headers */,
 				D2033DC316E1811000DBE69B /* NKOutputFilter.h in Headers */,
 				D2033DC416E1811000DBE69B /* NKUnicode.h in Headers */,
 				D2A1180116FCD7CE00FAD80F /* NKComponent.h in Headers */,
@@ -635,6 +646,8 @@
 				D2E1000C173418E5009938D2 /* NKCookie.h in Headers */,
 				D28BEE231739AEEE00BD7587 /* NKSHA1.h in Headers */,
 				D28BEE251739AEEE00BD7587 /* NKUUID.h in Headers */,
+				D2C33E76177118A800DAC202 /* NKMacros.h in Headers */,
+				D2C33E78177118A800DAC202 /* NKNetworkInterface.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -664,7 +677,6 @@
 				D26B0EC916F7C74C008379E0 /* NKDatabase.h in Headers */,
 				D26B0ECA16F7C74C008379E0 /* NKDatabase_SQLite.h in Headers */,
 				D26B0ECD16F7C754008379E0 /* NKHTTP.h in Headers */,
-				D26B0ECF16F7C754008379E0 /* NKHTTP_Mac.h in Headers */,
 				D26B0ED116F7C75C008379E0 /* NKJSON.h in Headers */,
 				D2A1180216FCD7CE00FAD80F /* NKComponent.h in Headers */,
 				D2A1180416FCD7CE00FAD80F /* NKMIME.h in Headers */,
@@ -677,6 +689,8 @@
 				D2E1000D173418E5009938D2 /* NKCookie.h in Headers */,
 				D28BEE241739AEEE00BD7587 /* NKSHA1.h in Headers */,
 				D28BEE261739AEEE00BD7587 /* NKUUID.h in Headers */,
+				D2C33E77177118A800DAC202 /* NKMacros.h in Headers */,
+				D2C33E79177118A800DAC202 /* NKNetworkInterface.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -904,7 +918,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				D23DF56815F698F90027A8F1 /* NKObject.cpp in Sources */,
-				D23DF58315F69D300027A8F1 /* NKLog.cpp in Sources */,
 				D23DF5C215F6D5490027A8F1 /* NKSocket.cpp in Sources */,
 				D23DF5D415F922170027A8F1 /* NKHTTP.cpp in Sources */,
 				D23DF5D915F964C20027A8F1 /* NKURI.cpp in Sources */,
@@ -916,7 +929,6 @@
 				D239D38516D6A8B2007FB101 /* NKSource.cpp in Sources */,
 				D20ED13216D8379900177887 /* NKRunLoop_Mac.mm in Sources */,
 				D20ED13616DB123C00177887 /* NKProxy.cpp in Sources */,
-				D20ED13A16DB366D00177887 /* NKHTTP_Mac.mm in Sources */,
 				D2033DC616E1813C00DBE69B /* NKUnicode.cpp in Sources */,
 				D2A1180716FCD7E300FAD80F /* NKComponent.cpp in Sources */,
 				D2A1180916FCD7E300FAD80F /* NKMIME.cpp in Sources */,
@@ -928,6 +940,10 @@
 				D223BA541718CFBB000C2C44 /* NKEndpoint.cpp in Sources */,
 				D28BEE291739AEFB00BD7587 /* NKSHA1.cpp in Sources */,
 				D28BEE2B1739AEFB00BD7587 /* NKUUID.cpp in Sources */,
+				D2C33E7B177118BD00DAC202 /* NKNetworkInterface.cpp in Sources */,
+				D2C33E7E17711DC000DAC202 /* NKNetworkInterface_Mac.mm in Sources */,
+				D2C33E861771F30B00DAC202 /* NKLog.cpp in Sources */,
+				D2C33E891771F31800DAC202 /* NKLog_Mac.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -945,7 +961,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				D26B0EA916F7C744008379E0 /* NKBase64.cpp in Sources */,
-				D26B0EAF16F7C744008379E0 /* NKLog.cpp in Sources */,
 				D26B0EB116F7C744008379E0 /* NKOAuth.cpp in Sources */,
 				D26B0EB316F7C744008379E0 /* NKObject.cpp in Sources */,
 				D26B0EB716F7C744008379E0 /* NKProxy.cpp in Sources */,
@@ -957,7 +972,6 @@
 				D26B0EC716F7C744008379E0 /* NKURI.cpp in Sources */,
 				D26B0ECB16F7C74C008379E0 /* NKDatabase_SQLite.cpp in Sources */,
 				D26B0ECC16F7C754008379E0 /* NKHTTP.cpp in Sources */,
-				D26B0ECE16F7C754008379E0 /* NKHTTP_Mac.mm in Sources */,
 				D26B0ED016F7C75C008379E0 /* NKJSON.cpp in Sources */,
 				D2A1180816FCD7E300FAD80F /* NKComponent.cpp in Sources */,
 				D2A1180A16FCD7E300FAD80F /* NKMIME.cpp in Sources */,
@@ -969,6 +983,10 @@
 				D223BA551718CFBB000C2C44 /* NKEndpoint.cpp in Sources */,
 				D28BEE2A1739AEFB00BD7587 /* NKSHA1.cpp in Sources */,
 				D28BEE2C1739AEFB00BD7587 /* NKUUID.cpp in Sources */,
+				D2C33E7C177118BD00DAC202 /* NKNetworkInterface.cpp in Sources */,
+				D2C33E7F17711DC000DAC202 /* NKNetworkInterface_Mac.mm in Sources */,
+				D2C33E871771F30B00DAC202 /* NKLog.cpp in Sources */,
+				D2C33E8A1771F31800DAC202 /* NKLog_Mac.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1054,7 +1072,7 @@
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.6;
+				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx10.7;
 			};
@@ -1075,7 +1093,7 @@
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.6;
+				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				SDKROOT = macosx10.7;
 			};
 			name = Release;
@@ -1084,7 +1102,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CLANG_CXX_LIBRARY = "libc++";
 				COMBINE_HIDPI_IMAGES = YES;
@@ -1095,12 +1113,9 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = NO;
 				GCC_PREFIX_HEADER = "";
 				HEADER_SEARCH_PATHS = (
-					"/usr/lib/c++/v1",
-					/usr/include/libxml2,
 					./include,
 					"./ThirdParty/http-parser",
 					./ThirdParty/uriparser/include,
-					./ThirdParty/botan,
 				);
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = /Library/Frameworks;
@@ -1110,7 +1125,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				PRODUCT_NAME = NetKit;
-				SDKROOT = macosx10.7;
+				SDKROOT = macosx10.8;
 				WRAPPER_EXTENSION = framework;
 			};
 			name = Debug;
@@ -1119,7 +1134,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CLANG_CXX_LIBRARY = "libc++";
 				COMBINE_HIDPI_IMAGES = YES;
@@ -1130,12 +1145,9 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = NO;
 				GCC_PREFIX_HEADER = "";
 				HEADER_SEARCH_PATHS = (
-					"/usr/lib/c++/v1",
-					/usr/include/libxml2,
 					./include,
 					"./ThirdParty/http-parser",
 					./ThirdParty/uriparser/include,
-					./ThirdParty/botan,
 				);
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = /Library/Frameworks;
@@ -1145,7 +1157,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				PRODUCT_NAME = NetKit;
-				SDKROOT = macosx10.7;
+				SDKROOT = macosx10.8;
 				WRAPPER_EXTENSION = framework;
 			};
 			name = Release;
@@ -1161,7 +1173,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = macosx10.7;
+				SDKROOT = macosx10.8;
 			};
 			name = Debug;
 		};
@@ -1176,7 +1188,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = macosx10.7;
+				SDKROOT = macosx10.8;
 			};
 			name = Release;
 		};
@@ -1192,16 +1204,13 @@
 				CLANG_WARN_INT_CONVERSION = YES;
 				EXECUTABLE_PREFIX = lib;
 				HEADER_SEARCH_PATHS = (
-					"/usr/lib/c++/v1",
-					/usr/include/libxml2,
 					./include,
 					"./ThirdParty/http-parser",
 					./ThirdParty/uriparser/include,
-					./ThirdParty/botan,
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				PRODUCT_NAME = NetKit;
-				SDKROOT = macosx10.7;
+				SDKROOT = macosx10.8;
 			};
 			name = Debug;
 		};
@@ -1217,16 +1226,13 @@
 				CLANG_WARN_INT_CONVERSION = YES;
 				EXECUTABLE_PREFIX = lib;
 				HEADER_SEARCH_PATHS = (
-					"/usr/lib/c++/v1",
-					/usr/include/libxml2,
 					./include,
 					"./ThirdParty/http-parser",
 					./ThirdParty/uriparser/include,
-					./ThirdParty/botan,
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				PRODUCT_NAME = NetKit;
-				SDKROOT = macosx10.7;
+				SDKROOT = macosx10.8;
 			};
 			name = Release;
 		};
@@ -1237,9 +1243,9 @@
 				CLANG_CXX_LIBRARY = "libc++";
 				EXECUTABLE_PREFIX = lib;
 				HEADER_SEARCH_PATHS = ./ThirdParty/uriparser/include;
-				MACOSX_DEPLOYMENT_TARGET = 10.6;
+				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = macosx10.7;
+				SDKROOT = macosx10.8;
 			};
 			name = Debug;
 		};
@@ -1250,9 +1256,9 @@
 				CLANG_CXX_LIBRARY = "libc++";
 				EXECUTABLE_PREFIX = lib;
 				HEADER_SEARCH_PATHS = ./ThirdParty/uriparser/include;
-				MACOSX_DEPLOYMENT_TARGET = 10.6;
+				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = macosx10.7;
+				SDKROOT = macosx10.8;
 			};
 			name = Release;
 		};
@@ -1262,9 +1268,9 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CLANG_CXX_LIBRARY = "libc++";
 				EXECUTABLE_PREFIX = lib;
-				MACOSX_DEPLOYMENT_TARGET = 10.6;
+				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = macosx10.7;
+				SDKROOT = macosx10.8;
 			};
 			name = Debug;
 		};
@@ -1274,9 +1280,9 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CLANG_CXX_LIBRARY = "libc++";
 				EXECUTABLE_PREFIX = lib;
-				MACOSX_DEPLOYMENT_TARGET = 10.6;
+				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = macosx10.7;
+				SDKROOT = macosx10.8;
 			};
 			name = Release;
 		};

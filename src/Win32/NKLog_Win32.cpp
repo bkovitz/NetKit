@@ -11,10 +11,7 @@
 
 using namespace netkit;
 
-static std::recursive_mutex	*g_mutex		= nullptr;
-static log::level			g_logLevel		= log::info;
-static HANDLE				g_eventSource	= nullptr;
-std::vector< log::set_f >	*g_set_handlers;
+static HANDLE g_event_source	= nullptr;
 
 void
 log::init( LPCTSTR name )
@@ -26,7 +23,7 @@ log::init( LPCTSTR name )
 		g_set_handlers = new std::vector< set_f >;
 	}
 
-	if ( g_eventSource == nullptr )
+	if ( g_event_source == nullptr )
 	{
 		std::wstring	fullname;
 		TCHAR			path[ MAX_PATH ];
@@ -78,7 +75,7 @@ log::init( LPCTSTR name )
 			goto exit;
 		}
 	
-		g_eventSource = RegisterEventSource( NULL, name );
+		g_event_source = RegisterEventSource( NULL, name );
 	}
 
 exit:
@@ -87,39 +84,6 @@ exit:
 	{
 		RegCloseKey( key );
 	}
-}
-
-
-log::level
-log::get_level()
-{
-	std::lock_guard< std::recursive_mutex > guard( *g_mutex );
-
-	return g_logLevel;
-}
-
-
-void
-log::set_level( log::level l )
-{
-	std::lock_guard< std::recursive_mutex > guard( *g_mutex );
-
-	if ( g_logLevel != l )
-	{
-		g_logLevel = l;
-
-		for ( auto it = g_set_handlers->begin(); it != g_set_handlers->end(); it++ )
-		{
-			( *it )( l );
-		}
-	}
-}
-
-
-void
-log::on_set( set_f handler )
-{
-	g_set_handlers->push_back( handler );
 }
 
 
@@ -170,7 +134,7 @@ log::put( log::level l, const char * filename, const char * function, int line, 
 			}
 		}
 		
-		_snprintf_s( msg, sizeof( msg ), _TRUNCATE, "%d %s %s:%d %s %s", GetCurrentThreadId(), timeStr, prune( filename ), line, function, buf );
+		_snprintf_s( msg, sizeof( msg ), _TRUNCATE, "%d:%d %s %s:%d %s %s", GetCurrentProcessId(), GetCurrentThreadId(), timeStr, prune( filename ), line, function, buf );
 		
 		for ( unsigned i = 0; i < strlen( msg ); i++ )
 		{
@@ -180,7 +144,7 @@ log::put( log::level l, const char * filename, const char * function, int line, 
 			}
 		}
 
-		if ( g_eventSource )
+		if ( g_event_source )
 		{
 			WORD		type;
 			const char	*array[ 1 ];
@@ -205,7 +169,7 @@ log::put( log::level l, const char * filename, const char * function, int line, 
 	
 			array[ 0 ] = msg;
 	
-			ok = ReportEventA( g_eventSource, type, 0, NETKIT_LOG, NULL, 1, 0, array, NULL );
+			ok = ReportEventA( g_event_source, type, 0, NETKIT_LOG, NULL, 1, 0, array, NULL );
 		}
 
 		OutputDebugStringA( msg );

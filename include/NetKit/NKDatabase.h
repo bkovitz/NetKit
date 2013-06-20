@@ -194,7 +194,7 @@ public:
 	cancel( cookie c ) = 0;
 
 	virtual netkit::status
-	exec( const std::string &str ) = 0;
+	exec( const std::string &str, bool quiet = false ) = 0;
 
 	virtual statement::ref
 	select( const std::string &str ) = 0;

@@ -758,19 +758,115 @@ public:
 	{
 		return ( m_ref->is_null() );
 	}
+	
+	inline smart_ref< json::value >
+	operator[]( std::uint8_t index )
+	{
+		return m_ref->at_index( index );
+	}
 
-	template< typename T > auto
-	operator[]( T index ) -> decltype( std::to_string( index ), smart_ref< json::value >() )  // uses comma operator
+	inline smart_ref< json::value >
+	operator[]( std::int8_t index )
+	{
+		return m_ref->at_index( index );
+	}
+
+	inline smart_ref< json::value >
+	operator[]( std::uint16_t index )
+	{
+		return m_ref->at_index( index );
+	}
+
+	inline smart_ref< json::value >
+	operator[]( std::int16_t index )
+	{
+		return m_ref->at_index( index );
+	}
+
+	inline smart_ref< json::value >
+	operator[]( std::uint32_t index )
+	{
+		return m_ref->at_index( index );
+	}
+
+	inline smart_ref< json::value >
+	operator[]( std::int32_t index )
+	{
+		return m_ref->at_index( index );
+	}
+
+	inline smart_ref< json::value >
+	operator[]( std::uint64_t index )
+	{
+		return m_ref->at_index( index );
+	}
+
+	inline smart_ref< json::value >
+	operator[]( std::int64_t index )
+	{
+		return m_ref->at_index( index );
+	}
+	
+	inline smart_ref< json::value >
+	operator[]( std::size_t index )
 	{
 		return m_ref->at_index( index );
 	}
 	
 	inline const smart_ref< json::value >
-	operator[]( std::size_t index ) const
+	operator[]( std::uint8_t index ) const
 	{
 		return m_ref->at_index( index );
 	}
 
+	inline const smart_ref< json::value >
+	operator[]( std::int8_t index ) const
+	{
+		return m_ref->at_index( index );
+	}
+
+	inline const smart_ref< json::value >
+	operator[]( std::uint16_t index ) const
+	{
+		return m_ref->at_index( index );
+	}
+
+	inline const smart_ref< json::value >
+	operator[]( std::int16_t index ) const
+	{
+		return m_ref->at_index( index );
+	}
+
+	inline const smart_ref< json::value >
+	operator[]( std::uint32_t index ) const
+	{
+		return m_ref->at_index( index );
+	}
+
+	inline const smart_ref< json::value >
+	operator[]( std::int32_t index ) const
+	{
+		return m_ref->at_index( index );
+	}
+
+	inline const smart_ref< json::value >
+	operator[]( std::uint64_t index ) const
+	{
+		return m_ref->at_index( index );
+	}
+
+	inline const smart_ref< json::value >
+	operator[]( std::int64_t index ) const
+	{
+		return m_ref->at_index( index );
+	}
+
+	inline const smart_ref< json::value >
+	operator[]( std::size_t index ) const
+	{
+		return m_ref->at_index( index );
+	}
+	
 	inline smart_ref< json::value >
 	operator[]( const char *key )
 	{

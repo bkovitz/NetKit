@@ -34,6 +34,7 @@
 #include <NetKit/NKBase64.h>
 #include <NetKit/NKLog.h>
 #include <sstream>
+#include <vector>
 
 using namespace netkit;
 
@@ -93,7 +94,8 @@ protected:
 static proxy::ref g_proxy;
 
 proxy::auth_challenge_f		proxy::m_auth_challenge_handler;
-std::list< proxy::set_f >	proxy::m_set_handlers;
+proxy::set_handlers			proxy::m_set_handlers;
+static std::uint8_t			*g_ptr = nullptr;
 
 source::adapter::ref
 proxy::create( bool secure )
@@ -129,10 +131,28 @@ proxy::get()
 }
 
 
-void
+netkit::cookie
 proxy::on_set( set_f handler )
 {
-	m_set_handlers.push_back( handler );
+	netkit::cookie cookie( g_ptr++ );
+	
+	m_set_handlers.push_back( std::make_pair( cookie, handler ) );
+	
+	return cookie;
+}
+
+
+void
+proxy::cancel( netkit::cookie cookie )
+{
+	for ( auto it = m_set_handlers.begin(); it != m_set_handlers.end(); it++ )
+	{
+		if ( it->first.get() == cookie.get() )
+		{
+			m_set_handlers.erase( it );
+			break;
+		}
+	}
 }
 
 
@@ -145,7 +165,7 @@ proxy::set( proxy::ref val )
 
 		for ( auto it = m_set_handlers.begin(); it != m_set_handlers.end(); it++ )
 		{
-			( *it )( g_proxy );
+			( it->second )( g_proxy );
 		}
 	}
 }
@@ -263,7 +283,7 @@ proxy::inflate( const json::value_ref &root )
 
 	for ( auto i = 0; i < root[ "bypass" ]->size(); i++ )
 	{
-		m_bypass_list.push_back( root[ "bypass"][ i ]->as_string() );
+		m_bypass_list.push_back( root[ "bypass" ][ i ]->as_string() );
 	}
 }
 
