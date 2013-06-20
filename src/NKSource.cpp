@@ -395,8 +395,11 @@ source::recv_internal( bool peek_flag, recv_reply_f reply )
 	}
 	else if ( would_block )
 	{
+		nklog( log::verbose, "scheduling event" );
+
 		runloop::main()->schedule( m_recv_event, [=]( runloop::event event )
 		{
+			nklog( log::verbose, "got a recv event" );
 			runloop::main()->suspend( event );
 			recv_internal( peek_flag, reply );
 		} );

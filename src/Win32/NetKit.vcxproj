@@ -217,6 +217,7 @@ IF EXIST ..\..\ThirdParty\uriparser GOTO DONE
     <ClCompile Include="..\NKError.cpp" />
     <ClCompile Include="..\NKHTTP.cpp" />
     <ClCompile Include="..\NKJSON.cpp" />
+    <ClCompile Include="..\NKLog.cpp" />
     <ClCompile Include="..\NKMIME.cpp" />
     <ClCompile Include="..\NKNetworkInterface.cpp" />
     <ClCompile Include="..\NKOAuth.cpp" />
@@ -232,9 +233,9 @@ IF EXIST ..\..\ThirdParty\uriparser GOTO DONE
     <ClCompile Include="..\NKUUID.cpp" />
     <ClCompile Include="..\NKWebSocket.cpp" />
     <ClCompile Include=".\CRC32.cpp" />
-    <ClCompile Include=".\EventLog.cpp" />
     <ClCompile Include=".\NKPlatform_Win32.cpp" />
     <ClCompile Include=".\NKRunLoop_Win32.cpp" />
+    <ClCompile Include="NKLog_Win32.cpp" />
     <ClCompile Include="NKNetworkInterface_Win32.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -285,8 +286,8 @@ IF EXIST ..\..\ThirdParty\uriparser GOTO DONE
     <ClInclude Include="..\..\ThirdParty\uriparser\src\UriParseBase.h" />
     <ClInclude Include="..\NKDatabase_SQLite.h" />
     <ClInclude Include=".\CRC32.h" />
-    <ClInclude Include=".\EventLog.h" />
     <ClInclude Include=".\NKRunLoop_Win32.h" />
+    <ClInclude Include="NKLog_Win32.h" />
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include=".\EventLog.mc">

@@ -807,11 +807,13 @@ public:
 		return m_ref->at_index( index );
 	}
 	
+#if defined( __APPLE__ )
 	inline smart_ref< json::value >
 	operator[]( std::size_t index )
 	{
 		return m_ref->at_index( index );
 	}
+#endif
 	
 	inline const smart_ref< json::value >
 	operator[]( std::uint8_t index ) const
@@ -861,11 +863,13 @@ public:
 		return m_ref->at_index( index );
 	}
 
+#if defined( __APPLE__ )
 	inline const smart_ref< json::value >
 	operator[]( std::size_t index ) const
 	{
 		return m_ref->at_index( index );
 	}
+#endif
 	
 	inline smart_ref< json::value >
 	operator[]( const char *key )

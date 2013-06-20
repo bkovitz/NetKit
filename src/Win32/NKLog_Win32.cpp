@@ -18,9 +18,14 @@ log::init( LPCTSTR name )
 {
 	HKEY key = NULL;
 
-	if ( !g_set_handlers )
+	if ( !m_set_handlers )
 	{
-		g_set_handlers = new std::vector< set_f >;
+		m_set_handlers = new set_handlers;
+	}
+
+	if ( !m_mutex )
+	{
+		m_mutex = new std::recursive_mutex;
 	}
 
 	if ( g_event_source == nullptr )
@@ -31,7 +36,6 @@ log::init( LPCTSTR name )
 		int				err;
 		int				n;
 	
-		g_mutex = new std::recursive_mutex;
 
 		// Build the path string using the fixed registry path and app name.
 	
@@ -105,9 +109,9 @@ prune( const char *filename )
 void
 log::put( log::level l, const char * filename, const char * function, int line, const char * format, ... )
 {
-	if ( l <= g_logLevel )
+	if ( l <= m_log_level )
 	{
-		std::lock_guard< std::recursive_mutex > guard( *g_mutex );
+		std::lock_guard< std::recursive_mutex > guard( *m_mutex );
 
 		static char buf[ 32000 ];
 		static char msg[ 32512 ];
