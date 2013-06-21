@@ -52,7 +52,7 @@ sink::bind( source::ref source )
 {
 	m_source = source;
 
-	m_on_close = m_source->on_close( std::bind( &sink::source_was_closed , this ) );
+	m_on_close = m_source->on_close( std::bind( &sink::source_was_closed, this ) );
 	
 	run();
 }
@@ -109,8 +109,6 @@ sink::source_was_closed()
 	{
 		it->second();
 	}
-
-	m_close_handlers.clear();
 }
 
 
