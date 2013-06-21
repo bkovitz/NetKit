@@ -93,6 +93,8 @@
       <AdditionalIncludeDirectories>C:\OpenSSL\include;..\..\include;..\..\ThirdParty\http-parser;..\..\ThirdParty\uriparser\include;..\..\ThirdParty\sqlite;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <MinimalRebuild>false</MinimalRebuild>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -119,6 +121,8 @@ IF EXIST ..\..\ThirdParty\uriparser GOTO DONE
       <AdditionalIncludeDirectories>C:\OpenSSL\include;..\..\include;..\..\ThirdParty\http-parser;..\..\ThirdParty\uriparser\include;..\..\ThirdParty\sqlite;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <MinimalRebuild>false</MinimalRebuild>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -144,6 +148,7 @@ IF EXIST ..\..\ThirdParty\uriparser GOTO DONE
       <AdditionalIncludeDirectories>C:\OpenSSL\include;..\..\include;..\..\ThirdParty\http-parser;..\..\ThirdParty\uriparser\include;..\..\ThirdParty\sqlite;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -174,6 +179,7 @@ IF EXIST ..\..\ThirdParty\uriparser GOTO DONE
       <AdditionalIncludeDirectories>C:\OpenSSL\include;..\..\include;..\..\ThirdParty\http-parser;..\..\ThirdParty\uriparser\include;..\..\ThirdParty\sqlite;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
