@@ -55,15 +55,7 @@ source::source()
 
 source::~source()
 {
-	if ( m_send_event )
-	{
-		runloop::main()->cancel( m_send_event );
-	}
-
-	if ( m_recv_event )
-	{
-		runloop::main()->cancel( m_recv_event );
-	}
+	teardown_notifications();
 }
 
 
@@ -420,17 +412,7 @@ source::close( bool notify )
 {
 	m_closed = true;
 
-	if ( m_send_event )
-	{
-		runloop::main()->cancel( m_send_event );
-		m_send_event = nullptr;
-	}
-
-	if ( m_recv_event )
-	{
-		runloop::main()->cancel( m_recv_event );
-		m_recv_event = nullptr;
-	}
+	teardown_notifications();
 
 	if ( m_close_handlers.size() > 0 )
 	{
@@ -474,6 +456,23 @@ endpoint::ref
 source::peer() const
 {
 	return nullptr;
+}
+
+
+void
+source::teardown_notifications()
+{
+	if ( m_send_event )
+	{
+		runloop::main()->cancel( m_send_event );
+		m_send_event = nullptr;
+	}
+
+	if ( m_recv_event )
+	{
+		runloop::main()->cancel( m_recv_event );
+		m_recv_event = nullptr;
+	}
 }
 
 

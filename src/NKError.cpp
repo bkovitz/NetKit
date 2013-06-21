@@ -46,16 +46,9 @@ netkit::status_to_string( netkit::status status )
 		}
 		break;
 		
-		case status::invalid_license:
+		case status::expired:
 		{
-			static const char *msg = "Invalid License Key";
-			s = msg;
-		}
-		break;
-		
-		case status::license_expired:
-		{
-			static const char *msg = "License Key Expired";
+			static const char *msg = "Expired";
 			s = msg;
 		}
 		break;
@@ -63,20 +56,6 @@ netkit::status_to_string( netkit::status status )
 		case status::no_memory:
 		{
 			static const char *msg = "Out Of Memory";
-			s = msg;
-		}
-		break;
-		
-		case status::no_plugin:
-		{
-			static const char *msg = "PlugIn Not Found";
-			s = msg;
-		}
-		break;
-		
-		case status::no_function:
-		{
-			static const char *msg = "PlugIn Entry Point Not Found";
 			s = msg;
 		}
 		break;
@@ -109,30 +88,30 @@ netkit::status_to_string( netkit::status status )
 		}
 		break;
 		
-		case status::parse:
+		case status::parse_error:
 		{
 			static const char *msg = "Parse Error";
 			s = msg;
 		}
 		break;
 		
-		case status::invalid_request:
+		case status::invalid:
 		{
-			static const char *msg = "Request Is Invalid";
+			static const char *msg = "Invalid";
 			s = msg;
 		}
 		break;
 		
-		case status::method_not_found:
+		case status::not_found:
 		{
-			static const char *msg = "Method Not Found";
+			static const char *msg = "Not Found";
 			s = msg;
 		}
 		break;
 		
-		case status::invalid_params:
+		case status::bad_params:
 		{
-			static const char *msg = "Invalid Parameters";
+			static const char *msg = "Bad Parameters";
 			s = msg;
 		}
 		break;
@@ -143,7 +122,28 @@ netkit::status_to_string( netkit::status status )
 			s = msg;
 		}
 		break;
-		
+
+		case status::permission_denied:
+		{
+			static const char *msg = "Permission Denied";
+			s = msg;
+		}
+		break;
+
+		case status::limit_error:
+		{
+			static const char *msg = "Exceeded Limit";
+			s = msg;
+		}
+		break;
+			
+		case status::network_error:
+		{
+			static const char *msg = "Network Error";
+			s = msg;
+		}
+		break;
+
 		default:
 		{
 			static const char *msg = "Unknown Error";
