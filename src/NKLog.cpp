@@ -39,7 +39,7 @@
 using namespace netkit;
 
 
-log::level				log::m_log_level;
+log::level				log::m_log_level = log::info;
 log::set_handlers		*log::m_set_handlers;
 std::recursive_mutex	*log::m_mutex;
 static std::uint8_t		*g_ptr	= nullptr;

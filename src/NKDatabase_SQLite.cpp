@@ -65,7 +65,8 @@ manager::instance()
 
 manager_impl::manager_impl( sqlite3 * db )
 :
-	m_db( db )
+	m_db( db ),
+	m_ignore_changes( false )
 {
 	sqlite3_update_hook( m_db, database_was_changed, this );
 }
@@ -179,6 +180,13 @@ database::manager_impl::on_change( const std::string &tableName, observer_reply_
 
 	return o;
 }
+
+
+void
+database::manager_impl::set_ignore_changes( bool val )
+{
+	m_ignore_changes = val;
+}
 		
 
 void
@@ -211,29 +219,33 @@ void
 database::manager_impl::database_was_changed( void* context, int action, const char* db_name, const char* table_name, sqlite_int64 oid )
 {
 	database::manager_impl	*self	= ( database::manager_impl* ) context;
-	map::iterator			it1		= self->m_omap.find( table_name );
-	oids					oids;
 
-	oids.push_back( oid );
-
-	if ( it1 != self->m_omap.end() )
+	if ( !self->m_ignore_changes )
 	{
-		for ( auto it2 = it1->second.begin(); it2 != it1->second.end(); it2++ )
+		map::iterator			it1		= self->m_omap.find( table_name );
+		oids					oids;
+
+		oids.push_back( oid );
+
+		if ( it1 != self->m_omap.end() )
 		{
-			switch ( action )
+			for ( auto it2 = it1->second.begin(); it2 != it1->second.end(); it2++ )
 			{
-				 case SQLITE_INSERT:
-				 case SQLITE_UPDATE:
-				 {
-					( *it2 )->reply()( action::update, oids );
-				 }
-				 break;
+				switch ( action )
+				{
+					 case SQLITE_INSERT:
+					 case SQLITE_UPDATE:
+					 {
+						( *it2 )->reply()( action::update, oids );
+					 }
+					 break;
 				 
-				 case SQLITE_DELETE:
-				 {
-					( *it2 )->reply()( action::delet, oids );
-				 }
-				 break;
+					 case SQLITE_DELETE:
+					 {
+						( *it2 )->reply()( action::delet, oids );
+					 }
+					 break;
+				}
 			}
 		}
 	}

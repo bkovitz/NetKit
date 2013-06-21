@@ -191,6 +191,9 @@ public:
 	on_change( const std::string &table_name, observer_reply_f reply ) = 0;
 	
 	virtual void
+	set_ignore_changes( bool val ) = 0;
+
+	virtual void
 	cancel( cookie c ) = 0;
 
 	virtual netkit::status
