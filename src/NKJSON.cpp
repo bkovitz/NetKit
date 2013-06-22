@@ -3114,7 +3114,7 @@ connection::validate( const value::ref &root, value::ref error)
       
 	if ( !root->is_object() || !root->is_member( "jsonrpc" ) || ( root[ "jsonrpc" ] != value::ref( "2.0" ) ) )
 	{
-        err[ "code" ]		= status::invalid_request;
+        err[ "code" ]		= status::invalid;
         err[ "message" ]	= "Invalid JSON-RPC request.";
 		
 		error[ "id" ]		= value::null();
@@ -3125,7 +3125,7 @@ connection::validate( const value::ref &root, value::ref error)
 	}
 	else if ( root->is_member( "id" ) && ( root[ "id" ]->is_array() || root[ "id" ]->is_object() ) )
 	{
-        err[ "code" ]		= status::invalid_request;
+        err[ "code" ]		= status::invalid;
         err[ "message" ]	= "Invalid JSON-RPC request.";
 		
 		error[ "id" ]		= value::null();
@@ -3136,7 +3136,7 @@ connection::validate( const value::ref &root, value::ref error)
 	}
 	else if ( !root->is_member( "method" ) || !root["method"]->is_string() )
 	{
-        err[ "code" ]		= status::invalid_request;
+        err[ "code" ]		= status::invalid;
         err[ "message" ]	= "Invalid JSON-RPC request.";
 		
 		error[ "id" ]		= value::null();
@@ -3253,7 +3253,7 @@ server::route_request( const value::ref &request, reply_f r )
 				value::ref reply;
 				value::ref error;
 							
-				error[ "code" ]			= status::invalid_params;
+				error[ "code" ]			= status::bad_params;
 				error[ "message" ]		= "Invalid Paramaters.";
 				reply[ "error" ]		= error;
 					
@@ -3265,7 +3265,7 @@ server::route_request( const value::ref &request, reply_f r )
 			value::ref reply;
 			value::ref error;
 							
-			error[ "code" ]		= status::method_not_found;
+			error[ "code" ]		= status::not_found;
 			error[ "message" ]	= "Method not found.";
 			reply[ "error" ]	= error;
 				

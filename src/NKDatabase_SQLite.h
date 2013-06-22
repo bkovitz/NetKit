@@ -90,6 +90,9 @@ public:
 	on_change( const std::string &tableName, observer_reply_f reply );
 	
 	virtual void
+	set_ignore_changes( bool val );
+
+	virtual void
 	cancel( cookie t );
 
 	virtual netkit::status
@@ -144,6 +147,7 @@ private:
 	static void
 	database_was_changed( void* impl, int, const char* db_name, const char* table_name, sqlite_int64 );
 
+	bool	m_ignore_changes;
 	map		m_omap;
 	sqlite3	*m_db;
 };

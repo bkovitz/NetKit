@@ -206,6 +206,8 @@ socket::set_blocking( native fd, bool block )
 void
 socket::close( bool notify )
 {
+	teardown_notifications();
+
 	if ( m_fd != null )
 	{
 #if defined( WIN32 )

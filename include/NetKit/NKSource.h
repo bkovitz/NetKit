@@ -176,6 +176,9 @@ protected:
 	
 	void
 	send_internal();
+
+	void
+	teardown_notifications();
 	
 	typedef std::queue< send_info* >	send_queue;
 	typedef std::queue< buf_t >			recv_queue;
