@@ -33,6 +33,7 @@
 #include <NetKit/NKJSON.h>
 #include <NetKit/NKBase64.h>
 #include <NetKit/NKLog.h>
+#include <limits>
 #include <sstream>
 #include <vector>
 
@@ -645,7 +646,7 @@ http_adapter::parse_server_handshake()
 
 		auto ret = strtol( &m_handshake[ 9 ], &end, 0 );
 
-		if ( ret && ( ret != LONG_MAX ) && ( ret != LONG_MIN ) )
+		if ( ret && ( ret != std::numeric_limits< long >::max() ) && ( ret != std::numeric_limits< long >::min() ) )
 		{
 			code = ( std::uint16_t ) ret;
 		}
