@@ -740,7 +740,16 @@ request::add_to_header( const std::string &key, const std::string &val )
 void
 request::send_prologue( connection_ref conn ) const
 {
-	*conn << method::to_string( m_method ) << " " << m_uri->path();
+	*conn << method::to_string( m_method ) << " ";
+	
+	if ( proxy::get()->is_null() || ( m_uri->scheme() == "https" ) )
+	{
+		*conn << m_uri->path();
+	}
+	else
+	{
+		*conn << m_uri->to_string();
+	}
 
 	if ( !m_uri->query().empty() )
 	{
@@ -956,6 +965,8 @@ connection::http_minor() const
 bool
 connection::put( message::ref message )
 {
+	m_ostream.clear();
+	
 	message->send_prologue( this );
 	
 	for ( auto it = message->heeder().begin(); it != message->heeder().end(); it++ )
@@ -1534,10 +1545,12 @@ client::really_send()
 		{
 			m_request->add_to_header( "Host", m_request->uri()->host() );
 			m_request->add_to_header( "User-Agent", "NetKit/2 " + platform::machine_description() );
+			m_request->add_to_header( "Connection", "keep-alive" );
 
 			if ( proxy::get()->authorization().size() > 0 )
 			{
 				m_request->add_to_header( "Proxy-Authorization", "basic " + proxy::get()->authorization() );
+				m_request->add_to_header( "Proxy-Connection", "keep-alive" );
 			}
 
 			if ( m_request->body().length() > 0 )
@@ -1581,19 +1594,11 @@ client::headers_were_received( connection::ref connection, message::header &head
 {
 	int ret = 0;
 
-	if ( connection->status_code() == http::status::proxy_authentication )
+	m_response = new response( connection->http_major(), connection->http_minor(), connection->status_code(), false );
+	m_response->add_to_header( header );
+	
+	if ( connection->status_code() != http::status::proxy_authentication )
 	{
-		if ( proxy::auth_challenge() )
-		{
-			m_request->add_to_header( "Proxy-Authorization", "basic " + proxy::get()->authorization() );
-			m_connection->put( m_request.get() );
-			ret = 1;
-		}
-	}
-	else
-	{
-		m_response = new response( connection->http_major(), connection->http_minor(), connection->status_code(), false );
-		m_response->add_to_header( header );
 		m_request->headers_reply( m_response );
 		m_request->on_headers_reply( nullptr );
 	}
@@ -1605,7 +1610,11 @@ client::headers_were_received( connection::ref connection, message::header &head
 int
 client::body_was_received( connection::ref connection, const char *buf, size_t len )
 {
-	m_request->body_reply( m_response, ( std::uint8_t* ) buf, len );
+	if ( connection->status_code() != http::status::proxy_authentication )
+	{
+		m_request->body_reply( m_response, ( std::uint8_t* ) buf, len );
+	}
+	
 	return 0;
 }
 
@@ -1613,11 +1622,20 @@ client::body_was_received( connection::ref connection, const char *buf, size_t l
 int
 client::message_was_received( connection::ref connection )
 {
-	m_request->reply( m_response );
-
-	m_request->on_auth( nullptr );
-	m_request->on_body_reply( nullptr );
-	m_request->on_reply( nullptr );
+	if ( ( connection->status_code() == http::status::proxy_authentication ) && proxy::auth_challenge() )
+	{
+		m_request->add_to_header( "Proxy-Authorization", "basic " + proxy::get()->authorization() );
+		m_request->add_to_header( "Proxy-Connection", "keep-alive " );
+		
+		client::send( m_request );
+	}
+	else
+	{
+		m_request->reply( m_response );
+		m_request->on_auth( nullptr );
+		m_request->on_body_reply( nullptr );
+		m_request->on_reply( nullptr );
+	}
 
 	m_done = true;
 

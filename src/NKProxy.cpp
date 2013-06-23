@@ -50,13 +50,7 @@ public:
 	resolve( const uri::ref &uri, resolve_reply_f reply );
 	
 	virtual void
-	connect( const uri::ref &uri, const endpoint::ref &to, connect_reply_f reply );
-		
-	virtual void
 	send( const std::uint8_t *in_buf, std::size_t in_len, send_reply_f reply );
-		
-	virtual void
-	recv( const std::uint8_t *in_buf, std::size_t in_len, recv_reply_f reply );
 	
 protected:
 
@@ -73,17 +67,68 @@ protected:
 		}
 	};
 
-	void
-	send_connect();
-
-	std::uint16_t
-	parse_server_handshake();
-
 	proxy::ref				m_proxy;
 	bool					m_secure;
 	bool					m_connected;
 	std::string				m_handshake;
 	std::queue< buffer* >	m_pending_send_list;
+	netkit::uri::ref		m_uri;
+};
+
+
+class http_adapter : public proxy_adapter
+{
+public:
+
+	http_adapter( proxy::ref proxy, bool secure );
+
+	virtual ~http_adapter();
+	
+	virtual void
+	connect( const uri::ref &uri, const endpoint::ref &to, connect_reply_f reply );
+		
+	virtual void
+	recv( const std::uint8_t *in_buf, std::size_t in_len, recv_reply_f reply );
+	
+protected:
+
+	void
+	send_connect();
+
+	std::uint16_t
+	parse_server_handshake();
+};
+
+
+class socks4_adapter : public proxy_adapter
+{
+public:
+
+	socks4_adapter( proxy::ref proxy, bool secure );
+
+	virtual ~socks4_adapter();
+	
+	virtual void
+	connect( const uri::ref &uri, const endpoint::ref &to, connect_reply_f reply );
+	
+	virtual void
+	recv( const std::uint8_t *in_buf, std::size_t in_len, recv_reply_f reply );
+};
+
+
+class socks5_adapter : public proxy_adapter
+{
+public:
+
+	socks5_adapter( proxy::ref proxy, bool secure );
+	
+	virtual ~socks5_adapter();
+	
+	virtual void
+	connect( const uri::ref &uri, const endpoint::ref &to, connect_reply_f reply );
+	
+	virtual void
+	recv( const std::uint8_t *in_buf, std::size_t in_len, recv_reply_f reply );
 };
 
 
@@ -100,8 +145,25 @@ static std::uint8_t			*g_ptr = nullptr;
 source::adapter::ref
 proxy::create( bool secure )
 {
-	return new proxy_adapter( g_proxy, secure );
+	if ( g_proxy->uri() )
+	{
+		if ( g_proxy->uri()->scheme() == "http" )
+		{
+			return new http_adapter( g_proxy, secure );
+		}
+		else if ( g_proxy->uri()->scheme() == "socks4" )
+		{
+//			return new socks4_adapter( g_proxy, secure );
+		}
+		else
+		{
+		//	return new socks5_adapter( g_proxy, secure );
+		}
+	}
+	
+	return nullptr;
 }
+
 
 void
 proxy::on_auth_challenge( auth_challenge_f handler )
@@ -328,49 +390,19 @@ proxy_adapter::~proxy_adapter()
 void
 proxy_adapter::resolve( const uri::ref &uri, resolve_reply_f reply )
 {
-	nklog( log::verbose, "uri = %s", m_proxy->uri()->to_string().c_str() );
-
-	m_next->resolve( uri, reply );
-
-#if 0
-	m_next->resolve( proxy::get()->uri(), [=]( int status, const netkit::uri::ref &uri, ip::address::list addrs )
+	m_uri = uri;
+	
+	m_next->resolve( m_proxy->uri(), [=]( int status, const netkit::uri::ref &uri, ip::address::list addrs )
 	{
 		reply( status, uri, addrs );
 	} );
-#endif
 }
 
-	
-void
-proxy_adapter::connect( const uri::ref &uri, const endpoint::ref &to, connect_reply_f reply )
-{
-	nklog( log::verbose, "uri = %s", m_proxy->uri()->to_string().c_str() );
-
-	m_next->connect( uri, to, reply );
-
-#if 0
-	m_next->connect( uri, to, [=]( int status )
-	{
-		if ( ( status == 0 ) && m_secure )
-		{
-			m_uri = uri;
-
-			send_connect();
-		}
-
-		reply( status );
-	} );
-#endif
-} 
 		
 void
 proxy_adapter::send( const std::uint8_t *in_buf, std::size_t in_len, send_reply_f reply )
 {
-	nklog( log::verbose, "uri = %s", m_proxy->uri()->to_string().c_str() );
-
-	m_next->send( in_buf, in_len, reply );
-#if 0
-	if ( m_secure && m_connected )
+	if ( !m_secure || m_connected )
 	{
 		m_next->send( in_buf, in_len, reply );
 	}
@@ -380,18 +412,46 @@ proxy_adapter::send( const std::uint8_t *in_buf, std::size_t in_len, send_reply_
 
 		m_pending_send_list.push( buf );
 	}
-#endif
 }
 
 		
-void
-proxy_adapter::recv( const std::uint8_t *in_buf, std::size_t in_len, recv_reply_f reply )
+http_adapter::http_adapter( proxy::ref proxy, bool secure )
+:
+	proxy_adapter( proxy, secure )
 {
-	nklog( log::verbose, "uri = %s", m_proxy->uri()->to_string().c_str() );
+}
 
-	m_next->recv( in_buf, in_len, reply );
 
-#if 0
+http_adapter::~http_adapter()
+{
+}
+
+
+void
+http_adapter::connect( const uri::ref &uri, const endpoint::ref &to, connect_reply_f reply )
+{
+	m_next->connect( uri, to, [=]( int status )
+	{
+		if ( status == 0 )
+		{
+			if ( m_secure )
+			{
+				send_connect();
+			}
+			else
+			{
+				m_connected = true;
+			}
+		}
+
+		reply( status );
+	} );
+}
+
+
+void
+http_adapter::recv( const std::uint8_t *in_buf, std::size_t in_len, recv_reply_f reply )
+{
 	m_next->recv( in_buf, in_len, [=]( int status, const std::uint8_t *out_buf, std::size_t out_len, bool more_coming )
 	{
 		if ( m_secure && !m_connected )
@@ -408,8 +468,11 @@ proxy_adapter::recv( const std::uint8_t *in_buf, std::size_t in_len, recv_reply_
 					{
 						auto code = parse_server_handshake();
 
+fprintf( stderr, "got code %d\n", code );
 						if ( code == http::status::ok )
 						{
+							m_connected = true;
+	
 							while ( m_pending_send_list.size() > 0 )
 							{
 								buffer *b = m_pending_send_list.front();
@@ -431,6 +494,12 @@ proxy_adapter::recv( const std::uint8_t *in_buf, std::size_t in_len, recv_reply_
 							if ( proxy::auth_challenge() )
 							{
 								send_connect();
+								
+								m_handshake.clear();
+								
+								status	= 0;
+								out_buf	= nullptr;
+								out_len	= 0;
 							}
 							else
 							{
@@ -457,18 +526,17 @@ proxy_adapter::recv( const std::uint8_t *in_buf, std::size_t in_len, recv_reply_
 
 		reply( status, out_buf, out_len, more_coming );
 	} );
-#endif
 }
 
 
 void
-proxy_adapter::send_connect()
+http_adapter::send_connect()
 {
 	std::string			msg;
 	std::ostringstream	os;
 
-	os << "CONNECT " << m_proxy->uri()->host() << ":" << m_proxy->uri()->port() << " HTTP/1.1\r\n";
-	os << "Host: " << m_proxy->uri()->host() << "\r\n";
+	os << "CONNECT " << m_uri->host() << ":" << m_uri->port() << " HTTP/1.1\r\n";
+	os << "Host: " << m_uri->host() << ":" << m_uri->port() << "\r\n";
 
 	if ( proxy::get()->authorization().size() > 0 )
 	{
@@ -490,7 +558,7 @@ proxy_adapter::send_connect()
 
 
 std::uint16_t
-proxy_adapter::parse_server_handshake()
+http_adapter::parse_server_handshake()
 {
 	std::uint16_t code = -1;
 

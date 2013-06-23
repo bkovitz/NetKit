@@ -28,88 +28,69 @@
  *
  */
  
-#include <NetKit/NKLog.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <time.h>
-#include <string.h>
-#include <vector>
-#include <mutex>
+#include "catch.hpp"
+#include <NetKit/NetKit.h>
 
 using namespace netkit;
 
-
-log::level				log::m_log_level = log::info;
-log::set_handlers		*log::m_set_handlers;
-std::recursive_mutex	*log::m_mutex;
-static std::uint8_t		*g_ptr	= nullptr;
-
-
-log::level
-log::get_level()
+TEST_CASE( "NetKit/proxy", "proxy tests" )
 {
-	std::lock_guard<std::recursive_mutex> lock( *m_mutex );
-
-	return m_log_level;
-}
-
-
-netkit::cookie
-log::on_set( set_f handler )
-{
-	std::lock_guard<std::recursive_mutex> lock( *m_mutex );
-	
-	netkit::cookie cookie( g_ptr++ );
-	
-    m_set_handlers->push_back( std::make_pair( cookie, handler ) );
-	
-	return cookie;
-}
-
-
-void
-log::cancel( netkit::cookie cookie )
-{
-	std::lock_guard<std::recursive_mutex> lock( *m_mutex );
-	
-	for ( auto it = m_set_handlers->begin(); it != m_set_handlers->end(); it++ )
+	SECTION( "http", "http proxy" )
 	{
-		if ( it->first.get() == cookie.get() )
-		{
-			m_set_handlers->erase( it );
-			break;
-		}
-	}
-}
-
-
-void
-log::set_level( log::level l )
-{
-	std::lock_guard<std::recursive_mutex> lock( *m_mutex );
-	
-	if ( m_log_level != l )
-	{
-		m_log_level = l;
+		uri::ref uri		= new netkit::uri( "http://127.0.0.1:8080" );
+		proxy::ref proxy	= new netkit::proxy( uri );
 		
-		for ( auto it = m_set_handlers->begin(); it != m_set_handlers->end(); it++ )
+		proxy::set( proxy );
+		
+		proxy::on_auth_challenge( [=]() mutable
 		{
-			( it->second )( l );
-		}
+			proxy->encode_authorization( "test", "test" );
+			return true;
+		} );
+	
+		http::request::ref request = new http::request( 1, 1, http::method::get, new netkit::uri( "http://www.apple.com" ) );
+		request->add_to_header( "Accept", "*/*" );
+		REQUIRE( request );
+		
+		request->on_reply( [=]( http::response::ref response )
+		{
+			REQUIRE( response );
+			REQUIRE( response->status() == 200 );
+			netkit::runloop::main()->stop();
+		} );
+		
+		http::client::send( request );
+	
+		netkit::runloop::main()->run();
 	}
-}
-
-
-std::string
-log::prune( const char *filename )
-{
-	for ( auto i = strlen( filename ) - 1; i > 0; i-- )
+	
+	SECTION( "https", "https proxy" )
 	{
-		if ( ( filename[ i ] == '/' ) || ( filename[ i ] == '\\' ) )
+		uri::ref uri		= new netkit::uri( "http://127.0.0.1:8080" );
+		proxy::ref proxy	= new netkit::proxy( uri );
+		
+		proxy::set( proxy::null() );
+		proxy::set( proxy );
+		
+		proxy::on_auth_challenge( [=]() mutable
 		{
-			return filename + i + 1;
-		}
+			proxy->encode_authorization( "test", "test" );
+			return true;
+		} );
+	
+		http::request::ref request = new http::request( 1, 1, http::method::get, new netkit::uri( "https://www.apple.com" ) );
+		request->add_to_header( "Accept", "*/*" );
+		REQUIRE( request );
+		
+		request->on_reply( [=]( http::response::ref response )
+		{
+			REQUIRE( response );
+			REQUIRE( response->status() == 200 );
+			netkit::runloop::main()->stop();
+		} );
+		
+		http::client::send( request );
+	
+		netkit::runloop::main()->run();
 	}
-
-	return filename;
 }

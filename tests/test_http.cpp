@@ -47,18 +47,14 @@ TEST_CASE( "NetKit/http/server/1", "http server tests" )
 	acceptor->accept( [=]( int status, socket::ref sock )
 	{
 		REQUIRE( status == 0 );
-		
-		sock->peek( g_buf, sizeof( g_buf ), [=]( int status, std::size_t len )
-		{
-			REQUIRE( status == 0 );
-			REQUIRE( len > 0 );
-			REQUIRE( http::connection::adopt( sock.get(), g_buf, len ) );
-		} );
+		sink::ref sink = http::server::adopt( sock.get() );
+		REQUIRE( sink );
+		sink->bind( sock.get() );
 	} );
 	
-	http::connection::bind( http::method::get, "/found", "*", [=]( http::request::ref request, http::connection::response_f reply )
+	http::server::bind( http::method::get, "/found", "*", [=]( http::request::ref request, http::server::response_f reply )
 	{
-		http::response::ref response = http::response::create( request->major(), request->minor(), 200, false );
+		http::response::ref response = new http::response( request->major(), request->minor(), http::status::ok, false );
 		
 		response->add_to_header( "Content-Type", "text/plain" );
 		response->add_to_header( "Content-Length", 5 );
@@ -72,14 +68,16 @@ TEST_CASE( "NetKit/http/server/1", "http server tests" )
 	
 	os << "http://127.0.0.1:" << acceptor->endpoint()->port() << "/found";
 	
-	request	= http::request::create( 1, 1, http::method::get, new uri( os.str() ) );
+	request	= new http::request( 1, 1, http::method::get, new uri( os.str() ) );
 	
-	http::client::send( request, [=]( int32_t error, const http::response::ref &response )
+	request->on_reply( [=]( http::response::ref response )
 	{
 		REQUIRE( response->status() == 200 );
 		
 		runloop::main()->stop();
 	} );
+	
+	http::client::send( request );
 	
 	runloop::main()->run();
 }
@@ -96,18 +94,14 @@ TEST_CASE( "NetKit/http/server/2", "http server tests" )
 	acceptor->accept( [=]( int status, socket::ref sock )
 	{
 		REQUIRE( status == 0 );
-		
-		sock->peek( g_buf, sizeof( g_buf ), [=]( int status, std::size_t len )
-		{
-			REQUIRE( status == 0 );
-			REQUIRE( len > 0 );
-			REQUIRE( http::connection::adopt( sock.get(), g_buf, len ) );
-		} );
+		sink::ref sink = http::server::adopt( sock.get() );
+		REQUIRE( sink );
+		sink->bind( sock.get() );
 	} );
 	
-	http::connection::bind( http::method::get, "/found", "*", [=]( http::request::ref request, http::connection::response_f func )
+	http::server::bind( http::method::get, "/found", "*", [=]( http::request::ref request, http::server::response_f func )
 	{
-		http::response::ref response = http::response::create( request->major(), request->minor(), 200, false );
+		http::response::ref response = new http::response( request->major(), request->minor(), http::status::ok, false );
 		
 		func( response, false );
 		
@@ -116,13 +110,15 @@ TEST_CASE( "NetKit/http/server/2", "http server tests" )
 	
 	os << "http://127.0.0.1:" << acceptor->endpoint()->port() << "/notfound";
 	
-	request	= http::request::create( 1, 1, http::method::get, new uri( os.str() ) );
+	request	= new http::request( 1, 1, http::method::get, new uri( os.str() ) );
 	
-	http::client::send( request, [&]( int32_t error, const http::response::ref &response )
+	request->on_reply( [=]( http::response::ref response )
 	{
 		REQUIRE( response->status() == 404 );
 		runloop::main()->stop();
 	} );
+	
+	http::client::send( request );
 	
 	runloop::main()->run();
 }

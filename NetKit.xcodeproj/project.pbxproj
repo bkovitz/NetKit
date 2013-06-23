@@ -11,7 +11,7 @@
 		D2033DC416E1811000DBE69B /* NKUnicode.h in Headers */ = {isa = PBXBuildFile; fileRef = D2033DC216E1811000DBE69B /* NKUnicode.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D2033DC616E1813C00DBE69B /* NKUnicode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D2033DC516E1813C00DBE69B /* NKUnicode.cpp */; };
 		D20D20FF1608FF2B0037A994 /* NKOAuth.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D20D20FC1608FF2B0037A994 /* NKOAuth.cpp */; };
-		D20D21051608FF4F0037A994 /* NKOAuth.h in Headers */ = {isa = PBXBuildFile; fileRef = D20D21031608FF4F0037A994 /* NKOAuth.h */; };
+		D20D21051608FF4F0037A994 /* NKOAuth.h in Headers */ = {isa = PBXBuildFile; fileRef = D20D21031608FF4F0037A994 /* NKOAuth.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D20ED13116D8379900177887 /* NKRunLoop_Mac.h in Headers */ = {isa = PBXBuildFile; fileRef = D20ED12F16D8379900177887 /* NKRunLoop_Mac.h */; };
 		D20ED13216D8379900177887 /* NKRunLoop_Mac.mm in Sources */ = {isa = PBXBuildFile; fileRef = D20ED13016D8379900177887 /* NKRunLoop_Mac.mm */; };
 		D20ED13416DB123300177887 /* NKProxy.h in Headers */ = {isa = PBXBuildFile; fileRef = D20ED13316DB123300177887 /* NKProxy.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -20,6 +20,7 @@
 		D20ED14016DC0EF300177887 /* CoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D20ED13F16DC0EF200177887 /* CoreServices.framework */; };
 		D2171B85170E4387002E1119 /* NKAddress.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D23DF54B15F698F90027A8F1 /* NKAddress.cpp */; };
 		D2171B86170E4388002E1119 /* NKAddress.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D23DF54B15F698F90027A8F1 /* NKAddress.cpp */; };
+		D21A369417761E28003F80FF /* test_proxy.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D21A369317761E28003F80FF /* test_proxy.cpp */; };
 		D223BA3C1717336E000C2C44 /* NKWebSocket.h in Headers */ = {isa = PBXBuildFile; fileRef = D223BA3B1717336E000C2C44 /* NKWebSocket.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D223BA3D1717336E000C2C44 /* NKWebSocket.h in Headers */ = {isa = PBXBuildFile; fileRef = D223BA3B1717336E000C2C44 /* NKWebSocket.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D223BA3F1717338A000C2C44 /* NKWebSocket.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D223BA3E1717338A000C2C44 /* NKWebSocket.cpp */; };
@@ -78,7 +79,7 @@
 		D26B0EAE16F7C744008379E0 /* NKAddress.h in Headers */ = {isa = PBXBuildFile; fileRef = D23DF54C15F698F90027A8F1 /* NKAddress.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D26B0EB016F7C744008379E0 /* NKLog.h in Headers */ = {isa = PBXBuildFile; fileRef = D23DF58715F69F980027A8F1 /* NKLog.h */; };
 		D26B0EB116F7C744008379E0 /* NKOAuth.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D20D20FC1608FF2B0037A994 /* NKOAuth.cpp */; };
-		D26B0EB216F7C744008379E0 /* NKOAuth.h in Headers */ = {isa = PBXBuildFile; fileRef = D20D21031608FF4F0037A994 /* NKOAuth.h */; };
+		D26B0EB216F7C744008379E0 /* NKOAuth.h in Headers */ = {isa = PBXBuildFile; fileRef = D20D21031608FF4F0037A994 /* NKOAuth.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D26B0EB316F7C744008379E0 /* NKObject.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D23DF55015F698F90027A8F1 /* NKObject.cpp */; };
 		D26B0EB416F7C744008379E0 /* NKObject.h in Headers */ = {isa = PBXBuildFile; fileRef = D23DF55115F698F90027A8F1 /* NKObject.h */; };
 		D26B0EB516F7C744008379E0 /* NKOutputFilter.h in Headers */ = {isa = PBXBuildFile; fileRef = D2033DC116E1811000DBE69B /* NKOutputFilter.h */; };
@@ -139,7 +140,6 @@
 		D28BEE2A1739AEFB00BD7587 /* NKSHA1.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D28BEE271739AEFB00BD7587 /* NKSHA1.cpp */; };
 		D28BEE2B1739AEFB00BD7587 /* NKUUID.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D28BEE281739AEFB00BD7587 /* NKUUID.cpp */; };
 		D28BEE2C1739AEFB00BD7587 /* NKUUID.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D28BEE281739AEFB00BD7587 /* NKUUID.cpp */; };
-		D28BEE381739B18D00BD7587 /* test_ws.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D28BEE371739B18D00BD7587 /* test_ws.cpp */; };
 		D2A1180116FCD7CE00FAD80F /* NKComponent.h in Headers */ = {isa = PBXBuildFile; fileRef = D2A117FF16FCD7CE00FAD80F /* NKComponent.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D2A1180216FCD7CE00FAD80F /* NKComponent.h in Headers */ = {isa = PBXBuildFile; fileRef = D2A117FF16FCD7CE00FAD80F /* NKComponent.h */; };
 		D2A1180316FCD7CE00FAD80F /* NKMIME.h in Headers */ = {isa = PBXBuildFile; fileRef = D2A1180016FCD7CE00FAD80F /* NKMIME.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -155,10 +155,10 @@
 		D2A8BA41162BC0B900D0C09A /* libxml2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D2A8BA40162BC0B900D0C09A /* libxml2.dylib */; };
 		D2B09C79170238C9002EE020 /* NKError.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D2B09C78170238C9002EE020 /* NKError.cpp */; };
 		D2B09C7A170238C9002EE020 /* NKError.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D2B09C78170238C9002EE020 /* NKError.cpp */; };
-		D2C33E76177118A800DAC202 /* NKMacros.h in Headers */ = {isa = PBXBuildFile; fileRef = D2C33E74177118A800DAC202 /* NKMacros.h */; };
-		D2C33E77177118A800DAC202 /* NKMacros.h in Headers */ = {isa = PBXBuildFile; fileRef = D2C33E74177118A800DAC202 /* NKMacros.h */; };
-		D2C33E78177118A800DAC202 /* NKNetworkInterface.h in Headers */ = {isa = PBXBuildFile; fileRef = D2C33E75177118A800DAC202 /* NKNetworkInterface.h */; };
-		D2C33E79177118A800DAC202 /* NKNetworkInterface.h in Headers */ = {isa = PBXBuildFile; fileRef = D2C33E75177118A800DAC202 /* NKNetworkInterface.h */; };
+		D2C33E76177118A800DAC202 /* NKMacros.h in Headers */ = {isa = PBXBuildFile; fileRef = D2C33E74177118A800DAC202 /* NKMacros.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D2C33E77177118A800DAC202 /* NKMacros.h in Headers */ = {isa = PBXBuildFile; fileRef = D2C33E74177118A800DAC202 /* NKMacros.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D2C33E78177118A800DAC202 /* NKNetworkInterface.h in Headers */ = {isa = PBXBuildFile; fileRef = D2C33E75177118A800DAC202 /* NKNetworkInterface.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D2C33E79177118A800DAC202 /* NKNetworkInterface.h in Headers */ = {isa = PBXBuildFile; fileRef = D2C33E75177118A800DAC202 /* NKNetworkInterface.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D2C33E7B177118BD00DAC202 /* NKNetworkInterface.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D2C33E7A177118BD00DAC202 /* NKNetworkInterface.cpp */; };
 		D2C33E7C177118BD00DAC202 /* NKNetworkInterface.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D2C33E7A177118BD00DAC202 /* NKNetworkInterface.cpp */; };
 		D2C33E7E17711DC000DAC202 /* NKNetworkInterface_Mac.mm in Sources */ = {isa = PBXBuildFile; fileRef = D2C33E7D17711DC000DAC202 /* NKNetworkInterface_Mac.mm */; };
@@ -227,6 +227,7 @@
 		D20ED13516DB123B00177887 /* NKProxy.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = NKProxy.cpp; path = src/NKProxy.cpp; sourceTree = "<group>"; };
 		D20ED13D16DC0E9C00177887 /* SecurityFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SecurityFoundation.framework; path = System/Library/Frameworks/SecurityFoundation.framework; sourceTree = SDKROOT; };
 		D20ED13F16DC0EF200177887 /* CoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreServices.framework; path = System/Library/Frameworks/CoreServices.framework; sourceTree = SDKROOT; };
+		D21A369317761E28003F80FF /* test_proxy.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = test_proxy.cpp; path = tests/test_proxy.cpp; sourceTree = SOURCE_ROOT; };
 		D223BA3B1717336E000C2C44 /* NKWebSocket.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NKWebSocket.h; path = include/NetKit/NKWebSocket.h; sourceTree = "<group>"; };
 		D223BA3E1717338A000C2C44 /* NKWebSocket.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = NKWebSocket.cpp; path = src/NKWebSocket.cpp; sourceTree = "<group>"; };
 		D223BA4A1718C706000C2C44 /* NKTLS.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NKTLS.h; path = include/NetKit/NKTLS.h; sourceTree = "<group>"; };
@@ -522,6 +523,7 @@
 		D23DF59A15F6AFCD0027A8F1 /* tests */ = {
 			isa = PBXGroup;
 			children = (
+				D21A369317761E28003F80FF /* test_proxy.cpp */,
 				D28BEE371739B18D00BD7587 /* test_ws.cpp */,
 				D28BEE351739B11500BD7587 /* test_uuid.cpp */,
 				D28BEE2D1739AF2A00BD7587 /* test_address.cpp */,
@@ -952,7 +954,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				D23DF59C15F6AFCD0027A8F1 /* main.cpp in Sources */,
-				D28BEE381739B18D00BD7587 /* test_ws.cpp in Sources */,
+				D21A369417761E28003F80FF /* test_proxy.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

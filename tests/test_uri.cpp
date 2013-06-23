@@ -38,7 +38,7 @@ TEST_CASE( "NetKit/uri/1", "netkit::uri tests" )
 	REQUIRE( uri->scheme() == "http" );
 	REQUIRE( uri->host() == "www.google.com" );
 	REQUIRE( uri->port() == 8080 );
-	REQUIRE( uri->path().size() == 0 );
+	REQUIRE( uri->path().size() == 1 );
 }
 
 
@@ -66,7 +66,7 @@ TEST_CASE( "NetKit/uri/3", "netkit::uri tests" )
 TEST_CASE( "NetKit/uri/4", "netkit::uri tests" )
 {
 	netkit::uri::ref	uri = new netkit::uri( "http://www.google.com/path" );
-	std::string		str = uri->recompose();
+	std::string		str = uri->to_string();
 
 	REQUIRE( str == "http://www.google.com:80/path" );
 }

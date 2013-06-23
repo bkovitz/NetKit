@@ -89,7 +89,10 @@ public:
 	static void
 	put( level l, const char * filename, const char * function, int line, const char * message, ... );
 	
-private:
+protected:
+
+	static std::string
+	prune( const char *filename );
 
 	typedef std::vector< std::pair< netkit::cookie, set_f > >	set_handlers;
 	static log::level											m_log_level;

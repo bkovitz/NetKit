@@ -199,11 +199,7 @@ TEST_CASE( "NetKit/json/3", "json rpc" )
 	acceptor->accept( [=]( int status, socket::ref sock )
 	{
 		REQUIRE( status == 0 );
-		
-		sock->peek( g_buf, sizeof( g_buf ), [=]( int status, std::size_t len )
-		{
-			REQUIRE( json::connection::adopt( sock.get(), g_buf, len ) );
-		} );
+		//REQUIRE( json::server::adopt( sock.get() ) );
 	} );
 
 	json::server::bind( "func", 3, ( netkit::json::server::request_f ) [=]( json::value::ref params, json::server::reply_f reply )

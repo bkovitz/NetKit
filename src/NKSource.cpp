@@ -128,7 +128,7 @@ source::connect( const uri::ref &uri, connect_reply_f reply )
 		add( ws::client::create() );
 	}
 
-	m_adapters.tail()->resolve( uri, [=]( int status, const uri::ref &out_uri, ip::address::list addrs )
+	m_adapters.head()->resolve( uri, [=]( int status, const uri::ref &out_uri, ip::address::list addrs )
 	{	
 		if ( status == 0 )
 		{

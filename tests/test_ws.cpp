@@ -35,10 +35,9 @@ using namespace netkit;
 
 TEST_CASE( "NetKit/ws", "websocket tests" )
 {
-	SECTION( "constructors", "websocket constructors" )
+	SECTION( "client", "websocket client" )
 	{
-		std::uint8_t	*buf = new std::uint8_t[ 1024 ];
-		source::ref		sock = new netkit::ip::tcp::socket;
+		source::ref sock = new netkit::ip::tcp::socket;
 	
 		REQUIRE( sock );
 		
@@ -53,7 +52,7 @@ TEST_CASE( "NetKit/ws", "websocket tests" )
 				REQUIRE( status == 0 );
 			} );
 			
-			sock->recv( buf, 1024, [=]( int status, std::size_t len ) mutable
+			sock->recv( [=]( int status, const std::uint8_t *buf, std::size_t len ) mutable
 			{
 				REQUIRE( status == 0 );
 				REQUIRE( strstr( ( const char* ) buf, "echo" ) != NULL );
@@ -62,7 +61,7 @@ TEST_CASE( "NetKit/ws", "websocket tests" )
 				{
 				} );
 				
-				sock->recv( buf, 1024, [=]( int status, std::size_t len ) mutable
+				sock->recv( [=]( int status, const std::uint8_t *buf, std::size_t len ) mutable
 				{
 					REQUIRE( status == 0 );
 					REQUIRE( strstr( ( const char* ) buf, "hello" ) != NULL );

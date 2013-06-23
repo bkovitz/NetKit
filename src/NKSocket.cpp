@@ -111,6 +111,8 @@ socket::start_connect( const endpoint::ref &peer, bool &would_block )
 	sockaddr_storage	addr;
 	std::size_t			len;
 	int					err;
+	
+	fprintf( stderr, "connecting to %s", peer->to_string().c_str() );
 
 	len = peer->to_sockaddr( addr );
 	

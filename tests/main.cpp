@@ -34,6 +34,7 @@
 
 int main (int argc, char * const argv[])
 {
+	netkit::log::init( "UnitTests" );
 	netkit::log::set_level( netkit::log::verbose );
     return Catch::Main( argc, argv );
 }
