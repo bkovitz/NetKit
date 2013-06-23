@@ -91,21 +91,6 @@ exit:
 }
 
 
-static const char*
-prune( const char *filename )
-{
-	for ( auto i = strlen( filename ) - 1; i > 0; i-- )
-	{
-		if ( filename[ i ] == '\\' )
-		{
-			return filename + i + 1;
-		}
-	}
-
-	return filename;
-}
-
-
 void
 log::put( log::level l, const char * filename, const char * function, int line, const char * format, ... )
 {
@@ -138,7 +123,7 @@ log::put( log::level l, const char * filename, const char * function, int line, 
 			}
 		}
 		
-		_snprintf_s( msg, sizeof( msg ), _TRUNCATE, "%d:%d %s %s:%d %s %s", GetCurrentProcessId(), GetCurrentThreadId(), timeStr, prune( filename ), line, function, buf );
+		_snprintf_s( msg, sizeof( msg ), _TRUNCATE, "%d:%d %s %s:%d %s %s", GetCurrentProcessId(), GetCurrentThreadId(), timeStr, prune( filename ).c_str(), line, function, buf );
 		
 		for ( unsigned i = 0; i < strlen( msg ); i++ )
 		{
