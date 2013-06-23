@@ -90,7 +90,7 @@ runloop_mac::create( std::time_t msec )
 {
 	auto event = dispatch_source_create( DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue() );
 
-	dispatch_source_set_timer( event, dispatch_time( DISPATCH_TIME_NOW, msec * NSEC_PER_SEC ), msec * NSEC_PER_MSEC, 0 );
+	dispatch_source_set_timer( event, dispatch_time( DISPATCH_TIME_NOW, msec * NSEC_PER_MSEC ), msec * NSEC_PER_MSEC, 0 );
 
 	return event;
 }
@@ -100,7 +100,7 @@ void
 runloop_mac::modify( event e, std::time_t msec )
 {
 	auto event = reinterpret_cast< dispatch_source_t >( e );
-	dispatch_source_set_timer( event, dispatch_time( DISPATCH_TIME_NOW, msec * NSEC_PER_SEC ), msec * NSEC_PER_MSEC, 0 );
+	dispatch_source_set_timer( event, dispatch_time( DISPATCH_TIME_NOW, msec * NSEC_PER_MSEC ), msec * NSEC_PER_MSEC, 0 );
 }
 
 
@@ -123,13 +123,15 @@ runloop_mac::schedule_oneshot_timer( std::time_t msec, event_f func )
 {
 	auto event = dispatch_source_create( DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue() );
 
-	dispatch_source_set_timer( event, dispatch_time( DISPATCH_TIME_NOW, msec * NSEC_PER_SEC ), msec * NSEC_PER_MSEC, 0 );
+	dispatch_source_set_timer( event, dispatch_time( DISPATCH_TIME_NOW, msec * NSEC_PER_MSEC ), DISPATCH_TIME_FOREVER, 0 );
 	
 	dispatch_source_set_event_handler( event, ^()
 	{
 		func( event );
-		cancel( event );
+		dispatch_source_cancel( event );
 	} );
+	
+	dispatch_resume( event );
 }
 
 
