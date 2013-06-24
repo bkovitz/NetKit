@@ -742,7 +742,7 @@ request::send_prologue( connection_ref conn ) const
 {
 	*conn << method::to_string( m_method ) << " ";
 	
-	if ( proxy::get()->is_null() || ( m_uri->scheme() == "https" ) )
+	if ( proxy::get()->is_null() || !proxy::get()->is_http() || ( m_uri->scheme() == "https" ) )
 	{
 		*conn << m_uri->path();
 	}
@@ -1547,7 +1547,7 @@ client::really_send()
 			m_request->add_to_header( "User-Agent", "NetKit/2 " + platform::machine_description() );
 			m_request->add_to_header( "Connection", "keep-alive" );
 
-			if ( proxy::get()->authorization().size() > 0 )
+			if ( proxy::get()->is_http() && ( proxy::get()->authorization().size() > 0 ) )
 			{
 				m_request->add_to_header( "Proxy-Authorization", "basic " + proxy::get()->authorization() );
 				m_request->add_to_header( "Proxy-Connection", "keep-alive" );

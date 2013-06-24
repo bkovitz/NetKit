@@ -42,7 +42,7 @@ class proxy_adapter : public netkit::source::adapter
 {
 public:
 
-	proxy_adapter( proxy::ref proxy, bool secure );
+	proxy_adapter( proxy::ref proxy );
 	
 	virtual ~proxy_adapter();
 
@@ -66,11 +66,12 @@ protected:
 		{
 		}
 	};
+	
+	void
+	set_connected( bool val );
 
 	proxy::ref				m_proxy;
-	bool					m_secure;
 	bool					m_connected;
-	std::string				m_handshake;
 	std::queue< buffer* >	m_pending_send_list;
 	netkit::uri::ref		m_uri;
 };
@@ -97,6 +98,9 @@ protected:
 
 	std::uint16_t
 	parse_server_handshake();
+	
+	std::string	m_handshake;
+	bool		m_secure;
 };
 
 
@@ -104,8 +108,8 @@ class socks4_adapter : public proxy_adapter
 {
 public:
 
-	socks4_adapter( proxy::ref proxy, bool secure );
-
+	socks4_adapter( proxy::ref proxy );
+	
 	virtual ~socks4_adapter();
 	
 	virtual void
@@ -113,6 +117,13 @@ public:
 	
 	virtual void
 	recv( const std::uint8_t *in_buf, std::size_t in_len, recv_reply_f reply );
+	
+protected:
+
+	void
+	send_connect( endpoint::ref endpoint );
+	
+	std::vector< std::uint8_t >	m_handshake;
 };
 
 
@@ -120,7 +131,7 @@ class socks5_adapter : public proxy_adapter
 {
 public:
 
-	socks5_adapter( proxy::ref proxy, bool secure );
+	socks5_adapter( proxy::ref proxy );
 	
 	virtual ~socks5_adapter();
 	
@@ -129,6 +140,29 @@ public:
 	
 	virtual void
 	recv( const std::uint8_t *in_buf, std::size_t in_len, recv_reply_f reply );
+	
+protected:
+
+	enum state
+	{
+		waiting_for_opening_response			= 0x1,
+		waiting_for_authentication_response		= 0x2,
+		waiting_for_connect_response			= 0x3,
+	};
+		
+	void
+	start_negotiate();
+	
+	void
+	send_auth();
+	
+	void
+	send_connect();
+	
+	std::vector< std::uint8_t >	m_handshake;
+	std::uint8_t				m_method;
+	std::uint8_t				m_state;
+	sockaddr_storage			m_dest;
 };
 
 
@@ -153,11 +187,11 @@ proxy::create( bool secure )
 		}
 		else if ( g_proxy->uri()->scheme() == "socks4" )
 		{
-//			return new socks4_adapter( g_proxy, secure );
+			return new socks4_adapter( g_proxy );
 		}
-		else
+		else if ( g_proxy->uri()->scheme() == "socks5" )
 		{
-		//	return new socks5_adapter( g_proxy, secure );
+			return new socks5_adapter( g_proxy );
 		}
 	}
 	
@@ -277,6 +311,27 @@ proxy::is_null() const
 }
 
 
+bool
+proxy::is_http() const
+{
+	return ( m_uri ) ? ( m_uri->scheme() == "http" ) : false;
+}
+
+
+bool
+proxy::is_socks4() const
+{
+	return ( m_uri ) ? ( m_uri->scheme() == "socks4" ) : false;
+}
+
+
+bool
+proxy::is_socks5() const
+{
+	return ( m_uri ) ? ( m_uri->scheme() == "socks5" ) : false;
+}
+
+
 void
 proxy::encode_authorization( const std::string &username, const std::string &password )
 {
@@ -295,8 +350,8 @@ proxy::decode_authorization( std::string &username, std::string &password ) cons
 
 		if ( spot != std::string::npos )
 		{
-			username = m_authorization.substr( 0, spot - 1 );
-			password = m_authorization.substr( spot + 1, m_authorization.size() );
+			username = tmp.substr( 0, spot );
+			password = tmp.substr( spot + 1, m_authorization.size() );
 		}
 	}
 }
@@ -373,10 +428,9 @@ proxy::equals( const object &that ) const
 #	pragma mark proxy_adapter implementation
 #endif
 
-proxy_adapter::proxy_adapter( proxy::ref proxy, bool secure )
+proxy_adapter::proxy_adapter( proxy::ref proxy )
 :
 	m_proxy( proxy ),
-	m_secure( secure ),
 	m_connected( false )
 {
 }
@@ -402,7 +456,7 @@ proxy_adapter::resolve( const uri::ref &uri, resolve_reply_f reply )
 void
 proxy_adapter::send( const std::uint8_t *in_buf, std::size_t in_len, send_reply_f reply )
 {
-	if ( !m_secure || m_connected )
+	if ( m_connected )
 	{
 		m_next->send( in_buf, in_len, reply );
 	}
@@ -414,10 +468,37 @@ proxy_adapter::send( const std::uint8_t *in_buf, std::size_t in_len, send_reply_
 	}
 }
 
-		
+
+void
+proxy_adapter::set_connected( bool val )
+{
+	m_connected = val;
+	
+	if ( m_connected )
+	{
+		while ( m_pending_send_list.size() > 0 )
+		{
+			buffer *b = m_pending_send_list.front();
+									
+			m_source->send( m_next, &b->m_data[ 0 ], b->m_data.size(), [=]( int status )
+			{
+			} );
+	
+			m_pending_send_list.pop();
+							
+			delete b;
+		}
+	}
+}
+
+#if defined( __APPLE__ )
+#	pragma mark http_adapter implementation
+#endif
+
 http_adapter::http_adapter( proxy::ref proxy, bool secure )
 :
-	proxy_adapter( proxy, secure )
+	proxy_adapter( proxy ),
+	m_secure( secure )
 {
 }
 
@@ -468,24 +549,10 @@ http_adapter::recv( const std::uint8_t *in_buf, std::size_t in_len, recv_reply_f
 					{
 						auto code = parse_server_handshake();
 
-fprintf( stderr, "got code %d\n", code );
 						if ( code == http::status::ok )
 						{
-							m_connected = true;
-	
-							while ( m_pending_send_list.size() > 0 )
-							{
-								buffer *b = m_pending_send_list.front();
-									
-								m_source->send( m_next, &b->m_data[ 0 ], b->m_data.size(), [=]( int status )
-								{
-								} );
-	
-								m_pending_send_list.pop();
+							set_connected( true );
 							
-								delete b;
-							}
-	
 							out_buf += ( end + 4 );
 							out_len -= ( end + 4 );
 						}
@@ -585,4 +652,475 @@ http_adapter::parse_server_handshake()
 	}
 
 	return code;
+}
+
+#if defined( __APPLE__ )
+#	pragma mark socks4_adapter implementation
+#endif
+
+socks4_adapter::socks4_adapter( proxy::ref proxy )
+:
+	proxy_adapter( proxy )
+{
+}
+
+	
+socks4_adapter::~socks4_adapter()
+{
+}
+
+	
+void
+socks4_adapter::connect( const uri::ref &uri, const endpoint::ref &to, connect_reply_f reply )
+{
+	m_next->connect( uri, to, [=]( int status )
+	{
+		if ( status == 0 )
+		{
+			ip::address::resolve( m_uri->host(), [=]( int status, ip::address::list addrs )
+			{
+				if ( status == 0 )
+				{
+					// Find an IPv4 address...we need to fix this at some point
+					
+					for ( auto it = addrs.begin(); it != addrs.end(); it++ )
+					{
+						if ( ( *it )->is_v4() )
+						{
+							ip::endpoint::ref endpoint = new ip::endpoint( *it, m_uri->port() );
+							
+							send_connect( endpoint );
+							
+							break;
+						}
+					}
+				}
+				
+				reply( status );
+			} );
+		}
+		else
+		{
+			reply( status );
+		}	
+	} );
+}
+
+	
+void
+socks4_adapter::recv( const std::uint8_t *in_buf, std::size_t in_len, recv_reply_f reply )
+{
+	m_next->recv( in_buf, in_len, [=]( int status, const std::uint8_t *out_buf, std::size_t out_len, bool more_coming )
+	{
+		if ( status == 0 )
+		{
+			if ( !m_connected && out_len )
+			{
+				std::copy( out_buf, out_buf + out_len, std::back_inserter( m_handshake ) );
+				
+				if ( m_handshake.size() >= 8 )
+				{
+					if ( m_handshake[ 0 ] == 0x00 )
+					{
+						if ( m_handshake[ 1 ] == 0x90 )
+						{
+							std::rotate( m_handshake.begin(), m_handshake.begin() + 8, m_handshake.end() );
+							
+							out_buf = &m_handshake[ 8 ];
+							out_len = m_handshake.size() - 8;
+											
+							set_connected( true );
+						}
+						else
+						{
+							nklog( log::error, "expecting 0x90, received 0x%x", m_handshake[ 0 ] );
+							
+							status	= -1;
+							out_buf = nullptr;
+							out_len = 0;
+						}
+					}
+					else
+					{
+						nklog( log::error, "expecting 0x00, received 0x%x", m_handshake[ 0 ] );
+						
+						status	= -1;
+						out_buf = nullptr;
+						out_len = 0;
+					}
+				}
+			}
+		}
+
+		reply( status, out_buf, out_len, more_coming );
+	} );
+}
+
+
+void
+socks4_adapter::send_connect( endpoint::ref endpoint )
+{
+	sockaddr_in		addr;
+	std::uint8_t	buf[ 9 ];
+	
+	endpoint->to_sockaddr( ( sockaddr_storage& ) addr );
+	
+	buf[ 0 ] = 0x04;
+	buf[ 1 ] = 0x01;
+	buf[ 2 ] = ( ( std::uint8_t* ) &addr.sin_port )[ 0 ];
+	buf[ 3 ] = ( ( std::uint8_t* ) &addr.sin_port )[ 1 ];
+	buf[ 4 ] = ( ( std::uint8_t* ) &addr.sin_addr.s_addr )[ 0 ];
+	buf[ 5 ] = ( ( std::uint8_t* ) &addr.sin_addr.s_addr )[ 1 ];
+	buf[ 6 ] = ( ( std::uint8_t* ) &addr.sin_addr.s_addr )[ 2 ];
+	buf[ 7 ] = ( ( std::uint8_t* ) &addr.sin_addr.s_addr )[ 3 ];
+	buf[ 8 ] = 0x00;
+	
+	m_source->send( m_next, buf, sizeof( buf ), [=]( int status )
+	{
+	} );
+}
+
+
+#if defined( __APPLE__ )
+#	pragma mark socks5_adapter implementation
+#endif
+
+socks5_adapter::socks5_adapter( proxy::ref proxy )
+:
+	proxy_adapter( proxy )
+{
+}
+
+	
+socks5_adapter::~socks5_adapter()
+{
+}
+
+	
+void
+socks5_adapter::connect( const uri::ref &uri, const endpoint::ref &to, connect_reply_f reply )
+{
+	m_next->connect( uri, to, [=]( int status )
+	{
+		if ( status == 0 )
+		{
+			ip::address::resolve( m_uri->host(), [=]( int status, ip::address::list addrs )
+			{
+				if ( status == 0 )
+				{
+					// Find an IPv4 address...we need to fix this at some point
+					
+					for ( auto it = addrs.begin(); it != addrs.end(); it++ )
+					{
+						if ( ( *it )->is_v4() )
+						{
+							ip::endpoint::ref endpoint = new ip::endpoint( *it, m_uri->port() );
+							
+							endpoint->to_sockaddr( m_dest );
+							
+							start_negotiate();
+							
+							break;
+						}
+					}
+				}
+				
+				reply( status );
+			} );
+		}
+		else
+		{
+			reply( status );
+		}
+	} );
+}
+
+	
+void
+socks5_adapter::recv( const std::uint8_t *in_buf, std::size_t in_len, recv_reply_f reply )
+{
+	m_next->recv( in_buf, in_len, [=]( int status, const std::uint8_t *out_buf, std::size_t out_len, bool more_coming )
+	{
+		if ( status == 0 )
+		{
+			if ( !m_connected && out_len )
+			{
+				switch ( m_state )
+				{
+					case waiting_for_opening_response:
+					{
+						std::copy( out_buf, out_buf + out_len, std::back_inserter( m_handshake ) );
+						
+						if ( m_handshake.size() == 2 )
+						{
+							if ( ( m_handshake[ 0 ] == 0x05 ) && ( m_handshake[ 1 ] == m_method ) )
+							{
+								m_handshake.clear();
+								
+								if ( m_method == 0x00 )
+								{
+									send_connect();
+								}
+								else
+								{
+									send_auth();
+								}
+							}
+							else if ( ( m_method == 0x00 ) && ( m_handshake[ 1 ] == 0xff ) && proxy::auth_challenge() )
+							{
+								m_handshake.clear();
+									
+								start_negotiate();
+										
+								status = 0;
+							}
+							else
+							{
+								status = -1;
+							}
+						}
+						
+						out_buf = nullptr;
+						out_len = 0;
+					}
+					break;
+					
+					case waiting_for_authentication_response:
+					{
+						std::copy( out_buf, out_buf + out_len, std::back_inserter( m_handshake ) );
+						
+						if ( m_handshake.size() == 2 )
+						{
+							if ( ( m_handshake[ 0 ] == 0x01 ) && ( m_handshake[ 1 ] == 0x00 ) )
+							{
+								m_handshake.clear();
+								
+								send_connect();
+							}
+							else
+							{
+								status	= -1;
+							}
+						}
+						
+						out_buf = nullptr;
+						out_len = 0;
+					}
+					break;
+					
+					case waiting_for_connect_response:
+					{
+						std::copy( out_buf, out_buf + out_len, std::back_inserter( m_handshake ) );
+						
+						if ( m_handshake.size() >= 4 )
+						{
+							if ( ( m_handshake[ 0 ] == 0x05 ) && ( m_handshake[ 1 ] == 0x00 ) )
+							{
+								switch ( m_handshake[ 3 ] )
+								{
+									case 0x01:
+									{
+										if ( m_handshake.size() >= 10 )
+										{
+											std::rotate( m_handshake.begin(), m_handshake.begin() + 10, m_handshake.end() );
+											
+											if ( m_handshake.size() > 0 )
+											{
+												out_buf = &m_handshake[ 10 ];
+												out_len = m_handshake.size() - 10;
+											}
+											else
+											{
+												out_buf = nullptr;
+												out_len = 0;
+											}
+											
+											set_connected( true );
+										}
+										else
+										{
+											out_buf = nullptr;
+											out_len = 0;
+										}
+									}
+									break;
+									
+									case 0x03:
+									{
+										if ( m_handshake.size() >= 5 )
+										{
+											std::uint8_t len = m_handshake[ 4 ];
+											
+											if ( m_handshake.size() >= ( 5 + len ) )
+											{
+												std::rotate( m_handshake.begin(), m_handshake.begin() + 5 + len, m_handshake.end() );
+												
+												if ( m_handshake.size() > 0 )
+												{
+													out_buf = &m_handshake[ 5 + len ];
+													out_len = m_handshake.size() - 5 + len;
+												}
+												else
+												{
+													out_buf = nullptr;
+													out_len = 0;
+												}
+												
+												set_connected( true );
+											}
+											else
+											{
+												out_buf = nullptr;
+												out_len = 0;
+											}
+										}
+										else
+										{
+											out_buf = nullptr;
+											out_len = 0;
+										}
+									}
+									break;
+									
+									case 0x04:
+									{
+										if ( m_handshake.size() >= 22 )
+										{
+											std::rotate( m_handshake.begin(), m_handshake.begin() + 22, m_handshake.end() );
+											
+											if ( m_handshake.size() > 0 )
+											{
+												out_buf = &m_handshake[ 22 ];
+												out_len = m_handshake.size() - 22;
+											}
+											else
+											{
+												out_buf = nullptr;
+												out_len = 0;
+											}
+												
+											set_connected( true );
+										}
+										else
+										{
+											out_buf = nullptr;
+											out_len = 0;
+										}
+									}
+									break;
+									
+									default:
+									{
+										status	= -1;
+										out_buf = nullptr;
+										out_len = 0;
+									}
+									break;
+								}
+							}
+							else
+							{
+								status	= -1;
+								out_buf	= nullptr;
+								out_len	= 0;
+							}
+						}
+						else
+						{
+							out_buf = nullptr;
+							out_len = 0;
+						}
+					}
+					break;
+				}
+			}
+		}
+
+		reply( status, out_buf, out_len, more_coming );
+	} );
+}
+
+
+void
+socks5_adapter::start_negotiate()
+{
+	std::uint8_t buf[ 3 ];
+	
+	buf[ 0 ] = 0x05;
+	buf[ 1 ] = 0x01;
+	m_method = ( m_proxy->authorization().size() > 0 ) ? 0x02 : 0x00;
+	buf[ 2 ] = m_method;
+	
+	m_source->send( m_next, buf, sizeof( buf ), [=]( int status )
+	{
+	} );
+	
+	m_state = waiting_for_opening_response;
+}
+
+
+void
+socks5_adapter::send_auth()
+{
+	std::string		username;
+	std::string		password;
+	std::uint8_t	ulen;
+	std::uint8_t	plen;
+	std::uint8_t	buf[ 1024 ];	// this is bigger than we can use, so no buffer overflows
+	
+	m_proxy->decode_authorization( username, password );
+	
+	ulen = username.size() > 255 ? 255 : ( std::uint8_t ) username.size();
+	plen = password.size() > 255 ? 255 : ( std::uint8_t ) password.size();
+	
+	buf[ 0 ] = 0x01;
+	buf[ 1 ] = ulen;
+	memcpy( buf + 2, username.c_str(), ulen );
+	buf[ 2 + ulen ] = plen;
+	memcpy( buf + 3 + ulen, password.c_str(), plen );
+	
+	m_source->send( m_next, buf, ulen + plen + 3, [=]( int status )
+	{
+	} );
+	
+	m_state = waiting_for_authentication_response;
+}
+
+	
+void
+socks5_adapter::send_connect()
+{
+	std::uint8_t	buf[ 1024 ];
+	std::size_t		len = 0;
+	
+	buf[ len++ ] = 0x05;
+	buf[ len++ ] = 0x01;
+	buf[ len++ ] = 0x00;
+	
+	if ( m_dest.ss_family == AF_INET )
+	{
+		sockaddr_in *destv4 = ( sockaddr_in* ) &m_dest;
+		
+		buf[ len++ ] = 0x01;
+		memcpy( buf + len, &destv4->sin_addr.s_addr, sizeof( destv4->sin_addr.s_addr ) );
+		len += sizeof( destv4->sin_addr.s_addr );
+		buf[ len++ ] = ( ( std::uint8_t* ) &destv4->sin_port )[ 0 ];
+		buf[ len++ ] = ( ( std::uint8_t* ) &destv4->sin_port )[ 1 ];
+	}
+	else if ( m_dest.ss_family == AF_INET6 )
+	{
+		sockaddr_in6 *destv6 = ( sockaddr_in6* ) &m_dest;
+		
+		buf[ len++ ] = 0x04;
+		memcpy( buf + len, &destv6->sin6_addr, sizeof( destv6->sin6_addr ) );
+		len += sizeof( destv6->sin6_addr );
+		buf[ len++ ] = ( ( std::uint8_t* ) &destv6->sin6_port )[ 0 ];
+		buf[ len++ ] = ( ( std::uint8_t* ) &destv6->sin6_port )[ 1 ];
+	}
+	
+	m_source->send( m_next, buf, len, [=]( int status )
+	{
+	} );
+	
+	m_state = waiting_for_connect_response;
 }

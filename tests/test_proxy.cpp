@@ -35,6 +35,7 @@ using namespace netkit;
 
 TEST_CASE( "NetKit/proxy", "proxy tests" )
 {
+#if 0
 	SECTION( "http", "http proxy" )
 	{
 		uri::ref uri		= new netkit::uri( "http://127.0.0.1:8080" );
@@ -78,6 +79,55 @@ TEST_CASE( "NetKit/proxy", "proxy tests" )
 			return true;
 		} );
 	
+		http::request::ref request = new http::request( 1, 1, http::method::get, new netkit::uri( "https://www.apple.com" ) );
+		request->add_to_header( "Accept", "*/*" );
+		REQUIRE( request );
+		
+		request->on_reply( [=]( http::response::ref response )
+		{
+			REQUIRE( response );
+			REQUIRE( response->status() == 200 );
+			netkit::runloop::main()->stop();
+		} );
+		
+		http::client::send( request );
+	
+		netkit::runloop::main()->run();
+	}
+#endif
+	SECTION( "socks5", "socks5 proxy" )
+	{
+		uri::ref uri		= new netkit::uri( "socks5://127.0.0.1:8080" );
+		proxy::ref proxy	= new netkit::proxy( uri );
+		
+		proxy->encode_authorization( "test", "test" );
+		
+		proxy::set( proxy );
+		
+		http::request::ref request = new http::request( 1, 1, http::method::get, new netkit::uri( "http://www.apple.com" ) );
+		request->add_to_header( "Accept", "*/*" );
+		REQUIRE( request );
+		
+		request->on_reply( [=]( http::response::ref response )
+		{
+			REQUIRE( response );
+			REQUIRE( response->status() == 200 );
+			netkit::runloop::main()->stop();
+		} );
+		
+		http::client::send( request );
+	
+		netkit::runloop::main()->run();
+	}
+	
+	SECTION( "socks5", "socks5 proxy" )
+	{
+		uri::ref uri		= new netkit::uri( "socks5://127.0.0.1:8080" );
+		proxy::ref proxy	= new netkit::proxy( uri );
+	
+		proxy->encode_authorization( "test", "test" );
+		proxy::set( proxy );
+		
 		http::request::ref request = new http::request( 1, 1, http::method::get, new netkit::uri( "https://www.apple.com" ) );
 		request->add_to_header( "Accept", "*/*" );
 		REQUIRE( request );

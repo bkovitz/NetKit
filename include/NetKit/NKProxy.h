@@ -80,6 +80,15 @@ public:
 
 	bool
 	is_null() const;
+	
+	bool
+	is_http() const;
+	
+	bool
+	is_socks4() const;
+	
+	bool
+	is_socks5() const;
 
 	inline const uri::ref&
 	uri() const
