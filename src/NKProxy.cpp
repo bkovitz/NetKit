@@ -121,7 +121,7 @@ public:
 protected:
 
 	void
-	send_connect( endpoint::ref endpoint );
+	send_connect( ip::endpoint::ref endpoint );
 	
 	std::vector< std::uint8_t >	m_handshake;
 };
@@ -758,7 +758,7 @@ socks4_adapter::recv( const std::uint8_t *in_buf, std::size_t in_len, recv_reply
 
 
 void
-socks4_adapter::send_connect( endpoint::ref endpoint )
+socks4_adapter::send_connect( ip::endpoint::ref endpoint )
 {
 	sockaddr_in		addr;
 	std::uint8_t	buf[ 9 ];
