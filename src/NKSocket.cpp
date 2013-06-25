@@ -112,8 +112,6 @@ socket::start_connect( const endpoint::ref &peer, bool &would_block )
 	std::size_t			len;
 	int					err;
 	
-	fprintf( stderr, "connecting to %s", peer->to_string().c_str() );
-
 	len = peer->to_sockaddr( addr );
 	
 	m_fd = ::socket( addr.ss_family, SOCK_STREAM, 0 );
