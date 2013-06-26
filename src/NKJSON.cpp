@@ -2783,7 +2783,7 @@ value::read_number(std::istream &input, value &result)
 	}
 	else
 	{
-		int intResult;
+		std::uint64_t intResult;
 		constructing >> intResult;
 		result.set_integer(intResult);
 	}
@@ -3378,7 +3378,7 @@ client::send_request( const std::string &method, value::ref params, reply_f repl
 		}
 		else
 		{
-			error_code		= ( netkit::status ) response[ "error" ][ "code" ]->as_int64();
+			error_code		= response[ "error" ][ "code" ]->as_status();
 			error_message	= response[ "error" ][ "message" ]->as_string();
 		}
 			
