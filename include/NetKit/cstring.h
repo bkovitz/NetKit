@@ -1,7 +1,8 @@
 #ifndef _netkit_cstring_h
 #define _netkit_cstring_h
 
-#include <stdarg.h>
+#include <cstdarg>
+#include <cstring>
 
 namespace std {
 

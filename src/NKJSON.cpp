@@ -1482,16 +1482,6 @@ value::value( std::uint64_t val )
 }
 
 
-#if !defined( _WIN32 )
-value::value( std::time_t val )
-:
-	m_kind( type::integer ),
-	m_data( new std::uint64_t( val ) )
-{
-}
-#endif
-
-
 value::value( status v )
 :
 	m_kind( type::integer ),
@@ -2892,7 +2882,7 @@ value::output(std::ostream &output, bool indent, bool escapeAll) const
 
 
 std::ostream&
-netkit::operator<<(std::ostream &output, const value::ref &v)
+netkit::operator<<(std::ostream &output, const json::value::ref &v)
 {
 	return output << *v.get();
 }
@@ -3253,7 +3243,7 @@ server::route_request( const value::ref &request, reply_f r )
 				value::ref reply;
 				value::ref error;
 							
-				error[ "code" ]			= status::bad_params;
+				error[ "code" ]			= netkit::status::bad_params;
 				error[ "message" ]		= "Invalid Paramaters.";
 				reply[ "error" ]		= error;
 					
@@ -3265,7 +3255,7 @@ server::route_request( const value::ref &request, reply_f r )
 			value::ref reply;
 			value::ref error;
 							
-			error[ "code" ]		= status::not_found;
+			error[ "code" ]		= netkit::status::not_found;
 			error[ "message" ]	= "Method not found.";
 			reply[ "error" ]	= error;
 				

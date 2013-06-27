@@ -50,7 +50,7 @@ component::finalize()
 
 component::component()
 :
-	m_status( status::uninitialized )
+	m_status( netkit::status::uninitialized )
 {
 	m_instances->push_back( this );
 }

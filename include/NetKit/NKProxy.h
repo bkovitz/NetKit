@@ -33,6 +33,7 @@
 
 #include <NetKit/NKSocket.h>
 #include <NetKit/NKURI.h>
+#include <algorithm>
 #include <vector>
 #include <string>
 
@@ -90,7 +91,7 @@ public:
 	bool
 	is_socks5() const;
 
-	inline const uri::ref&
+	inline const netkit::uri::ref& 
 	uri() const
 	{
 		return m_uri;
@@ -152,11 +153,11 @@ protected:
 	
 	typedef std::vector< std::pair< netkit::cookie, set_f > > set_handlers;
 	
-	uri::ref					m_uri;
-	std::vector< std::string >	m_bypass_list;
-	std::string					m_authorization;
-	static auth_challenge_f		m_auth_challenge_handler;
-	static set_handlers			m_set_handlers;
+	netkit::uri::ref 				m_uri;
+	std::vector< std::string > 		m_bypass_list;
+	std::string 					m_authorization;
+	static auth_challenge_f 		m_auth_challenge_handler;
+	static set_handlers 			m_set_handlers;
 };
 
 }
