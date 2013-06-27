@@ -4,7 +4,7 @@ find_package (OpenSSL)
 #TODO - create a FindUriParser cmake module
 #TODO - create a FindSqlite cmake module
 
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fpermissive -luriparser -lsqlite3")
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fpermissive -luriparser -lsqlite3 -luuid")
 
 include_directories (${LIBXML2_INCLUDE_DIR})
 
@@ -36,6 +36,8 @@ set(NETKIT_SOURCE
 		NKUnicode.cpp
 		NKWebSocket.cpp
 		NKXMPP.cpp
+		Linux/NKLog_Linux.cpp
+		Linux/NKPlatform_Linux.cpp
 		../ThirdParty/http-parser/http_parser.c
 )
 
