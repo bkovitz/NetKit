@@ -1,11 +1,19 @@
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-include_directories (${NetKit_SOURCE_DIR}/include)
+find_package (LibXml2)
+find_package (OpenSSL)
+
+#TODO - create a FindUriParser cmake module
+#TODO - create a FindSqlite cmake module
+
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fpermissive -luriparser -lsqlite3")
+
+include_directories (${LIBXML2_INCLUDE_DIR})
+
+include_directories (${NetKit_SOURCE_DIR}/include ${NetKit_SOURCE_DIR}/ThirdParty/http-parser ${OPENSSL_INCLUDE_DIR} ${LIBXML2_INCLUDE_DIR})
 
 set(NETKIT_SOURCE 
 		NKAddress.cpp
 		NKBase64.cpp
 		NKComponent.cpp
-		NKConnection.cpp
 		NKDatabase_SQLite.cpp
 		NKDatabase_SQLite.h
 		NKEndpoint.cpp
@@ -27,11 +35,9 @@ set(NETKIT_SOURCE
 		NKUUID.cpp
 		NKUnicode.cpp
 		NKWebSocket.cpp
-		NKXMLAttribute.cpp
-		NKXMLDocument.cpp
-		NKXMLElement.cpp
-		NKXMLNode.cpp
 		NKXMPP.cpp
 )
 
-add_library (NetKit ${NETKIT_SOURCE})
+add_library (NetKit SHARED ${NETKIT_SOURCE})
+
+target_link_libraries (NetKit ${LIBXML2_LIBRARIES} ${OPENSSL_LIBRARIES})
