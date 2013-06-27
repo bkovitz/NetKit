@@ -909,6 +909,9 @@ private:
 	json::value *m_ref;
 };
 
+std::ostream&
+operator<<(std::ostream &output, const json::value::ref &v);
+
 template<>
 inline bool
 operator==( smart_ref< json::value > const &a, smart_ref< json::value > const &b )
