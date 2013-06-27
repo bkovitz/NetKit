@@ -1,6 +1,3 @@
-[submodule "ThirdParty/uriparser"]
-	path = ThirdParty/uriparser
-	url = git://git.code.sf.net/p/uriparser/git
 [submodule "ThirdParty/http-parser"]
 	path = ThirdParty/http-parser
 	url = https://github.com/joyent/http-parser.git
