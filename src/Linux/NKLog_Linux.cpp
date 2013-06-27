@@ -29,6 +29,7 @@
  */
  
 #include <NetKit/NKLog.h>
+#include <syslog.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <time.h>
@@ -39,20 +40,12 @@
 
 using namespace netkit;
 
-// TODO - Use syslog
+static const int FACILITY = LOG_DAEMON;
 
 void
 log::init( const char *name )
 {
-	if ( !m_set_handlers )
-	{
-		m_set_handlers = new set_handlers;
-	}
-	
-	if ( !m_mutex )
-	{
-		m_mutex = new std::recursive_mutex;
-	}
+	openlog( name, LOG_PID, FACILITY );
 }
 
 
@@ -60,34 +53,37 @@ void
 log::put( log::level l, const char * filename, const char * function, int line, const char * format, ... )
 {
 	std::lock_guard<std::recursive_mutex> lock( *m_mutex );
-	
+
 	if ( l <= m_log_level )
 	{
+		int 		level;
 		static char msg[ 32767 ];
 		static char buf[ 32767 ];
-		char		*time_str;
-		time_t		t;
 		va_list		ap;
+		
+		switch ( l )
+		{
+		case log::error:
+			level = LOG_ERR;
+			break;
+		case log::warning:
+			level = LOG_WARNING;
+			break;
+		case log::info:
+			level = LOG_INFO;
+			break;
+		default:
+			level = LOG_DEBUG;
+		}
+
+		int priority = FACILITY | level;
 
 		va_start( ap, format );
 		vsnprintf( buf, sizeof( buf ), format, ap );
 		va_end( ap );
-		
-		t = time( NULL );
-		time_str = ctime( &t );
-		
-		if ( time_str )
-		{
-			for ( unsigned i = 0; i < strlen( time_str ); i++ )
-			{
-				if ( time_str[ i ] == '\n' )
-				{
-					time_str[ i ] = '\0';
-				}
-			}
-		}
-		
-		snprintf( msg, sizeof( msg ), "%d %s %s:%d %s", getpid(), time_str, function, line, buf );
-		fprintf( stderr, "%s\n", msg );
+
+		snprintf( msg, sizeof( msg ), "%d %s:%d %s", getpid(), function, line, buf );
+
+		syslog( priority, msg );
 	}
 }
