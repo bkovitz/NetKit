@@ -36,6 +36,7 @@ set(NETKIT_SOURCE
 		NKUnicode.cpp
 		NKWebSocket.cpp
 		NKXMPP.cpp
+		../ThirdParty/http-parser/http_parser.c
 )
 
 add_library (NetKit SHARED ${NETKIT_SOURCE})
