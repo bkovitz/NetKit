@@ -27,6 +27,7 @@
  * either expressed or implied, of the FreeBSD Project.
  *
  */
+#define NOMINMAX
  
 #include <NetKit/NKProxy.h>
 #include <NetKit/NKHTTP.h>
