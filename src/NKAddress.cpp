@@ -32,6 +32,8 @@
 #include <NetKit/NKRunLoop.h>
 #include <NetKit/NKPlatform.h>
 #include <NetKit/NKLog.h>
+#include <algorithm>
+#include <cstring>
 #include <sstream>
 #include <thread>
 

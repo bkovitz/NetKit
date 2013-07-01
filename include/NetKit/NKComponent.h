@@ -63,16 +63,16 @@ public:
 		return m_instances->end();
 	}
 
-	virtual status
+	virtual netkit::status
 	will_initialize( const std::vector< std::string > &command_line ) = 0;
 	
-	virtual status
+	virtual netkit::status
 	did_initialize() = 0;
 	
 	virtual void
 	will_terminate() = 0;
 	
-	inline status
+	inline netkit::status
 	status() const
 	{
 		return m_status;

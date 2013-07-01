@@ -36,16 +36,16 @@
 #include <NetKit/NKLog.h>
 #include <NetKit/NKPlatform.h>
 #include <NetKit/NKError.h>
-#include <assert.h>
 #include <algorithm>
+#include <assert.h>
+#include <cstring>
+#include <fstream>
+#include <iostream>
+#include <memory>
+#include <sstream>
 #include <stdio.h>
 #include <string>
-#include <iostream>
-#include <sstream>
-#include <fstream>
-#include <memory>
 #include <thread>
-
 
 using namespace netkit;
 
