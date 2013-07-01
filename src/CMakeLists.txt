@@ -38,6 +38,7 @@ set(NETKIT_SOURCE
 		NKXMPP.cpp
 		Linux/NKLog_Linux.cpp
 		Linux/NKPlatform_Linux.cpp
+		Linux/NKRunLoop_Linux.cpp
 		../ThirdParty/http-parser/http_parser.c
 )
 

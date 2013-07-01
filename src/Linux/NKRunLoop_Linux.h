@@ -27,3 +27,58 @@
  * either expressed or implied, of the FreeBSD Project.
  *
  */
+
+#ifndef _netkit_runloop_linux_h
+#define _netkit_runloop_linux_h
+
+#include <NetKit/NKRunLoop.h>
+#include <sys/epoll.h>
+
+namespace netkit {
+
+class runloop_linux : public runloop
+{
+public:
+
+	runloop_linux();
+
+	virtual ~runloop_linux();
+
+	virtual event
+	create( int fd, event_mask m );
+
+	virtual event
+	create( std::time_t msec );
+
+	virtual void
+	modify( event e, std::time_t msec );
+
+	virtual void
+	schedule( event e, event_f f );
+
+	virtual void
+	schedule_oneshot_timer( std::time_t msec, event_f func );
+
+	virtual void
+	suspend( event e );
+
+	virtual void
+	cancel( event e );
+
+	virtual void
+	dispatch( dispatch_f f );
+
+	virtual void
+	run( mode how );
+
+	virtual void
+	stop();
+
+protected:
+
+	int 		m_epoll_instance_fd;
+};
+
+}
+
+#endif
