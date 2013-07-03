@@ -46,6 +46,16 @@ void
 log::init( const char *name )
 {
 	openlog( name, LOG_PID, FACILITY );
+
+	if ( !m_set_handlers )
+	{
+		m_set_handlers = new set_handlers;
+	}
+
+	if ( !m_mutex )
+	{
+		m_mutex = new std::recursive_mutex;
+	}
 }
 
 
