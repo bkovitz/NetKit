@@ -40,7 +40,20 @@ using namespace netkit;
 void
 netkit::initialize()
 {
+	static bool first = true;
 
+	if ( first )
+	{
+		netkit::component::m_instances                = new netkit::component::list;
+
+		netkit::http::server::m_connections           = new netkit::http::connection::list;
+
+		netkit::json::server::m_connections           = new netkit::json::connection::list;
+		netkit::json::server::m_notification_handlers = new netkit::json::server::notification_handlers;
+		netkit::json::server::m_request_handlers      = new netkit::json::server::request_handlers;
+
+		first = false;
+	}
 }
 
 
