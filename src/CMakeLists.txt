@@ -4,7 +4,7 @@ find_package (OpenSSL)
 #TODO - create a FindUriParser cmake module
 #TODO - create a FindSqlite cmake module
 
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fpermissive -luriparser -lsqlite3 -luuid")
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fpermissive -luriparser -lsqlite3 -luuid -ggdb")
 
 include_directories (${LIBXML2_INCLUDE_DIR})
 
