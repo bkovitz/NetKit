@@ -202,7 +202,7 @@ TEST_CASE( "NetKit/json/3", "json rpc" )
 		//REQUIRE( json::server::adopt( sock.get() ) );
 	} );
 
-	json::server::bind( "func", 3, ( netkit::json::server::request_f ) [=]( json::value::ref params, json::server::reply_f reply )
+	json::server::bind( "func", 3, [=]( json::value::ref params, json::server::reply_f reply )
 	{
 		int					i = params[ "i" ]->as_int32();
 		double				d = params[ "d" ]->as_real();
