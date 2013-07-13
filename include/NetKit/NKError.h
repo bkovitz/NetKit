@@ -52,6 +52,7 @@ enum class status
 	limit_error			= -32009,
 	network_error		= -32010,
 	uninitialized		= -32011,
+	component_failure	= -32012,	
 	invalid				= -32600,
 	not_found			= -32601,
 	bad_params			= -32602,
