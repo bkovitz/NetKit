@@ -145,10 +145,6 @@ public:
 	
 	value( std::uint64_t v );
 	
-#if !defined( _WIN32 )
-	value( std::time_t v );
-#endif
-	
 	value( status v );
 
 	value( double v );
@@ -636,15 +632,6 @@ public:
 		m_ref->retain();
 	}
 	
-#if !defined( _WIN32 )
-	inline smart_ref( std::time_t v )
-	:
-		m_ref( new json::value( v ) )
-	{
-		m_ref->retain();
-	}
-#endif
-	
 	inline smart_ref( netkit::status v )
 	:
 		m_ref( new json::value( v ) )
@@ -921,6 +908,9 @@ private:
 
 	json::value *m_ref;
 };
+
+std::ostream&
+operator<<(std::ostream &output, const json::value::ref &v);
 
 template<>
 inline bool

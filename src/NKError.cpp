@@ -39,105 +39,105 @@ netkit::status_to_string( netkit::status status )
 	
 	switch ( status )
 	{
-		case status::ok:
+		case netkit::status::ok:
 		{
 			static const char *msg = "None";
 			s = msg;
 		}
 		break;
 		
-		case status::expired:
+		case netkit::status::expired:
 		{
 			static const char *msg = "Expired";
 			s = msg;
 		}
 		break;
 		
-		case status::no_memory:
+		case netkit::status::no_memory:
 		{
 			static const char *msg = "Out Of Memory";
 			s = msg;
 		}
 		break;
 		
-		case status::not_authorized:
+		case netkit::status::not_authorized:
 		{
 			static const char *msg = "Not Authorized";
 			s = msg;
 		}
 		break;
 		
-		case status::write_failed:
+		case netkit::status::write_failed:
 		{
 			static const char *msg = "Write Failed";
 			s = msg;
 		}
 		break;
 		
-		case status::not_implemented:
+		case netkit::status::not_implemented:
 		{
 			static const char *msg = "Not Implemented";
 			s = msg;
 		}
 		break;
 		
-		case status::unexpected:
+		case netkit::status::unexpected:
 		{
 			static const char *msg = "Unexpected Error";
 			s = msg;
 		}
 		break;
 		
-		case status::parse_error:
+		case netkit::status::parse_error:
 		{
 			static const char *msg = "Parse Error";
 			s = msg;
 		}
 		break;
 		
-		case status::invalid:
+		case netkit::status::invalid:
 		{
 			static const char *msg = "Invalid";
 			s = msg;
 		}
 		break;
 		
-		case status::not_found:
+		case netkit::status::not_found:
 		{
 			static const char *msg = "Not Found";
 			s = msg;
 		}
 		break;
 		
-		case status::bad_params:
+		case netkit::status::bad_params:
 		{
 			static const char *msg = "Bad Parameters";
 			s = msg;
 		}
 		break;
 		
-		case status::internal_error:
+		case netkit::status::internal_error:
 		{
 			static const char *msg = "Internal Error";
 			s = msg;
 		}
 		break;
 
-		case status::permission_denied:
+		case netkit::status::permission_denied:
 		{
 			static const char *msg = "Permission Denied";
 			s = msg;
 		}
 		break;
 
-		case status::limit_error:
+		case netkit::status::limit_error:
 		{
 			static const char *msg = "Exceeded Limit";
 			s = msg;
 		}
 		break;
 			
-		case status::network_error:
+		case netkit::status::network_error:
 		{
 			static const char *msg = "Network Error";
 			s = msg;

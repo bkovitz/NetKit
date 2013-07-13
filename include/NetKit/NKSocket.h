@@ -201,7 +201,7 @@ public:
 	virtual void
 	accept( accept_reply_f reply ) = 0;
 	
-	inline const endpoint::ref&
+	inline const netkit::endpoint::ref&
 	endpoint() const
 	{
 		return m_endpoint;
@@ -209,9 +209,9 @@ public:
 	
 protected:
 
-	endpoint::ref		m_endpoint;
-	runloop::event		m_event;
-	socket::native		m_fd;
+	netkit::endpoint::ref   m_endpoint;
+	runloop::event          m_event;
+	socket::native          m_fd;
 	
 private:
 

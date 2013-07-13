@@ -27,116 +27,57 @@
  * either expressed or implied, of the FreeBSD Project.
  *
  */
- 
-#ifndef _netkit_ip_address_h
-#define _netkit_ip_address_h
 
-#include <NetKit/NKObject.h>
-#include <NetKit/NKExpected.h>
-#if defined( WIN32 )
-#	include <WinSock2.h>
-#	include <Ws2tcpip.h>
-#else
-#	include <sys/socket.h>
-#	include <arpa/inet.h>
-#	include <net/if.h>
-#	include <netinet/in.h>
-#	include <netdb.h>
-#endif
-#include <vector>
-#include <deque>
+#ifndef _netkit_runloop_linux_h
+#define _netkit_runloop_linux_h
 
+#include <NetKit/NKRunLoop.h>
+#include <sys/epoll.h>
 
 namespace netkit {
 
-class NETKIT_DLL address : public object
+class runloop_linux : public runloop
 {
 public:
 
-	typedef smart_ref< address > ref;
-	
-	static address::ref
-	from_sockaddr( const sockaddr_storage &addr );
+	runloop_linux();
 
-	virtual std::string
-	to_string() const = 0;
-};
+	virtual ~runloop_linux();
 
-namespace ip {
+	virtual event
+	create( int fd, event_mask m );
 
-class address : public netkit::address
-{
-public:
+	virtual event
+	create( std::time_t msec );
 
-	typedef smart_ref< address > ref;
-	typedef std::deque< ref > list;
-	typedef std::vector< ref > array;
-	typedef std::function< void ( int status, list addrs ) > resolve_reply_f;
-	
-	enum type
-	{
-		unknown = -1,
-		v4		= 0,
-		v6
-	};
-	
-public:
+	virtual void
+	modify( event e, std::time_t msec );
 
-	static void
-	resolve( std::string host, resolve_reply_f reply );
-	
-	address( uint32_t addr );
-	
-	address( struct in_addr addr );
-	
-	address( struct in6_addr addr );
-	
-	address( const std::string &val );
-	
-	virtual ~address();
+	virtual void
+	schedule( event e, event_f f );
 
-	inline std::int32_t
-	type() const
-	{
-		return m_type;
-	}
-	
-	inline bool
-	is_v4() const
-	{
-		return ( m_type == v4 ) ? true : false;
-	}
-	
-	inline bool
-	is_v6() const
-	{
-		return ( m_type == v6 ) ? true : false;
-	}
-	
-	expected< in_addr >
-	to_v4() const;
-	
-	expected< in6_addr >
-	to_v6() const;
+	virtual void
+	schedule_oneshot_timer( std::time_t msec, event_f func );
 
-	virtual std::string
-	to_string() const;
-	
-	virtual bool
-	equals( const object &that ) const;
+	virtual void
+	suspend( event e );
+
+	virtual void
+	cancel( event e );
+
+	virtual void
+	dispatch( dispatch_f f );
+
+	virtual void
+	run( mode how );
+
+	virtual void
+	stop();
 
 protected:
 
-	std::int32_t m_type;
-	
-	union
-	{
-		in_addr		m_v4;
-		in6_addr	m_v6;
-	} m_addr;
+	int 		m_epoll_instance_fd;
 };
-
-}
 
 }
 

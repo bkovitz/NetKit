@@ -27,117 +27,69 @@
  * either expressed or implied, of the FreeBSD Project.
  *
  */
- 
-#ifndef _netkit_ip_address_h
-#define _netkit_ip_address_h
 
-#include <NetKit/NKObject.h>
-#include <NetKit/NKExpected.h>
-#if defined( WIN32 )
-#	include <WinSock2.h>
-#	include <Ws2tcpip.h>
-#else
-#	include <sys/socket.h>
-#	include <arpa/inet.h>
-#	include <net/if.h>
-#	include <netinet/in.h>
-#	include <netdb.h>
-#endif
-#include <vector>
-#include <deque>
+#include <NetKit/NetKit.h>
+#include <sys/utsname.h>
+#include <uuid/uuid.h>
+#include <cstdint>
+#include <sstream>
+#include <string>
 
+using namespace netkit;
 
-namespace netkit {
-
-class NETKIT_DLL address : public object
+void
+netkit::initialize()
 {
-public:
+	static bool first = true;
 
-	typedef smart_ref< address > ref;
-	
-	static address::ref
-	from_sockaddr( const sockaddr_storage &addr );
-
-	virtual std::string
-	to_string() const = 0;
-};
-
-namespace ip {
-
-class address : public netkit::address
-{
-public:
-
-	typedef smart_ref< address > ref;
-	typedef std::deque< ref > list;
-	typedef std::vector< ref > array;
-	typedef std::function< void ( int status, list addrs ) > resolve_reply_f;
-	
-	enum type
+	if ( first )
 	{
-		unknown = -1,
-		v4		= 0,
-		v6
-	};
-	
-public:
+		netkit::component::m_instances                = new netkit::component::list;
 
-	static void
-	resolve( std::string host, resolve_reply_f reply );
-	
-	address( uint32_t addr );
-	
-	address( struct in_addr addr );
-	
-	address( struct in6_addr addr );
-	
-	address( const std::string &val );
-	
-	virtual ~address();
+		netkit::http::server::m_connections           = new netkit::http::connection::list;
 
-	inline std::int32_t
-	type() const
-	{
-		return m_type;
+		netkit::json::server::m_connections           = new netkit::json::connection::list;
+		netkit::json::server::m_notification_handlers = new netkit::json::server::notification_handlers;
+		netkit::json::server::m_request_handlers      = new netkit::json::server::request_handlers;
+
+		first = false;
 	}
-	
-	inline bool
-	is_v4() const
-	{
-		return ( m_type == v4 ) ? true : false;
-	}
-	
-	inline bool
-	is_v6() const
-	{
-		return ( m_type == v6 ) ? true : false;
-	}
-	
-	expected< in_addr >
-	to_v4() const;
-	
-	expected< in6_addr >
-	to_v6() const;
-
-	virtual std::string
-	to_string() const;
-	
-	virtual bool
-	equals( const object &that ) const;
-
-protected:
-
-	std::int32_t m_type;
-	
-	union
-	{
-		in_addr		m_v4;
-		in6_addr	m_v6;
-	} m_addr;
-};
-
 }
 
+
+std::string
+platform::machine_description()
+{
+	std::ostringstream oss;
+	utsname machine;
+
+	int ret = uname( &machine );
+	if ( ret == 0 )
+	{
+		oss << machine.sysname << " " << machine.version << " (Kernel " <<
+			machine.release << ")";
+	}
+	else
+	{
+		oss << "Unknown Machine";
+	}
+
+	return oss.str();
 }
 
-#endif
+
+uuid::ref
+uuid::create()
+{
+	uuid_t 			id;
+	std::uint8_t 	data[ 16 ];
+
+	uuid_generate( id );
+	
+	for ( int i = 0; i < 16; i++ )
+	{
+		data[ i ] = id[ i ];
+	}
+
+	return new uuid( data );
+}

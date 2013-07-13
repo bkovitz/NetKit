@@ -28,116 +28,72 @@
  *
  */
  
-#ifndef _netkit_ip_address_h
-#define _netkit_ip_address_h
-
-#include <NetKit/NKObject.h>
-#include <NetKit/NKExpected.h>
-#if defined( WIN32 )
-#	include <WinSock2.h>
-#	include <Ws2tcpip.h>
-#else
-#	include <sys/socket.h>
-#	include <arpa/inet.h>
-#	include <net/if.h>
-#	include <netinet/in.h>
-#	include <netdb.h>
-#endif
+#include <NetKit/NKLog.h>
+#include <syslog.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <time.h>
+#include <string.h>
+#include <pthread.h>
 #include <vector>
-#include <deque>
+#include <mutex>
 
+using namespace netkit;
 
-namespace netkit {
+static const int FACILITY = LOG_DAEMON;
 
-class NETKIT_DLL address : public object
+void
+log::init( const char *name )
 {
-public:
+	openlog( name, LOG_PID, FACILITY );
 
-	typedef smart_ref< address > ref;
-	
-	static address::ref
-	from_sockaddr( const sockaddr_storage &addr );
-
-	virtual std::string
-	to_string() const = 0;
-};
-
-namespace ip {
-
-class address : public netkit::address
-{
-public:
-
-	typedef smart_ref< address > ref;
-	typedef std::deque< ref > list;
-	typedef std::vector< ref > array;
-	typedef std::function< void ( int status, list addrs ) > resolve_reply_f;
-	
-	enum type
+	if ( !m_set_handlers )
 	{
-		unknown = -1,
-		v4		= 0,
-		v6
-	};
-	
-public:
-
-	static void
-	resolve( std::string host, resolve_reply_f reply );
-	
-	address( uint32_t addr );
-	
-	address( struct in_addr addr );
-	
-	address( struct in6_addr addr );
-	
-	address( const std::string &val );
-	
-	virtual ~address();
-
-	inline std::int32_t
-	type() const
-	{
-		return m_type;
+		m_set_handlers = new set_handlers;
 	}
-	
-	inline bool
-	is_v4() const
+
+	if ( !m_mutex )
 	{
-		return ( m_type == v4 ) ? true : false;
+		m_mutex = new std::recursive_mutex;
 	}
-	
-	inline bool
-	is_v6() const
-	{
-		return ( m_type == v6 ) ? true : false;
-	}
-	
-	expected< in_addr >
-	to_v4() const;
-	
-	expected< in6_addr >
-	to_v6() const;
-
-	virtual std::string
-	to_string() const;
-	
-	virtual bool
-	equals( const object &that ) const;
-
-protected:
-
-	std::int32_t m_type;
-	
-	union
-	{
-		in_addr		m_v4;
-		in6_addr	m_v6;
-	} m_addr;
-};
-
 }
 
-}
 
-#endif
+void
+log::put( log::level l, const char * filename, const char * function, int line, const char * format, ... )
+{
+	std::lock_guard<std::recursive_mutex> lock( *m_mutex );
+
+	if ( l <= m_log_level )
+	{
+		int 		level;
+		static char msg[ 32767 ];
+		static char buf[ 32767 ];
+		va_list		ap;
+		
+		switch ( l )
+		{
+		case log::error:
+			level = LOG_ERR;
+			break;
+		case log::warning:
+			level = LOG_WARNING;
+			break;
+		case log::info:
+			level = LOG_INFO;
+			break;
+		default:
+			level = LOG_DEBUG;
+		}
+
+		int priority = FACILITY | level;
+
+		va_start( ap, format );
+		vsnprintf( buf, sizeof( buf ), format, ap );
+		va_end( ap );
+
+		snprintf( msg, sizeof( msg ), "%d %s:%d %s", getpid(), function, line, buf );
+
+		syslog( priority, msg );
+	}
+}

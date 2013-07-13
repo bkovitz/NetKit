@@ -26,6 +26,7 @@
 
 #include <NetKit/NKUUID.h>
 #include <NetKit/NKBase64.h>
+#include <cstring>
 #include <sstream>
 
 using namespace netkit;
