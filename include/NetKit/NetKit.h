@@ -47,6 +47,8 @@
 #include <NetKit/NKPlatform.h>
 #include <NetKit/NKJSON.h>
 #include <NetKit/NKDatabase.h>
+#include <NetKit/NKKeychain.h>
+#include <NetKit/NKLDAP.h>
 #include <NetKit/NKRunLoop.h>
 #include <NetKit/NKSource.h>
 #include <NetKit/NKSink.h>

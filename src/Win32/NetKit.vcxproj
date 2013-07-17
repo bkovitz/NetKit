@@ -223,6 +223,7 @@ IF EXIST ..\..\ThirdParty\uriparser GOTO DONE
     <ClCompile Include="..\NKError.cpp" />
     <ClCompile Include="..\NKHTTP.cpp" />
     <ClCompile Include="..\NKJSON.cpp" />
+    <ClCompile Include="..\NKLDAP.cpp" />
     <ClCompile Include="..\NKLog.cpp" />
     <ClCompile Include="..\NKMIME.cpp" />
     <ClCompile Include="..\NKNetworkInterface.cpp" />
@@ -241,6 +242,7 @@ IF EXIST ..\..\ThirdParty\uriparser GOTO DONE
     <ClCompile Include=".\CRC32.cpp" />
     <ClCompile Include=".\NKPlatform_Win32.cpp" />
     <ClCompile Include=".\NKRunLoop_Win32.cpp" />
+    <ClCompile Include="NKKeychain_Win32.cpp" />
     <ClCompile Include="NKLog_Win32.cpp" />
     <ClCompile Include="NKNetworkInterface_Win32.cpp" />
   </ItemGroup>
@@ -259,6 +261,8 @@ IF EXIST ..\..\ThirdParty\uriparser GOTO DONE
     <ClInclude Include="..\..\include\NetKit\NKHTTP.h" />
     <ClInclude Include="..\..\include\NetKit\NKIntrusiveList.h" />
     <ClInclude Include="..\..\include\NetKit\NKJSON.h" />
+    <ClInclude Include="..\..\include\NetKit\NKKeychain.h" />
+    <ClInclude Include="..\..\include\NetKit\NKLDAP.h" />
     <ClInclude Include="..\..\include\NetKit\NKLog.h" />
     <ClInclude Include="..\..\include\NetKit\NKMIME.h" />
     <ClInclude Include="..\..\include\NetKit\NKNetworkInterface.h" />
@@ -293,6 +297,7 @@ IF EXIST ..\..\ThirdParty\uriparser GOTO DONE
     <ClInclude Include="..\NKDatabase_SQLite.h" />
     <ClInclude Include=".\CRC32.h" />
     <ClInclude Include=".\NKRunLoop_Win32.h" />
+    <ClInclude Include="NKKeychain_Win32.h" />
     <ClInclude Include="NKLog_Win32.h" />
   </ItemGroup>
   <ItemGroup>
