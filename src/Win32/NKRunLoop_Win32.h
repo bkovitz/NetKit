@@ -72,6 +72,7 @@ private:
 			return lhs->m_absolute_time < rhs->m_absolute_time;
 		}
 
+		std::string		m_context;
 		long			m_network_events;
 		std::time_t		m_relative_time;
 		std::time_t		m_absolute_time;

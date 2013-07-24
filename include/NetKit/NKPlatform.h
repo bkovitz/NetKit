@@ -56,6 +56,9 @@ namespace netkit {
 namespace platform {
 
 std::string NETKIT_DLL
+machine_domain();
+
+std::string NETKIT_DLL
 machine_name();
 
 std::string NETKIT_DLL

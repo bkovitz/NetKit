@@ -59,10 +59,11 @@ public:
 
 	enum level
 	{
-		error	= 1,
-		warning	= 2,
-		info	= 3,
-		verbose	= 10
+		error		= 1,
+		warning		= 2,
+		info		= 3,
+		verbose		= 10,
+		voluminous	= 20
 	};
 		
 	typedef std::function< void ( level l ) > set_f;

@@ -1,4 +1,5 @@
 #include "NKRunLoop_Win32.h"
+#include <NetKit/NKStackWalk.h>
 #include <NetKit/NKLog.h>
 #include <stdarg.h>
 #include <stddef.h>
@@ -10,6 +11,7 @@
 #include <windows.h>
 #include <process.h>
 #include <list>
+#include <sstream>
 
 /*
  * runloop_win32 Methods
@@ -250,6 +252,7 @@ runloop_win32::schedule( event e, event_f func )
 		goto exit;
 	}
 
+	a->m_context = netkit::stackwalk::copy();
 
 	// First check our main Worker. In most cases, we won't have to worry about threads
 
@@ -399,6 +402,8 @@ runloop_win32::suspend( event e )
 	a = reinterpret_cast< atom* >( e );
 	s = a->m_source;
 
+	a->m_context = netkit::stackwalk::copy();
+
 	if ( !a->m_scheduled )
 	{
 		nklog( log::warning, "trying to suspend an event that has not been scheduled" );
@@ -484,6 +489,8 @@ runloop_win32::cancel( event e )
 
 	s->m_atoms.remove( a );
 	a->m_source = nullptr;
+
+	a->m_context = netkit::stackwalk::copy();
 
 	if ( s->m_atoms.size() == 0 )
 	{
@@ -863,6 +870,24 @@ runloop_win32::worker::run( mode how, bool &input_event )
 	if ( err )
 	{
 		nklog( log::error, "WaitForMultipleObjects() returned error: %d", err );
+
+		for ( unsigned i = 0; i < m_num_sources; i++ )
+		{
+			auto ret = WaitForSingleObject( m_handles[ i ], 0 );
+
+			if ( ret == WAIT_FAILED )
+			{
+				nklog( log::error, "found bad source...dumping atom contexts:" );
+				
+				for ( auto it = m_sources[ i ]->m_atoms.begin(); it != m_sources[ i ]->m_atoms.end(); it++ )
+				{
+					nklog( log::error, "   bad atom(%d): %s", ( *it )->m_scheduled, ( *it )->m_context.c_str() );
+				}
+			}
+		}
+
+		exit( -1 );
+
 		goto exit;
 	}
 

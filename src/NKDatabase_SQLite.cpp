@@ -92,7 +92,7 @@ manager_impl::exec( const std::string &str, bool quiet )
 	
 	if ( !quiet )
 	{
-		nklog( log::verbose, "exec: %s", str.c_str() );
+		nklog( log::voluminous, "exec: %s", str.c_str() );
 	}
 
 	int ret = sqlite3_exec( m_db, str.c_str(), 0, 0, &error );
@@ -116,7 +116,7 @@ database::manager_impl::select( const std::string &str )
 {
 	sqlite3_stmt *stmt;
 
-	nklog( log::verbose, "select: %s\n", str.c_str() );
+	nklog( log::voluminous, "select: %s\n", str.c_str() );
 
 	return ( sqlite3_prepare_v2( m_db, str.c_str(), -1, &stmt, NULL ) == SQLITE_OK ) ? new statement_impl( stmt ) : new statement_impl( NULL );
 }

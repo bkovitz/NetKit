@@ -44,6 +44,18 @@ netkit::initialize()
 
 
 std::string
+platform::machine_domain()
+{
+	TCHAR buf[ MAX_PATH ] = { 0 };
+	DWORD len = MAX_PATH;
+
+	GetComputerNameEx( ComputerNameDnsDomain, buf, &len );
+
+	return narrow( buf );
+}
+
+
+std::string
 platform::machine_name()
 {
 	static std::string name;

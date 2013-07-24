@@ -153,6 +153,9 @@
     <ClCompile Include="NKKeychain_Win32.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="NKStackWalk_Win32.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\NetKit\cstring.h">
@@ -309,6 +312,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="NKKeychain_Win32.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\NetKit\NKStackWalk.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
