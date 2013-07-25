@@ -252,7 +252,9 @@ runloop_win32::schedule( event e, event_f func )
 		goto exit;
 	}
 
+#if defined( DEBUG_RUNLOOP )
 	a->m_context = netkit::stackwalk::copy();
+#endif
 
 	// First check our main Worker. In most cases, we won't have to worry about threads
 
@@ -402,7 +404,9 @@ runloop_win32::suspend( event e )
 	a = reinterpret_cast< atom* >( e );
 	s = a->m_source;
 
+#if defined( DEBUG_RUNLOOP )
 	a->m_context = netkit::stackwalk::copy();
+#endif
 
 	if ( !a->m_scheduled )
 	{
@@ -490,7 +494,9 @@ runloop_win32::cancel( event e )
 	s->m_atoms.remove( a );
 	a->m_source = nullptr;
 
+#if defined( DEBUG_RUNLOOP )
 	a->m_context = netkit::stackwalk::copy();
+#endif
 
 	if ( s->m_atoms.size() == 0 )
 	{
@@ -871,13 +877,15 @@ runloop_win32::worker::run( mode how, bool &input_event )
 	{
 		nklog( log::error, "WaitForMultipleObjects() returned error: %d", err );
 
+#if defined( DEBUG_RUNLOOP )
+
 		for ( unsigned i = 0; i < m_num_sources; i++ )
 		{
 			auto ret = WaitForSingleObject( m_handles[ i ], 0 );
 
 			if ( ret == WAIT_FAILED )
 			{
-				nklog( log::error, "found bad source...dumping atom contexts:" );
+				nklog( log::error, "found bad handle...dumping atom contexts:" );
 				
 				for ( auto it = m_sources[ i ]->m_atoms.begin(); it != m_sources[ i ]->m_atoms.end(); it++ )
 				{
@@ -887,6 +895,29 @@ runloop_win32::worker::run( mode how, bool &input_event )
 		}
 
 		exit( -1 );
+
+#else
+
+		source::list sources;	
+
+		for ( unsigned i = 0; i < m_num_sources; i++ )
+		{
+			auto ret = WaitForSingleObject( m_handles[ i ], 0 );
+
+			if ( ret == WAIT_FAILED )
+			{
+				nklog( log::error, "found bad handle...suspending" );
+				
+				sources.push_back( m_sources[ i ] );
+			}
+		}
+
+		for ( auto it = sources.begin(); it != sources.end(); it++ )
+		{
+			suspend( *it );
+		}
+
+#endif
 
 		goto exit;
 	}
