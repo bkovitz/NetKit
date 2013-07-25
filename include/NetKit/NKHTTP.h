@@ -178,7 +178,10 @@ public:
 
 	virtual void
 	add_to_header( const std::string &key, const std::string &val );
-	
+
+	virtual std::string
+	find_in_header( const std::string &key ) const;
+
 	virtual void
 	remove_from_header( const std::string &key );
 	
@@ -325,13 +328,25 @@ public:
 	{
 		return m_method;
 	}
+
+	inline uri::ref&
+	uri() 
+	{
+		return m_uri;
+	}
 	
 	inline const uri::ref&
 	uri() const
 	{
 		return m_uri;
 	}
-	
+
+	inline void
+	set_uri( const netkit::uri::ref &val )
+	{
+		m_uri = val;
+	}
+
 	inline const std::string&
 	expect() const
 	{
@@ -838,6 +853,7 @@ protected:
 	connection::ref	m_connection;
 	request::ref	m_request;
 	response::ref	m_response;
+	std::string		m_redirect;
 	bool			m_done;
 };
 

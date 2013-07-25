@@ -622,6 +622,21 @@ message::add_to_header( const std::string &key, const std::string &val )
 }
 
 
+std::string
+message::find_in_header( const std::string &key ) const
+{
+	std::string val;
+	auto		it = m_header.find( key );
+
+	if ( it != m_header.end() )
+	{
+		val = it->second;
+	}
+
+	return val;
+}
+
+
 void
 message::remove_from_header( const std::string &key )
 {
@@ -1596,8 +1611,20 @@ client::headers_were_received( connection::ref connection, message::header &head
 
 	m_response = new response( connection->http_major(), connection->http_minor(), connection->status_code(), false );
 	m_response->add_to_header( header );
+
+	if ( ( connection->status_code() == http::status::moved_permanently ) ||
+	     ( connection->status_code() == http::status::moved_temporarily ) )
+	{
+		for ( auto it = header.begin(); it != header.end(); it++ )
+		{
+			if ( it->first == "Location" )
+			{
+				m_redirect = it->second;
+			}
+		}
+	}
 	
-	if ( connection->status_code() != http::status::proxy_authentication )
+	if ( ( m_redirect.size() == 0 ) && ( connection->status_code() != http::status::proxy_authentication ) )
 	{
 		m_request->headers_reply( m_response );
 		m_request->on_headers_reply( nullptr );
@@ -1610,7 +1637,7 @@ client::headers_were_received( connection::ref connection, message::header &head
 int
 client::body_was_received( connection::ref connection, const char *buf, size_t len )
 {
-	if ( connection->status_code() != http::status::proxy_authentication )
+	if ( ( m_redirect.size() == 0 ) && ( connection->status_code() != http::status::proxy_authentication ) )
 	{
 		m_request->body_reply( m_response, ( std::uint8_t* ) buf, len );
 	}
@@ -1627,6 +1654,12 @@ client::message_was_received( connection::ref connection )
 		m_request->add_to_header( "Proxy-Authorization", "basic " + proxy::get()->authorization() );
 		m_request->add_to_header( "Proxy-Connection", "keep-alive " );
 		
+		client::send( m_request );
+	}
+	else if ( m_redirect.size() > 0 )
+	{
+		m_request->set_uri( new netkit::uri( m_redirect ) );
+
 		client::send( m_request );
 	}
 	else
