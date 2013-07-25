@@ -106,11 +106,37 @@ public:
 	{
 		return ( m_type == v4 ) ? true : false;
 	}
+
+	inline bool
+	is_link_local_v4() const
+	{
+		bool ok = false;
+
+		if ( is_v4() )
+		{
+			ok = ( ( m_addr.m_v4.S_un.S_un_b.s_b1 == 169 ) && ( m_addr.m_v4.S_un.S_un_b.s_b2 == 254 ) );
+		}
+
+		return ok;
+	}
 	
 	inline bool
 	is_v6() const
 	{
 		return ( m_type == v6 ) ? true : false;
+	}
+
+	inline bool
+	is_link_local_v6() const
+	{
+		bool ok = false;
+
+		if ( is_v6() )
+		{
+			ok = IN6_IS_ADDR_LINKLOCAL( &m_addr.m_v6 ) ? true : false;
+		}
+
+		return ok;
 	}
 	
 	expected< in_addr >

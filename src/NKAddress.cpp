@@ -31,6 +31,7 @@
 #include <NetKit/NKAddress.h>
 #include <NetKit/NKRunLoop.h>
 #include <NetKit/NKPlatform.h>
+#include <NetKit/NKUnicode.h>
 #include <NetKit/NKLog.h>
 #include <algorithm>
 #include <cstring>
@@ -107,14 +108,17 @@ ip::address::address( const std::string &val )
 
 #if defined( _WIN32 )
 
-	INT len = sizeof( m_addr );
+	sockaddr_storage	addr;
+	INT					len = sizeof( addr );
 
-	if ( WSAStringToAddressA( ( LPSTR ) val.c_str(), AF_INET, nullptr, ( LPSOCKADDR ) &m_addr, &len ) == 0 )
+	if ( WSAStringToAddressA( ( LPSTR ) val.c_str(), AF_INET, nullptr, ( LPSOCKADDR ) &addr, &len ) == 0 )
 	{
+		memcpy( &m_addr, &( ( struct sockaddr_in* ) &addr )->sin_addr, sizeof( in_addr ) );
 		m_type = v4;
 	}
-	else if ( WSAStringToAddressA( ( LPSTR ) val.c_str(), AF_INET6, nullptr, ( LPSOCKADDR ) &m_addr, &len ) == 0 )
+	else if ( WSAStringToAddressA( ( LPSTR ) val.c_str(), AF_INET6, nullptr, ( LPSOCKADDR ) &addr, &len ) == 0 )
 	{
+		memcpy( &m_addr, &( ( struct sockaddr_in6* ) &addr )->sin6_addr, sizeof( in6_addr ) );
 		m_type = v6;
 	}
 	else

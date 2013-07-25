@@ -2976,7 +2976,7 @@ connection::process( const std::uint8_t *buf, std::size_t len )
 	bool			ok = true;
 
 	msg.assign( buf, buf + len );
-	    
+
 	auto ret = value::load( msg.c_str() );
 		
 	if ( !ret.is_valid() )
@@ -3087,7 +3087,7 @@ connection::send( value::ref request )
 	std::string msg;
 	
 	msg = request->to_string();
-    
+
 	sink::send( ( const std::uint8_t* ) msg.c_str(), msg.size(), [=]( int status )
 	{
 	} );
