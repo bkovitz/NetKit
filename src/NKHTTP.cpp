@@ -1444,6 +1444,7 @@ server::handler::headers_were_received( connection::ref connection, message::hea
 		response->add_to_header( "Connection", "Close" );
 		response->add_to_header( "Content-Type", "text/html" );
 		*response << "<html>Error 404: Content Not Found</html>";
+		response->add_to_header( "Content-Length", response->body().size() );
 		connection->put( response.get() );
 		goto exit;
 	}
@@ -1624,7 +1625,15 @@ client::headers_were_received( connection::ref connection, message::header &head
 		}
 	}
 	
-	if ( ( m_redirect.size() == 0 ) && ( connection->status_code() != http::status::proxy_authentication ) )
+	if ( m_redirect.size() > 0 )
+	{
+		nklog( log::verbose, "redirecting HTTP request to %s", m_redirect.c_str() );
+		
+		m_request->set_uri( new netkit::uri( m_redirect ) );
+
+		client::send( m_request );
+	}
+	else if ( connection->status_code() != http::status::proxy_authentication )
 	{
 		m_request->headers_reply( m_response );
 		m_request->on_headers_reply( nullptr );
@@ -1652,17 +1661,11 @@ client::message_was_received( connection::ref connection )
 	if ( ( connection->status_code() == http::status::proxy_authentication ) && proxy::auth_challenge() )
 	{
 		m_request->add_to_header( "Proxy-Authorization", "basic " + proxy::get()->authorization() );
-		m_request->add_to_header( "Proxy-Connection", "keep-alive " );
+		m_request->add_to_header( "Proxy-Connection", "keep-alive" );
 		
 		client::send( m_request );
 	}
-	else if ( m_redirect.size() > 0 )
-	{
-		m_request->set_uri( new netkit::uri( m_redirect ) );
-
-		client::send( m_request );
-	}
-	else
+	else if ( m_redirect.size() == 0 )
 	{
 		m_request->reply( m_response );
 		m_request->on_auth( nullptr );

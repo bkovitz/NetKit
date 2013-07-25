@@ -20,7 +20,6 @@
 		D20ED14016DC0EF300177887 /* CoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D20ED13F16DC0EF200177887 /* CoreServices.framework */; };
 		D2171B85170E4387002E1119 /* NKAddress.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D23DF54B15F698F90027A8F1 /* NKAddress.cpp */; };
 		D2171B86170E4388002E1119 /* NKAddress.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D23DF54B15F698F90027A8F1 /* NKAddress.cpp */; };
-		D21A369417761E28003F80FF /* test_proxy.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D21A369317761E28003F80FF /* test_proxy.cpp */; };
 		D223BA3C1717336E000C2C44 /* NKWebSocket.h in Headers */ = {isa = PBXBuildFile; fileRef = D223BA3B1717336E000C2C44 /* NKWebSocket.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D223BA3D1717336E000C2C44 /* NKWebSocket.h in Headers */ = {isa = PBXBuildFile; fileRef = D223BA3B1717336E000C2C44 /* NKWebSocket.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D223BA3F1717338A000C2C44 /* NKWebSocket.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D223BA3E1717338A000C2C44 /* NKWebSocket.cpp */; };
@@ -140,6 +139,13 @@
 		D28BEE2A1739AEFB00BD7587 /* NKSHA1.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D28BEE271739AEFB00BD7587 /* NKSHA1.cpp */; };
 		D28BEE2B1739AEFB00BD7587 /* NKUUID.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D28BEE281739AEFB00BD7587 /* NKUUID.cpp */; };
 		D28BEE2C1739AEFB00BD7587 /* NKUUID.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D28BEE281739AEFB00BD7587 /* NKUUID.cpp */; };
+		D29B900A17A1930700CAE680 /* NKKeychain.h in Headers */ = {isa = PBXBuildFile; fileRef = D29B900717A1930700CAE680 /* NKKeychain.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D29B900B17A1930700CAE680 /* NKKeychain.h in Headers */ = {isa = PBXBuildFile; fileRef = D29B900717A1930700CAE680 /* NKKeychain.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D29B900C17A1930700CAE680 /* NKLDAP.h in Headers */ = {isa = PBXBuildFile; fileRef = D29B900817A1930700CAE680 /* NKLDAP.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D29B900D17A1930700CAE680 /* NKLDAP.h in Headers */ = {isa = PBXBuildFile; fileRef = D29B900817A1930700CAE680 /* NKLDAP.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D29B900E17A1930700CAE680 /* NKStackWalk.h in Headers */ = {isa = PBXBuildFile; fileRef = D29B900917A1930700CAE680 /* NKStackWalk.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D29B900F17A1930700CAE680 /* NKStackWalk.h in Headers */ = {isa = PBXBuildFile; fileRef = D29B900917A1930700CAE680 /* NKStackWalk.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D29B901017A1933700CAE680 /* test_http.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D28BEE2E1739AF2A00BD7587 /* test_http.cpp */; };
 		D2A1180116FCD7CE00FAD80F /* NKComponent.h in Headers */ = {isa = PBXBuildFile; fileRef = D2A117FF16FCD7CE00FAD80F /* NKComponent.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D2A1180216FCD7CE00FAD80F /* NKComponent.h in Headers */ = {isa = PBXBuildFile; fileRef = D2A117FF16FCD7CE00FAD80F /* NKComponent.h */; };
 		D2A1180316FCD7CE00FAD80F /* NKMIME.h in Headers */ = {isa = PBXBuildFile; fileRef = D2A1180016FCD7CE00FAD80F /* NKMIME.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -312,6 +318,9 @@
 		D28BEE301739AF2A00BD7587 /* test_uri.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = test_uri.cpp; path = tests/test_uri.cpp; sourceTree = SOURCE_ROOT; };
 		D28BEE351739B11500BD7587 /* test_uuid.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = test_uuid.cpp; path = tests/test_uuid.cpp; sourceTree = SOURCE_ROOT; };
 		D28BEE371739B18D00BD7587 /* test_ws.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = test_ws.cpp; path = tests/test_ws.cpp; sourceTree = SOURCE_ROOT; };
+		D29B900717A1930700CAE680 /* NKKeychain.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NKKeychain.h; path = include/NetKit/NKKeychain.h; sourceTree = "<group>"; };
+		D29B900817A1930700CAE680 /* NKLDAP.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NKLDAP.h; path = include/NetKit/NKLDAP.h; sourceTree = "<group>"; };
+		D29B900917A1930700CAE680 /* NKStackWalk.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NKStackWalk.h; path = include/NetKit/NKStackWalk.h; sourceTree = "<group>"; };
 		D2A117FF16FCD7CE00FAD80F /* NKComponent.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NKComponent.h; path = include/NetKit/NKComponent.h; sourceTree = "<group>"; };
 		D2A1180016FCD7CE00FAD80F /* NKMIME.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NKMIME.h; path = include/NetKit/NKMIME.h; sourceTree = "<group>"; };
 		D2A1180516FCD7E300FAD80F /* NKComponent.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = NKComponent.cpp; path = src/NKComponent.cpp; sourceTree = "<group>"; };
@@ -466,6 +475,8 @@
 				D23DF54715F698F90027A8F1 /* NKError.h */,
 				D254EFB916C43DA500851E44 /* NKExpected.h */,
 				D2597C041725E5BB00FD3D63 /* NKIntrusiveList.h */,
+				D29B900717A1930700CAE680 /* NKKeychain.h */,
+				D29B900817A1930700CAE680 /* NKLDAP.h */,
 				D2C33E851771F30B00DAC202 /* NKLog.cpp */,
 				D23DF58715F69F980027A8F1 /* NKLog.h */,
 				D2C33E881771F31800DAC202 /* NKLog_Mac.mm */,
@@ -496,6 +507,7 @@
 				D23DF55815F698F90027A8F1 /* NKSocket.h */,
 				D239D38316D6A8B2007FB101 /* NKSource.cpp */,
 				D239D37F16D69451007FB101 /* NKSource.h */,
+				D29B900917A1930700CAE680 /* NKStackWalk.h */,
 				D223BA4D1718C715000C2C44 /* NKTLS.cpp */,
 				D223BA4A1718C706000C2C44 /* NKTLS.h */,
 				D2033DC516E1813C00DBE69B /* NKUnicode.cpp */,
@@ -650,6 +662,9 @@
 				D28BEE251739AEEE00BD7587 /* NKUUID.h in Headers */,
 				D2C33E76177118A800DAC202 /* NKMacros.h in Headers */,
 				D2C33E78177118A800DAC202 /* NKNetworkInterface.h in Headers */,
+				D29B900A17A1930700CAE680 /* NKKeychain.h in Headers */,
+				D29B900C17A1930700CAE680 /* NKLDAP.h in Headers */,
+				D29B900E17A1930700CAE680 /* NKStackWalk.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -693,6 +708,9 @@
 				D28BEE261739AEEE00BD7587 /* NKUUID.h in Headers */,
 				D2C33E77177118A800DAC202 /* NKMacros.h in Headers */,
 				D2C33E79177118A800DAC202 /* NKNetworkInterface.h in Headers */,
+				D29B900B17A1930700CAE680 /* NKKeychain.h in Headers */,
+				D29B900D17A1930700CAE680 /* NKLDAP.h in Headers */,
+				D29B900F17A1930700CAE680 /* NKStackWalk.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -954,7 +972,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				D23DF59C15F6AFCD0027A8F1 /* main.cpp in Sources */,
-				D21A369417761E28003F80FF /* test_proxy.cpp in Sources */,
+				D29B901017A1933700CAE680 /* test_http.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

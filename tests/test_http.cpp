@@ -34,8 +34,6 @@
 
 using namespace netkit;
 
-static std::uint8_t g_buf[ 64 ];
-		
 TEST_CASE( "NetKit/http/server/1", "http server tests" )
 {
 	ip::tcp::acceptor::ref	acceptor	= new ip::tcp::acceptor( new ip::endpoint( 0 ) );
@@ -68,7 +66,7 @@ TEST_CASE( "NetKit/http/server/1", "http server tests" )
 	
 	os << "http://127.0.0.1:" << acceptor->endpoint()->port() << "/found";
 	
-	request	= new http::request( 1, 1, http::method::get, new uri( os.str() ) );
+	request	= new http::request( http::method::get, 1, 1, new uri( os.str() ) );
 	
 	request->on_reply( [=]( http::response::ref response )
 	{
@@ -110,11 +108,27 @@ TEST_CASE( "NetKit/http/server/2", "http server tests" )
 	
 	os << "http://127.0.0.1:" << acceptor->endpoint()->port() << "/notfound";
 	
-	request	= new http::request( 1, 1, http::method::get, new uri( os.str() ) );
+	request	= new http::request( http::method::get, 1, 1, new uri( os.str() ) );
 	
 	request->on_reply( [=]( http::response::ref response )
 	{
 		REQUIRE( response->status() == 404 );
+		runloop::main()->stop();
+	} );
+	
+	http::client::send( request );
+	
+	runloop::main()->run();
+}
+
+
+TEST_CASE( "NetKit/http/server/3", "http redirect tests" )
+{
+	http::request::ref request = new http::request( http::method::get, 1, 1, new uri( "http://www.apple.com/bonjour" ) );
+	
+	request->on_reply( [=]( http::response::ref response )
+	{
+		REQUIRE( response->status() == 200 );
 		runloop::main()->stop();
 	} );
 	
