@@ -1579,6 +1579,7 @@ client::really_send()
 		else
 		{
 			nklog( log::error, "received error %d trying to connect to uri '%s'", status, m_request->uri()->to_string().c_str() );
+			m_response = new response( m_connection->http_major(), m_connection->http_minor(), 0, false );
 			m_request->reply( m_response );
 		}
 	} );

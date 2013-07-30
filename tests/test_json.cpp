@@ -194,15 +194,14 @@ TEST_CASE( "NetKit/json/3", "json rpc" )
 	ip::tcp::acceptor::ref	acceptor	= new ip::tcp::acceptor( new ip::endpoint( 0 ) );
 	echo::ref				e			= new echo;
 	
-	acceptor->listen( 5 );
-	
 	acceptor->accept( [=]( int status, socket::ref sock )
 	{
 		REQUIRE( status == 0 );
-		//REQUIRE( json::server::adopt( sock.get() ) );
+		netkit::json::connection::ref conn = new netkit::json::connection;
+		conn->bind( sock.get() );
 	} );
 
-	json::server::bind( "func", 3, [=]( json::value::ref params, json::server::reply_f reply )
+	json::server::bind( "func", 3, ( json::server::request_f ) [=]( json::value::ref params, json::server::reply_f reply )
 	{
 		int					i = params[ "i" ]->as_int32();
 		double				d = params[ "d" ]->as_real();

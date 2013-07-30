@@ -40,8 +40,6 @@ TEST_CASE( "NetKit/http/server/1", "http server tests" )
 	http::request::ref		request;
 	std::ostringstream		os;
 	
-	acceptor->listen( 5 );
-	
 	acceptor->accept( [=]( int status, socket::ref sock )
 	{
 		REQUIRE( status == 0 );
@@ -86,8 +84,6 @@ TEST_CASE( "NetKit/http/server/2", "http server tests" )
 	ip::tcp::acceptor::ref	acceptor	= new ip::tcp::acceptor( new ip::endpoint( 0 ) );
 	http::request::ref		request;
 	std::ostringstream		os;
-	
-	acceptor->listen( 5 );
 	
 	acceptor->accept( [=]( int status, socket::ref sock )
 	{
@@ -134,5 +130,80 @@ TEST_CASE( "NetKit/http/server/3", "http redirect tests" )
 	
 	http::client::send( request );
 	
+	runloop::main()->run();
+}
+
+
+static void
+do_accept( ip::tcp::acceptor::ref acceptor )
+{
+	static int i = 0;
+
+	acceptor->accept( [=]( int status, socket::ref sock ) mutable
+	{
+nklog( log::verbose, "accepted %d connections\n", ++i );
+
+		sink::ref sink = http::server::adopt( sock.get() );
+		sink->bind( sock.get() );
+
+		do_accept( acceptor );
+	} );
+}
+
+
+TEST_CASE( "NetKit/http/server/4", "http stress tests" )
+{
+	ip::tcp::acceptor::ref	acceptor		= new ip::tcp::acceptor( new ip::endpoint( 0 ) );
+	std::int32_t			max_count		= 500;
+	std::int32_t			*messages_rcvd	= new std::int32_t;
+	std::int32_t			*errors			= new std::int32_t;
+	
+	do_accept( acceptor );
+	
+	http::server::bind( http::method::get, "/found", "*", [=]( http::request::ref request, http::server::response_f reply )
+	{
+		http::response::ref response = new http::response( request->major(), request->minor(), http::status::ok, false );
+		
+		response->add_to_header( "Content-Type", "text/plain" );
+		response->add_to_header( "Content-Length", 5 );
+		
+		*response << "hello";
+		
+		reply( response, false );
+		
+		return 0;
+	} );
+
+	*messages_rcvd	= 0;
+
+	for ( int i = 0; i < max_count; i++ )
+	{
+		http::request::ref	request;
+		std::ostringstream	os;
+
+		os << "http://127.0.0.1:" << acceptor->endpoint()->port() << "/found";
+	
+		request	= new http::request( http::method::get, 1, 1, new uri( os.str() ) );
+	
+		request->on_reply( [=]( http::response::ref response )
+		{
+			REQUIRE( response->status() == 200 );
+
+			*messages_rcvd = *messages_rcvd + 1;
+
+			if ( *messages_rcvd == max_count )
+			{
+				runloop::main()->stop();
+			}
+		} );
+		
+		http::client::send( request );
+
+		if ( ( i % 133 ) == 0 )
+		{
+			runloop::main()->run( runloop::mode::once );
+		}
+	}
+
 	runloop::main()->run();
 }

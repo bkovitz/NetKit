@@ -88,10 +88,11 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>..\..\include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>ws2_32.lib;$(SolutionDir)\DerivedData\Products\$(Platform)\$(Configuration)\NetKit.lib;$(SolutionDir)\DerivedData\Products\$(Platform)\$(Configuration)\uriparser.lib;$(SolutionDir)\DerivedData\Products\$(Platform)\$(Configuration)\http-parser.lib;$(SolutionDir)\DerivedData\Products\$(Platform)\$(Configuration)\sqlite.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;$(SolutionDir)\DerivedData\Products\$(Platform)\$(Configuration)\NetKit.lib;crypt32.lib;C:\OpenSSL\lib\VC\static\libeay32MTd.lib;C:\OpenSSL\lib\VC\static\ssleay32MTd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -101,10 +102,11 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>..\..\include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>ws2_32.lib;$(SolutionDir)\DerivedData\Products\$(Platform)\$(Configuration)\NetKit.lib;$(SolutionDir)\DerivedData\Products\$(Platform)\$(Configuration)\uriparser.lib;$(SolutionDir)\DerivedData\Products\$(Platform)\$(Configuration)\http-parser.lib;$(SolutionDir)\DerivedData\Products\$(Platform)\$(Configuration)\sqlite.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;$(SolutionDir)\DerivedData\Products\$(Platform)\$(Configuration)\NetKit.lib;crypt32.lib;C:\OpenSSL-Win64\lib\VC\static\libeay32MTd.lib;C:\OpenSSL-Win64\lib\VC\static\ssleay32MTd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -115,12 +117,13 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>ws2_32.lib;$(SolutionDir)\DerivedData\Products\$(Platform)\$(Configuration)\NetKit.lib;$(SolutionDir)\DerivedData\Products\$(Platform)\$(Configuration)\uriparser.lib;$(SolutionDir)\DerivedData\Products\$(Platform)\$(Configuration)\http-parser.lib;$(SolutionDir)\DerivedData\Products\$(Platform)\$(Configuration)\sqlite.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;$(SolutionDir)\DerivedData\Products\$(Platform)\$(Configuration)\NetKit.lib;crypt32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -131,12 +134,13 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>ws2_32.lib;$(SolutionDir)\DerivedData\Products\$(Platform)\$(Configuration)\NetKit.lib;$(SolutionDir)\DerivedData\Products\$(Platform)\$(Configuration)\uriparser.lib;$(SolutionDir)\DerivedData\Products\$(Platform)\$(Configuration)\http-parser.lib;$(SolutionDir)\DerivedData\Products\$(Platform)\$(Configuration)\sqlite.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;$(SolutionDir)\DerivedData\Products\$(Platform)\$(Configuration)\NetKit.lib;crypt32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

@@ -45,8 +45,6 @@ using namespace netkit;
 source::source()
 :
 	m_recv_buf( 8192 ),
-	m_send_event( nullptr ),
-	m_recv_event( nullptr ),
 	m_closed( false )
 {
 	add( new adapter );
@@ -147,56 +145,27 @@ source::handle_resolve( ip::address::list addrs, const uri::ref &uri, connect_re
 {
 	assert( addrs.size() > 0 );
 
-	ip::endpoint::ref	endpoint = new ip::endpoint( addrs.front(), uri->port() );
-	bool				would_block;
-	int					ret;
+	ip::endpoint::ref endpoint = new ip::endpoint( addrs.front(), uri->port() );
 
-	ret = start_connect( endpoint.get(), would_block );
-
-	if ( ret == 0 )
+	start_connect( endpoint.get(), [=]( int status, const endpoint::ref peer ) mutable
 	{
-		connect_internal( uri, endpoint.get(), reply );
-	}
-	else if ( would_block )
-	{
-		runloop::main()->schedule( m_send_event, [=]( runloop::event event ) mutable
+		if ( status == 0 )
 		{
-			int ret;
-
-			runloop::main()->suspend( event );
-				
-			ret = finish_connect();
-
-			if ( ret == 0 )
-			{
-				connect_internal( uri, endpoint.get(), reply );
-			}
-			else
-			{
-				if ( addrs.size() > 1 )
-				{
-					addrs.pop_front();
-					handle_resolve( addrs, uri, reply );
-				}
-				else
-				{
-					reply( ret, endpoint.get() );
-				}
-			}
-		} );
-	}
-	else
-	{
-		if ( addrs.size() > 1 )
-		{
-			addrs.pop_front();
-			handle_resolve( addrs, uri, reply );
+			connect_internal( uri, endpoint.get(), reply );
 		}
 		else
 		{
-			reply( ret, endpoint.get() );
+			if ( addrs.size() > 1 )
+			{
+				addrs.pop_front();
+				handle_resolve( addrs, uri, reply );
+			}
+			else
+			{
+				reply( status, endpoint.get() );
+			}
 		}
-	}
+	} );
 }
 
 
@@ -240,14 +209,13 @@ source::send( adapter *adapter, const std::uint8_t *in_buf, size_t in_len, send_
 		{
 			if ( out_len > 0 )
 			{
-				send_info *info = new send_info( out_buf, out_len, reply );
+				send_info *info = new send_info( out_buf, out_len );
 			
-				m_send_queue.push( info );
-		
-				if ( m_send_queue.size() == 1 )
+				start_send( &info->m_buf[ info->m_idx ], info->m_buf.size() - info->m_idx, [=]( int status )
 				{
-					send_internal();
-				}
+					reply( status );
+					delete info;
+				} );
 			}
 			else
 			{
@@ -258,46 +226,6 @@ source::send( adapter *adapter, const std::uint8_t *in_buf, size_t in_len, send_
 	else
 	{
 		reply( -1 );
-	}
-}
-
-
-void
-source::send_internal()
-{
-	while ( !m_send_queue.empty() )
-	{
-		bool			would_block;
-		send_info		*info = m_send_queue.front();
-		std::streamsize ret;
-		
-		ret = start_send( &info->m_buf[ info->m_idx ], info->m_buf.size() - info->m_idx, would_block );
-		
-		if ( ret > 0 )
-		{
-			info->m_idx += ( std::size_t ) ret;
-		
-			if ( info->m_idx == info->m_buf.size() )
-			{
-				m_send_queue.pop();
-				info->m_reply( 0 );
-				delete info;
-			}
-		}
-		else if ( would_block )
-		{
-			runloop::main()->schedule( m_send_event, [=]( runloop::event event )
-			{
-				runloop::main()->suspend( m_send_event );
-				send_internal();
-			} );
-
-			break;
-		}
-		else
-		{
-			break;
-		}
 	}
 }
 
@@ -353,57 +281,47 @@ source::recv_internal( bool peek_flag, recv_reply_f reply )
 {
 	bool			would_block	= false;
 	std::streamsize num			= 0;
-	
-	num = start_recv( &m_recv_buf[ 0 ], m_recv_buf.size(), would_block );
-	
-	if ( num > 0 )
-	{
-		m_adapters.head()->recv( &m_recv_buf[ 0 ], num, [=]( int status, const std::uint8_t *out_buf, std::size_t out_len, bool more_coming )
-		{
-			if ( status == 0 )
-			{
-				if ( out_len )
-				{
-					m_recv_queue.push( buf_t( out_buf, out_buf + out_len ) );
-				}
 
-				if ( !more_coming )
+	start_recv( [=]( int status, const std::uint8_t *buf, std::size_t len )
+	{
+		if ( len > 0 )
+		{
+			m_adapters.head()->recv( buf, len, [=]( int status, const std::uint8_t *out_buf, std::size_t out_len, bool more_coming )
+			{
+				if ( status == 0 )
 				{
-					if ( peek_flag )
+					if ( out_len )
 					{
-						peek( reply );
+						m_recv_queue.push( buf_t( out_buf, out_buf + out_len ) );
 					}
-					else
+	
+					if ( !more_coming )
 					{
-						recv( reply );
+						if ( peek_flag )
+						{
+							peek( reply );
+						}
+						else
+						{
+							recv( reply );
+						}
 					}
 				}
-			}
-			else
-			{
-				reply( status, nullptr, 0 );
-			}
-		} );
-	}
-	else if ( would_block )
-	{
-		nklog( log::verbose, "scheduling event" );
-
-		runloop::main()->schedule( m_recv_event, [=]( runloop::event event )
+				else
+				{
+					reply( status, nullptr, 0 );
+				}
+			} );
+		}
+		else if ( len == 0 )
 		{
-			nklog( log::verbose, "got a recv event" );
-			runloop::main()->suspend( event );
-			recv_internal( peek_flag, reply );
-		} );
-	}
-	else if ( num == 0 )
-	{
-		reply( -2, nullptr, 0 );
-	}
-	else
-	{
-		reply( -1, nullptr, 0 );
-	}
+			reply( -2, nullptr, 0 );
+		}
+		else
+		{
+			reply( -1, nullptr, 0 );
+		}
+	} );
 }
 
 
@@ -462,17 +380,6 @@ source::peer() const
 void
 source::teardown_notifications()
 {
-	if ( m_send_event )
-	{
-		runloop::main()->cancel( m_send_event );
-		m_send_event = nullptr;
-	}
-
-	if ( m_recv_event )
-	{
-		runloop::main()->cancel( m_recv_event );
-		m_recv_event = nullptr;
-	}
 }
 
 

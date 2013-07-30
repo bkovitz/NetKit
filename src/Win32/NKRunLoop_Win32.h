@@ -17,6 +17,121 @@ class runloop_win32 : public netkit::runloop
 {
 public:
 
+	class fd_win32 : public netkit::runloop::fd
+	{
+	public:
+
+		struct context : public WSAOVERLAPPED
+		{
+			enum type
+			{
+				iocp_connect	= 1,
+				iocp_accept		= 2,
+				iocp_send		= 3,
+				iocp_recv		= 4
+			};
+
+			context( type val )
+			{
+				ZeroMemory( this, sizeof( context ) );
+				m_type = val;
+			}
+
+			type m_type;
+		};
+
+		struct connect_context : public context
+		{
+			connect_context()
+			:
+				context( iocp_connect )
+			{
+			}
+
+			connect_reply_f			m_reply;
+			netkit::endpoint::ref	m_to;
+		};
+
+		struct accept_context : public context
+		{
+			accept_context()
+			:
+				context( iocp_accept )
+			{
+			}
+
+			accept_reply_f	m_reply;
+			SOCKET			m_fd;
+		};
+
+		struct send_context : public context
+		{
+			send_context()
+			:
+				context( iocp_send )
+			{
+			}
+
+			send_reply_f m_reply;
+		};
+
+		struct recv_context : public context
+		{
+			recv_context()
+			:
+				context( iocp_recv )
+			{
+			}
+
+			recv_reply_f m_reply;
+		};
+
+		fd_win32( SOCKET fd, int domain, HANDLE port );
+
+		virtual ~fd_win32();
+
+		virtual void
+		connect( netkit::endpoint::ref to, connect_reply_f reply );
+
+		void
+		handle_connect( int status );
+
+		virtual void
+		accept( accept_reply_f reply );
+
+		void
+		handle_accept( int status );
+
+		virtual void
+		send( const std::uint8_t *buf, std::size_t len, send_reply_f reply );
+
+		void
+		handle_send( int status, send_context *context );
+
+		virtual void
+		recv( recv_reply_f reply );
+
+		void
+		handle_recv( int status, DWORD bytes_read );
+
+		virtual void
+		close();
+
+	private:
+
+		static LPFN_CONNECTEX				m_connect_ex;
+		static LPFN_ACCEPTEX				m_accept_ex;
+		static LPFN_GETACCEPTEXSOCKADDRS	m_get_accept_sockaddrs;
+
+		connect_context						m_connect_context;
+		accept_context						m_accept_context;
+		recv_context						m_recv_context;
+		std::vector< std::uint8_t >			m_in_buf;
+		int									m_domain;
+		HANDLE								m_port;
+		SOCKET								m_fd;
+	};
+
 	static runloop_win32*
 	main();
 
@@ -24,17 +139,17 @@ public:
 
 	virtual ~runloop_win32();
 
-	virtual event
-	create( int fd, event_mask m );
+	virtual fd::ref
+	create( std::int32_t domain, std::int32_t type, std::int32_t protocol );
+
+	virtual fd::ref
+	create( netkit::endpoint::ref in_endpoint, netkit::endpoint::ref &out_endpoint, std::int32_t domain, std::int32_t type, std::int32_t protocol );
 
 	virtual event
 	create( HANDLE handle );
 	
 	virtual event
 	create( std::time_t msec );
-	
-	virtual void
-	modify( event e, std::time_t msec );
 	
 	virtual void
 	schedule( event e, event_f func );
@@ -59,184 +174,99 @@ public:
 	
 private:
 
-	struct source;
-	struct worker;
-
-	struct atom
+	struct source
 	{
-		typedef std::list< atom* > list;
+		typedef std::vector< source* >	vector;
+		typedef std::list< source* >	list;
 
 		static inline bool
-		compare( atom *lhs, atom *rhs )
+		compare( source *lhs, source *rhs )
 		{
 			return lhs->m_absolute_time < rhs->m_absolute_time;
 		}
 
-		std::string		m_context;
-		long			m_network_events;
+		HANDLE			m_handle;
 		std::time_t		m_relative_time;
 		std::time_t		m_absolute_time;
 		bool			m_scheduled;
 		bool			m_oneshot;
-		source			*m_source;
 		event_f			m_func;
-
-		atom();
-
-		~atom();
-	};
-
-	struct source
-	{
-		typedef std::list< source* > list;
-
-		SOCKET			m_socket;
-		HANDLE			m_handle;
-		worker			*m_owner;
-		atom::list		m_atoms;
-		bool			m_scheduled;
 	
 		source();
 
 		~source();
 
 		inline bool
-		is_socket() const
-		{
-			return ( m_socket != INVALID_SOCKET ) ? true : false;
-		}
-
-		inline bool
 		is_handle() const
 		{
-			return ( m_socket == INVALID_SOCKET ) ? true : false;
+			return ( m_handle != WSA_INVALID_EVENT ) ? true : false;
 		}
 
 		inline bool
 		is_timer() const
 		{
-			return ( ( m_socket == INVALID_SOCKET ) && ( m_handle == WSA_INVALID_EVENT ) );
-		}
-
-		inline long
-		network_events()
-		{
-			long ret = 0;
-
-			for ( auto it = m_atoms.begin(); it != m_atoms.end(); it++ )
-			{
-				if ( ( *it )->m_scheduled )
-				{
-					ret |= ( *it )->m_network_events;
-				}
-			}
-
-			return ret;
+			return ( m_handle == WSA_INVALID_EVENT ) ? true : false;
 		}
 
 		void
 		dispatch();
 	};
 
-	struct worker
+	bool			m_setup;
+	source::vector	m_sources;
+	source::list	m_timers;
+	bool			m_running;
+
+	typedef netkit::concurrent::queue< std::pair< void*, dispatch_f > >		queue;
+
+	HANDLE			m_iocp_thread;
+	HANDLE			m_wakeup;
+	HANDLE			m_port;
+	HANDLE			m_network;
+	DWORD			m_result;
+
+	queue					m_queue;
+	std::recursive_mutex	m_mutex;
+		
+	bool
+	init();
+
+	bool
+	running()
 	{
-		typedef std::list< atom* >												timers;
-		typedef netkit::concurrent::queue< std::pair< void*, dispatch_f > >		queue;
-		typedef std::list< worker* >											list;
-
-		HANDLE		m_thread;
-		unsigned	m_id;			// 0 for main worker
-
-		HANDLE		m_wakeup;	// NULL for main worker
-		BOOL		m_done;		// Not used for main worker
-
-		timers		m_timers;
-		DWORD		m_num_sources;
-		source		*m_sources[ MAXIMUM_WAIT_OBJECTS ];
-		HANDLE		m_handles[ MAXIMUM_WAIT_OBJECTS ];
-		DWORD		m_result;
-
-		queue					m_queue;
-		std::recursive_mutex	m_mutex;
-		bool					m_running;
-		
-		static unsigned __stdcall
-		main( void * arg );
-
-		static worker*
-		get_main_worker();
-
-		worker();
-
-		~worker();
-
-		bool
-		init();
-
-		bool
-		running()
-		{
-			std::lock_guard< std::recursive_mutex > guard( m_mutex );
-			return m_running;
-		}
-
-		void
-		set_running( bool val )
-		{
-			std::lock_guard<std::recursive_mutex> guard( m_mutex );
-			m_running = val;
-		}
-
-		inline void
-		push( dispatch_f f )
-		{
-			push( NULL, f );
-		}
-
-		inline void
-		push( void *context, dispatch_f f )
-		{
-			m_queue.push( std::make_pair( context, f ) );
-			SetEvent( m_wakeup );
-		}
-		
-		void
-		schedule( source *s );
-
-		int
-		source_to_index( source *s );
-		
-		void
-		suspend( source *s );
-
-		inline void
-		run( mode how )
-		{
-			bool dummy;
-
-			run( how, dummy );
-		}
-
-		void
-		run( mode how, bool &input_event );
-	};
-
-	BOOL			m_setup;
-	source::list	m_sources;
-	worker			m_main;
-	worker::list	m_workers;
-	BOOL			m_running;
-	
-	void
-	remove_worker( worker *w );
-
-public:
-
-	inline worker&
-	main_worker()
-	{
-		return m_main;
+		std::lock_guard< std::recursive_mutex > guard( m_mutex );
+		return m_running;
 	}
+
+	void
+	set_running( bool val )
+	{
+		std::lock_guard< std::recursive_mutex > guard( m_mutex );
+		m_running = val;
+	}
+
+	inline void
+	push( dispatch_f f )
+	{
+		push( NULL, f );
+	}
+
+	inline void
+	push( void *context, dispatch_f f )
+	{
+		m_queue.push( std::make_pair( context, f ) );
+		SetEvent( m_wakeup );
+	}
+		
+	void
+	schedule( source *s );
+
+	void
+	suspend( source *s );
+
+	void
+	run( mode how, bool &input_event );
+	
 };
 
 

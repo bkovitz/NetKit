@@ -34,7 +34,12 @@
 
 int main (int argc, char * const argv[])
 {
+#if defined( _WIN32 )
+	netkit::log::init( TEXT( "UnitTests" ) );
+#else
 	netkit::log::init( "UnitTests" );
-	netkit::log::set_level( netkit::log::verbose );
-    return Catch::Main( argc, argv );
+#endif
+	netkit::log::set_level( netkit::log::info );
+	auto ret = Catch::Main( argc, argv );
+	return ret;
 }

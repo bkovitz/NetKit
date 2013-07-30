@@ -51,37 +51,28 @@ using namespace netkit;
 
 
 socket::socket()
-:
-	m_fd( socket::null )
 {
 }
 
 
 socket::socket( int domain, int type )
 {
-	m_fd = ::socket( domain, type, 0 );
-	
-	if ( m_fd != socket::null )
-	{
-		init();
-	}
+	m_fd = runloop::main()->create( domain, type, 0 );
 }
 
 
-socket::socket( native fd )
+socket::socket( runloop::fd::ref fd )
 :
 	m_fd( fd )
 {
-	init();
 }
 
 
-socket::socket( native fd, const endpoint::ref peer )
+socket::socket( runloop::fd::ref fd, const endpoint::ref peer )
 :
 	m_peer( peer ),
 	m_fd( fd )
 {
-	init();
 }
 
 
@@ -93,52 +84,10 @@ socket::~socket()
 }
 
 
-void
-socket::init()
-{
-	set_blocking( m_fd, false );
-	
-	m_send_event = runloop::main()->create( ( int ) m_fd, runloop::event_mask::write );
-	m_recv_event = runloop::main()->create( ( int ) m_fd, runloop::event_mask::read );
-}
 
 
-int
-socket::start_connect( const endpoint::ref &peer, bool &would_block )
-{
-	static std::map< socket*, socket* > map;
 
-	sockaddr_storage	addr;
-	std::size_t			len;
-	int					err;
-	
-	len = peer->to_sockaddr( addr );
-	
-	m_fd = ::socket( addr.ss_family, SOCK_STREAM, 0 );
-
-	if ( m_fd == socket::null )
-	{
-		nklog( log::error, "::socket() failed: %d", platform::error() );
-		err = -1;
-		goto exit;
-	}
-
-	init();
-
-	err			= ::connect( m_fd, ( struct sockaddr* ) &addr, ( int ) len );
-	would_block = ( err < 0 ) && ( ( platform::error() == ( int ) socket::error::in_progress ) || ( platform::error() == ( int ) socket::error::would_block ) ) ? true : false;
-
-	if ( ( err == -1 ) && ( !would_block ) )
-	{
-		nklog( log::error, "::connect() failed: %d", platform::error() );
-	}
-
-exit:
-
-	return err;
-}
-
-
+#if 0
 int
 socket::finish_connect()
 {
@@ -152,54 +101,57 @@ socket::finish_connect()
 					
 	return getpeername( m_fd, ( struct sockaddr* ) &addr, &len );
 }
-
-	
-std::streamsize
-socket::start_send( const std::uint8_t *buf, std::size_t len, bool &would_block )
-{
-	std::streamsize num;
-	
-	num			= ::send( m_fd, reinterpret_cast< const_buf_t >( buf ), ( int ) len, 0 );
-	would_block = ( num < 0 ) && ( platform::error() == ( int ) socket::error::would_block ) ? true : false;
-
-	if ( ( num < 0 ) && ( !would_block ) )
-	{
-		nklog( log::error, "send returned %d", platform::error() );
-	}
-	
-	return num;
-}
-
-	
-std::streamsize
-socket::start_recv( std::uint8_t *buf, std::size_t len, bool &would_block )
-{
-	std::streamsize num;
-
-	num			= ::recv( m_fd, reinterpret_cast< buf_t >( buf ), ( int ) len, 0 );
-	would_block = ( num < 0 ) && ( platform::error() == ( int ) socket::error::would_block ) ? true : false;
-	
-	if ( ( num < 0 ) && ( !would_block ) )
-	{
-		nklog( log::error, "recv returned %d", platform::error() );
-	}
-	
-	return num;
-}
-
-
-bool
-socket::set_blocking( native fd, bool block )
-{
-#if defined( WIN32 )
-	u_long flags = block ? 0 : 1;
-
-	return ioctlsocket( fd, FIONBIO, &flags ) ? true : false;
-#else
-	int flags = block ? fcntl( fd, F_GETFL, 0 ) & ~O_NONBLOCK : fcntl( fd, F_GETFL, 0 ) | O_NONBLOCK;
-
-	return fcntl( fd, F_SETFL, flags ) == 0 ? true : false;
 #endif
+
+
+void
+socket::start_connect( const endpoint::ref &peer, source::connect_reply_f reply )
+{
+	sockaddr_storage addr;
+	
+	peer->to_sockaddr( addr );
+	
+	m_fd = runloop::main()->create( addr.ss_family, SOCK_STREAM, 0 );
+
+	if ( m_fd )
+	{
+		m_fd->connect( peer, reply );
+	}
+	else
+	{
+		nklog( log::error, "unable to create socket" );
+		reply( -1, nullptr );
+	}
+}
+
+
+void
+socket::start_send( const std::uint8_t *buf, std::size_t len, source::send_reply_f reply )
+{
+	m_fd->send( buf, len, [=]( int status )
+	{
+		if ( status )
+		{
+			nklog( log::error, "send returned %d", platform::error() );
+		}
+
+		reply( status );
+	} );
+}
+
+	
+void
+socket::start_recv( source::recv_reply_f reply )
+{
+	m_fd->recv( [=]( int status, const std::uint8_t *buf, std::size_t len  )
+	{
+		if ( status )
+		{
+			nklog( log::error, "recv returned %d", platform::error() );
+		}
+
+		reply( status, buf, len );
+	} );
 }
 
 
@@ -208,15 +160,10 @@ socket::close( bool notify )
 {
 	teardown_notifications();
 
-	if ( m_fd != null )
+	if ( m_fd )
 	{
-#if defined( WIN32 )
-		::closesocket( m_fd );
-#else
-		::close( m_fd );
-#endif
-		m_fd = null;
-	
+		m_fd->close();
+		m_fd = nullptr;
 	}
 
 	source::close( notify );
@@ -226,7 +173,7 @@ socket::close( bool notify )
 bool
 socket::is_open() const
 {
-	return ( m_fd != null ) ? true : false;
+	return ( m_fd ) ? true : false;
 }
 
 
@@ -242,19 +189,8 @@ socket::peer() const
 #endif
 
 acceptor::acceptor( const endpoint::ref &endpoint, int domain, int type )
-:
-	m_endpoint( endpoint )
 {
-	m_fd = ::socket( domain, type, 0 );
-	socket::set_blocking( m_fd, false );
-}
-
-
-acceptor::acceptor( socket::native fd )
-:
-	m_fd( fd )
-{
-	socket::set_blocking( m_fd, false );
+	m_fd = runloop::main()->create( endpoint, m_endpoint, domain, type, 0 );
 }
 
 
@@ -262,56 +198,13 @@ acceptor::~acceptor()
 {
 	nklog( log::verbose, "" );
 
-#if defined( WIN32 )
-	closesocket( m_fd );
-#else
-	close( m_fd );
-#endif
+	if ( m_fd )
+	{
+		m_fd->close();
+		m_fd = nullptr;
+	}
 }
 
-
-int
-acceptor::listen( int size )
-{
-	sockaddr_storage	saddr	= { 0 };
-	sockaddr_storage	saddr2	= { 0 };
-	socklen_t			slen	= sizeof( sockaddr_storage );
-	std::size_t			len		= 0;
-	int					ret;
-	
-	len = m_endpoint->to_sockaddr( saddr );
-	
-	ret = ::bind( m_fd, ( struct sockaddr* ) &saddr, ( int ) len );
-	
-	if ( ret != 0 )
-	{
-		nklog( log::error, "bind() failed: %d", platform::error() );
-		goto exit;
-	}
-	
-	ret = ::getsockname( m_fd, ( struct sockaddr* ) &saddr2, &slen );
-	
-	if ( ret != 0 )
-	{
-		nklog( log::error, "getsockname() failed: %d", platform::error() );
-		goto exit;
-	}
-	
-	m_endpoint = endpoint::from_sockaddr( saddr2 );
-	
-	ret = ::listen( m_fd, size );
-	
-	if ( ret != 0 )
-	{
-		nklog( log::error, "listen() failed: %d", platform::error() );
-		goto exit;
-	}
-	
-exit:
-
-	return ret;
-}
-	
 #if defined( __APPLE__ )
 #	pragma mark ip::socket implementation
 #endif
@@ -323,14 +216,7 @@ ip::socket::socket( int domain, int type )
 }
 
 
-ip::socket::socket( native fd )
-:
-	netkit::socket( fd )
-{
-}
-
-
-ip::socket::socket( native fd, const ip::endpoint::ref &peer )
+ip::socket::socket( runloop::fd::ref fd, const ip::endpoint::ref &peer )
 :
 	netkit::socket( fd )
 {
@@ -348,13 +234,6 @@ ip::acceptor::acceptor( const ip::endpoint::ref &endpoint, int type )
 }
 
 
-ip::acceptor::acceptor( socket::native fd )
-:
-	netkit::acceptor( 0 )
-{
-}
-
-
 #if defined( __APPLE__ )
 #	pragma mark ip::tcp::socket implementation
 #endif
@@ -367,19 +246,10 @@ ip::tcp::socket::socket()
 }
 
 
-ip::tcp::socket::socket( native fd )
-:
-	ip::socket( fd )
-{
-	set_keep_alive( true );
-}
-
-
-ip::tcp::socket::socket( native fd, const ip::endpoint::ref &peer )
+ip::tcp::socket::socket( runloop::fd::ref fd, const ip::endpoint::ref &peer )
 :
 	ip::socket( fd, peer )
 {
-	set_keep_alive( true );
 }
 
 
@@ -403,8 +273,7 @@ ip::tcp::socket::set_keep_alive( bool val )
 
 ip::tcp::acceptor::acceptor( const ip::endpoint::ref &endpoint )
 :
-	ip::acceptor( endpoint, SOCK_STREAM ),
-	m_event( nullptr )
+	ip::acceptor( endpoint, SOCK_STREAM )
 {
 }
 
@@ -423,31 +292,22 @@ ip::tcp::acceptor::~acceptor()
 void
 ip::tcp::acceptor::accept( accept_reply_f reply )
 {
-	assert( !m_event );
+	assert( m_fd );
 
-	if ( !m_event )
+	if ( m_fd )
 	{
-		m_event = runloop::main()->create( ( int ) m_fd, runloop::event_mask::read );
-	
-		runloop::main()->schedule( m_event, [=]( runloop::event event )
+		m_fd->accept( [=]( int status, runloop::fd::ref fd, const netkit::endpoint::ref &peer )
 		{
-			socket::native			new_fd;
-			struct sockaddr_storage	addr;
-			socklen_t				addr_len = sizeof( addr );
-			socket::ref				new_sock;
-			
-			runloop::main()->cancel( m_event );
-			m_event = nullptr;
-		
-			new_fd = ::accept( m_fd, ( struct sockaddr* ) &addr, &addr_len );
-		
-			if ( new_fd != socket::null )
+			if ( status == 0 )
 			{
-				new_sock = new ip::tcp::socket( new_fd, new ip::endpoint( addr ) );
-				
-			// new_sock->get_ethernet_addr();
+				socket::ref new_sock;
 			
+				new_sock = new ip::tcp::socket( fd, ( ip::endpoint* ) peer.get() );
+				
 				reply( 0, new_sock.get() );
+			}
+			else
+			{
 			}
 		} );
 	}

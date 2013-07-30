@@ -55,15 +55,11 @@ public:
 	
 #if defined( WIN32 )
 
-	typedef SOCKET native;
-	static const native null = INVALID_SOCKET;
 	typedef const char * const_buf_t;
 	typedef char* buf_t;
 
 #else
 
-	typedef int native;
-	static const native null = -1;
 	typedef const void* const_buf_t;
 	typedef void* buf_t;
 
@@ -84,15 +80,6 @@ public:
 #endif
 	};
 	
-	static bool
-	set_blocking( native fd, bool block );
-	
-	inline bool
-	set_blocking( bool val )
-	{
-		return set_blocking( m_fd, val );
-	}
-
 	virtual bool
 	is_open() const;
 	
@@ -111,7 +98,7 @@ public:
 	virtual endpoint::ref
 	peer() const;
 	
-	inline native
+	inline netkit::runloop::fd::ref
 	fd() const
 	{
 		return m_fd;
@@ -153,32 +140,26 @@ protected:
 
 	socket( int domain, int type );
 
-	socket( native fd );
+	socket( netkit::runloop::fd::ref fd );
 	
-	socket( native fd, const endpoint::ref peer );
+	socket( netkit::runloop::fd::ref fd, const endpoint::ref peer );
 	
 	socket( const socket &that );	// Not implemented
 	
 	virtual ~socket();
 	
-	void
-	init();
-
-	virtual int
-	start_connect( const endpoint::ref &peer, bool &would_block );
+	virtual void
+	start_connect( const endpoint::ref &peer, source::connect_reply_f reply );
 	
-	virtual int
-	finish_connect();
+	virtual void
+	start_send( const std::uint8_t *buf, std::size_t len, source::send_reply_f reply );
 	
-	virtual std::streamsize
-	start_send( const std::uint8_t *buf, std::size_t len, bool &would_block );
+	virtual void
+	start_recv( source::recv_reply_f reply ); 
 	
-	virtual std::streamsize
-	start_recv( std::uint8_t *buf, std::size_t len, bool &would_block );
-	
-	bool			m_connected;
-	endpoint::ref	m_peer;
-	native			m_fd;
+	bool				m_connected;
+	endpoint::ref		m_peer;
+	runloop::fd::ref	m_fd;
 };
 
 
@@ -191,12 +172,7 @@ public:
 	
 	acceptor( const endpoint::ref &endpoint, int domain, int type );
 	
-	acceptor( socket::native fd );
-	
 	virtual ~acceptor();
-	
-	int
-	listen( int size );
 	
 	virtual void
 	accept( accept_reply_f reply ) = 0;
@@ -210,8 +186,7 @@ public:
 protected:
 
 	netkit::endpoint::ref   m_endpoint;
-	runloop::event          m_event;
-	socket::native          m_fd;
+	runloop::fd::ref		m_fd;
 	
 private:
 
@@ -231,9 +206,7 @@ protected:
 
 	socket( int domain, int type );
 
-	socket( native fd );
-	
-	socket( native fd, const ip::endpoint::ref &peer );
+	socket( runloop::fd::ref fd, const ip::endpoint::ref &peer );
 	
 	socket( const socket &that );	// Not implemented
 };
@@ -245,8 +218,6 @@ public:
 	typedef smart_ref< acceptor > ref;
 
 	acceptor( const ip::endpoint::ref &endpoint, int type );
-	
-	acceptor( socket::native fd );
 	
 	inline ip::endpoint::ref
 	endpoint() const
@@ -269,9 +240,7 @@ public:
 	
 	socket();
 	
-	socket( native fd );
-	
-	socket( native fd, const ip::endpoint::ref &peer );
+	socket( runloop::fd::ref fd, const ip::endpoint::ref &peer );
 	
 	virtual ~socket();
 

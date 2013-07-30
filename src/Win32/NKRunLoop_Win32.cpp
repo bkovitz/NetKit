@@ -12,7 +12,9 @@
 #include <process.h>
 #include <list>
 #include <sstream>
+#include <thread>
 
+#define DEBUG_RUNLOOP 1
 /*
  * runloop_win32 Methods
  */
@@ -20,13 +22,6 @@
 static runloop_win32 *g_instance;
 
 using namespace netkit;
-
-static void
-ShiftDown( void * arr, size_t arraySize, size_t itemSize, int index )
-{
-    memmove( ( ( unsigned char* ) arr ) + ( ( index - 1 ) * itemSize ), ( ( unsigned char* ) arr ) + ( index * itemSize ), ( arraySize - index ) * itemSize );
-}
-
 
 runloop::ref
 runloop::main()
@@ -52,7 +47,7 @@ runloop_win32::runloop_win32()
 :
 	m_running( FALSE )
 {
-	m_main.init();
+	init();
 }
 
 
@@ -61,94 +56,73 @@ runloop_win32::~runloop_win32()
 }
 
 
-runloop::event
-runloop_win32::create( int fd, event_mask m )
+runloop::fd::ref
+runloop_win32::create( std::int32_t domain, std::int32_t type, std::int32_t protocol )
 {
-	source		*s	= nullptr;
-	atom		*a	= nullptr;
-	DWORD		err	= 0;
+	runloop::fd::ref	fd;
+	SOCKET				s;
 
-	for ( auto it = m_sources.begin(); it != m_sources.end(); it++ )
-	{
-		if ( ( *it )->m_socket == fd )
-		{
-			s = *it;
-			break;
-		}
-	}
-
-	if ( !s )
-	{
-		try
-		{
-			s = new source;
-		}
-		catch ( ... )
-		{
-			s = nullptr;
-		}
-
-		if ( !s )
-		{
-			err = -1;
-			goto exit;
-		}
-
-		s->m_socket = fd;
-		s->m_handle = WSACreateEvent();
-
-		if ( s->m_handle == WSA_INVALID_EVENT )
-		{
-			err = -1;
-			goto exit;
-		}
-
-		m_sources.push_back( s );
-	}
+	s = WSASocket( domain, type, protocol, NULL, 0, WSA_FLAG_OVERLAPPED );
 	
-	try
+	if ( s == INVALID_SOCKET )
 	{
-		a = new atom;
-	}
-	catch ( ... )
-	{
-		err = -1;
+		nklog( log::error, "WSASocket() failed: %d", WSAGetLastError() );
 		goto exit;
 	}
-
-	if ( m & runloop::event_mask::read )
-	{
-		a->m_network_events |= ( FD_ACCEPT | FD_READ | FD_CLOSE );
-	}
 	
-	if ( m & runloop::event_mask::write )
-	{
-		a->m_network_events |= ( FD_CONNECT | FD_WRITE );
-	}
-
-	a->m_source = s;
-	s->m_atoms.push_back( a );
-
-	assert( s->m_atoms.size() <= 2 );
+	fd = new fd_win32( s, domain, m_port );
 
 exit:
 
-	if ( err != 0 )
-	{
-		if ( s != nullptr )
-		{
-			delete s;
-			s = nullptr;
-		}
+	return fd;
+}
 
-		if ( a != nullptr )
-		{
-			delete a;
-			a = nullptr;
-		}
+
+runloop::fd::ref
+runloop_win32::create( netkit::endpoint::ref in_endpoint, netkit::endpoint::ref &out_endpoint, std::int32_t domain, std::int32_t type, std::int32_t protocol )
+{
+	runloop::fd::ref	fd;
+	sockaddr_storage	addr;
+	int					len;
+	SOCKET				s;
+
+	s = WSASocket( domain, type, protocol, NULL, 0, WSA_FLAG_OVERLAPPED );
+	
+	if ( s == INVALID_SOCKET )
+	{
+		nklog( log::error, "WSASocket() failed: %d", WSAGetLastError() );
+		goto exit;
 	}
 
-	return a;
+	len = ( int ) in_endpoint->to_sockaddr( addr );
+
+	if ( ::bind( s, ( SOCKADDR* ) &addr, len ) != 0 )
+	{
+		nklog( log::error, "bind() failed: %d", ::WSAGetLastError() );
+		goto exit;
+	}
+
+	if ( ::listen( s, SOMAXCONN ) != 0 )
+	{
+		nklog( log::error, "listen() failed: %d", ::WSAGetLastError() );
+		goto exit;
+	}
+
+	len = sizeof( addr );
+
+	if ( ::getsockname( s, ( sockaddr* ) &addr, &len ) != 0 )
+	{
+		nklog( log::error, "getsockname() failed: %d", ::WSAGetLastError() );
+		goto exit;
+	}
+
+	out_endpoint = endpoint::from_sockaddr( addr );
+	
+	fd = new fd_win32( s, domain, m_port );
+
+exit:
+
+	return fd;
 }
 
 
@@ -156,109 +130,79 @@ runloop::event
 runloop_win32::create( HANDLE handle )
 {
 	source	*s = nullptr;
-	atom	*a = nullptr;
 	
 	try
 	{
 		s = new source;
-		a = new atom;
 	}
 	catch ( ... )
 	{
 		s = nullptr;
-		a = nullptr;
 	}
 
-	if ( !s || !a )
+	if ( !s )
 	{
 		goto exit;
 	}
 
-	a->m_source = s;
-
 	s->m_handle	= handle;
-	s->m_atoms.push_back( a );
+
+	m_sources.push_back( s );
 
 exit:
 
-	return a;
+	return s;
 }
 
 
 runloop::event
 runloop_win32::create( std::time_t msec )
 {
-	source	*s = nullptr;
-	atom	*a = nullptr;
+	source *s = nullptr;
 	
 	try
 	{
 		s = new source;
-		a = new atom;
 	}
 	catch ( ... )
 	{
 		s = nullptr;
-		a = nullptr;
 	}
 
-	if ( !s || !a )
+	if ( !s )
 	{
 		goto exit;
 	}
 
-	a->m_source			= s;
-	a->m_relative_time	= msec;
-	a->m_oneshot		= false;
+	s->m_relative_time	= msec;
+	s->m_oneshot		= false;
 
-	s->m_atoms.push_back( a );
+	m_timers.push_back( s );
 
 exit:
 
-	return a;
+	return s;
 }
 
 
-void
-runloop_win32::modify( event e, std::time_t msec )
-{
-}
-
-	
 void
 runloop_win32::schedule( event e, event_f func )
 {
-	atom	*a			= reinterpret_cast< atom* >( e );
-	source	*s			= nullptr;
-	worker	*w			= nullptr;
+	source	*s			= reinterpret_cast< source* >( e );
 	DWORD	registered	= FALSE;
 	DWORD	err			= 0;
-
-	assert( a );
-
-	if ( !a )
-	{
-		nklog( log::error, "schedule() called with null event" );
-		goto exit;
-	}
-
-	s = a->m_source;
 
 	assert( s );
 
 	if ( !s )
 	{
-		nklog( log::error, "schedule() called with bad atom" );
+		nklog( log::error, "schedule() called with null event" );
 		goto exit;
 	}
 
-#if defined( DEBUG_RUNLOOP )
-	a->m_context = netkit::stackwalk::copy();
-#endif
-
 	// First check our main Worker. In most cases, we won't have to worry about threads
 
-	if ( a->m_scheduled )
+	if ( s->m_scheduled )
 	{
 		if ( s->is_timer() )
 		{
@@ -268,129 +212,53 @@ runloop_win32::schedule( event e, event_f func )
 		{
 			nklog( log::error, "trying to schedule an event that has already been scheduled with handle %d", s->m_handle );
 		}
-		else
-		{
-			nklog( log::error, "trying to schedule an event that has already been scheduled on fd %d", s->m_socket );
-		}
 
 		goto exit;
 	}
 
-	a->m_scheduled	= true;
-	a->m_func		= func;
+	s->m_scheduled	= true;
+	s->m_func		= func;
 
 	if ( s->is_timer() )
 	{
-		a->m_absolute_time = ( time( NULL ) * 1000 ) + a->m_relative_time;
-		m_main.schedule( s );
+		s->m_absolute_time = ( time( NULL ) * 1000 ) + s->m_relative_time;
+		schedule( s );
 	}
 	else
 	{
-		if ( s->is_socket() )
-		{
-			err = WSAEventSelect( s->m_socket, s->m_handle, s->network_events() );
-
-			if ( err )
-			{
-				nklog( log::error, "WSAEventSelect() failed with error code: %d", ::GetLastError() );
-				a->m_scheduled = false;
-				goto exit;
-			}
-		}
-
 		if ( !s->m_scheduled )
 		{
-			if ( m_main.m_num_sources < MAXIMUM_WAIT_OBJECTS )
+			if ( m_sources.size() < MAXIMUM_WAIT_OBJECTS )
 			{
-				m_main.schedule( s );
+				schedule( s );
 			}
 			else
 			{
-				BOOL registered = FALSE;
-	
-				// Try to find a thread to use that we've already created
-	
-				for ( worker::list::iterator it = m_workers.begin(); it != m_workers.end(); it++ )
-				{
-					if ( ( *it )->m_num_sources < MAXIMUM_WAIT_OBJECTS )
-					{
-						worker *w = *it;
-
-						w->push( s, [=]()
-						{
-							w->schedule( s );
-						} );
-	
-						registered = TRUE;
-						break;
-					}
-				}
-	
-				// If not, then create a Worker and make a thread to run it in
-			
-				if ( !registered )
-				{
-					try
-					{
-						w = new worker;
-					}
-					catch ( ... )
-					{
-						w = nullptr;
-					}
-	
-					if ( !w )
-					{
-						err = -1;
-						goto exit;
-					}
-	
-					if ( !w->init() )
-					{
-						err = -1;
-						goto exit;
-					}
-			
-					w->schedule( s );
-	
-					w->m_thread = ( HANDLE ) _beginthreadex( nullptr, 0, worker::main, w, 0, nullptr );
-
-					if ( w->m_thread == nullptr )
-					{
-						err = GetLastError();
-						goto exit;
-					}
-	
-					m_workers.push_back( w );
-				}
+				// Error
 			}
 		}
 	}
 
 exit:
 
-	if ( err && w )
-	{
-		delete w;
-	}
+	return;
 }
 
 
 void
 runloop_win32::schedule_oneshot_timer( std::time_t msec, event_f func )
 {
-	atom *a = ( atom* ) create( msec );
+	source *s = reinterpret_cast< source* >( create( msec ) );
 
-	a->m_oneshot = true;
+	s->m_oneshot = true;
 
-	schedule( a, func );
+	schedule( s, func );
 }
 
 
 void
 runloop_win32::suspend( event e )
 {
-	atom	*a = nullptr;
 	source	*s = nullptr;
 
 	assert( e );
@@ -401,66 +269,19 @@ runloop_win32::suspend( event e )
 		goto exit;
 	}
 	
-	a = reinterpret_cast< atom* >( e );
-	s = a->m_source;
+	s = reinterpret_cast< source* >( e );
 
-#if defined( DEBUG_RUNLOOP )
-	a->m_context = netkit::stackwalk::copy();
-#endif
-
-	if ( !a->m_scheduled )
+	if ( !s->m_scheduled )
 	{
 		nklog( log::warning, "trying to suspend an event that has not been scheduled" );
 		goto exit;
 	}
 
-	a->m_scheduled = false;
+	s->m_scheduled = false;
 
-	if ( s->is_socket() )
+	if ( s->is_handle() )
 	{
-		int err = WSAEventSelect( s->m_socket, s->m_handle, s->network_events() );
-
-		if ( err )
-		{
-			nklog( log::error, "WSAEventSelect() failed with error code: %d", ::GetLastError() );
-		}
-	}
-
-	if ( ( s->is_handle() ) || ( s->network_events() == 0 ) )
-	{
-		if ( s->m_owner == &m_main )
-		{
-			s->m_owner->suspend( s );
-		}
-		else
-		{
-			HANDLE	sync = CreateEvent( nullptr, FALSE, FALSE, nullptr );
-			DWORD	err;
-
-			s->m_owner->push( s, [=]()
-			{
-				s->m_owner->suspend( s );
-				SetEvent( sync );
-			} );
-	
-			err = WaitForSingleObject( sync, 5 * 1000 );
-	
-			if ( err == WAIT_FAILED )
-			{
-				nklog( log::error, "error while waiting to synchronize remove source: %d", GetLastError() );
-			}
-			else if ( err == WAIT_TIMEOUT )
-			{
-				nklog( log::error, "timed out waiting to synchronize remove source" );
-			}
-	
-			m_main.m_queue.prune( [=]( std::pair< void*, dispatch_f > &item )
-			{
-				return ( item.first == s ) ? true : false;
-			} );
-	
-			CloseHandle( sync );
-		}
+		suspend( s );
 	}
 
 exit:
@@ -472,7 +293,6 @@ exit:
 void
 runloop_win32::cancel( event e )
 {
-	atom	*a = nullptr;
 	source	*s = nullptr;
 
 	assert( e );
@@ -483,28 +303,16 @@ runloop_win32::cancel( event e )
 		goto exit;
 	}
 
-	a = reinterpret_cast< atom* >( e );
-	s = a->m_source;
+	s = reinterpret_cast< source* >( e );
 
-	if ( a->m_scheduled )
+	if ( s->m_scheduled )
 	{
-		suspend( a );
+		suspend( s );
 	}
 
-	s->m_atoms.remove( a );
-	a->m_source = nullptr;
+	m_sources.erase( std::remove( m_sources.begin(), m_sources.end(), s ), m_sources.end() );
 
-#if defined( DEBUG_RUNLOOP )
-	a->m_context = netkit::stackwalk::copy();
-#endif
-
-	if ( s->m_atoms.size() == 0 )
-	{
-		m_sources.remove( s );
-		delete s;
-	}
-
-	// Don't delete the atom now, because it holds the lambda context.  This will allow us
+	// Don't delete the source now, because it holds the lambda context.  This will allow us
 	// to call cancel while in the context of a lambda handler.  Otherwise, we'd be deleting
 	// the context out from under us
 	//
@@ -512,7 +320,7 @@ runloop_win32::cancel( event e )
 
 	dispatch( [=]() mutable
 	{
-		delete a;
+		delete s;
 	} );
 
 exit:
@@ -524,7 +332,7 @@ exit:
 void
 runloop_win32::dispatch( dispatch_f f )
 {
-	m_main.push( f );
+	push( f );
 }
 
 
@@ -537,7 +345,7 @@ runloop_win32::run( mode how )
 	{
 		bool input_event;
 
-		m_main.run( how, input_event );
+		run( how, input_event );
 
 		if ( how == mode::once )
 		{
@@ -555,27 +363,23 @@ runloop_win32::run( mode how )
 void
 runloop_win32::stop()
 {
+	nklog( log::verbose, "" );
 	m_running = FALSE;
 }
 
 
 runloop_win32::source::source()
 :
-	m_socket( INVALID_SOCKET ),
 	m_handle( WSA_INVALID_EVENT ),
-	m_scheduled( false ),
-	m_owner( nullptr )
+	m_relative_time( 0 ),
+	m_absolute_time( 0 ),
+	m_scheduled( false )
 {
 }
 
 
 runloop_win32::source::~source()
 {
-	if ( m_socket != INVALID_SOCKET )
-	{
-		WSAEventSelect( m_socket, nullptr, 0 );
-	}
-
 	if( m_handle != WSA_INVALID_EVENT )
 	{
 		WSACloseEvent( m_handle );
@@ -586,102 +390,17 @@ runloop_win32::source::~source()
 void
 runloop_win32::source::dispatch()
 {
-	atom *a = nullptr;
-
-	assert( m_atoms.size() > 0 );
-
-	if ( is_socket() )
-	{
-		assert( m_scheduled );
-
-		WSANETWORKEVENTS network_events;
-
-		if ( WSAEnumNetworkEvents( m_socket, m_handle, &network_events ) == 0 )
-		{
-			for ( auto it = m_atoms.begin(); it != m_atoms.end(); it++ )
-			{
-				if ( network_events.lNetworkEvents & ( *it )->m_network_events )
-				{
-					a = ( *it );
-					break;
-				}
-			}
-		}
-
-		if ( !a )
-		{
-			for ( auto it = m_atoms.begin(); it != m_atoms.end(); it++ )
-			{
-				if ( ( *it )->m_scheduled )
-				{
-					a = ( *it );
-					break;
-				}
-			}
-		}
-	}
-	else
-	{
-		assert( m_atoms.size() == 1 );
-		a = m_atoms.front();
-	}
-
-	if ( a )
-	{
-		a->m_func( a );
-	}
-	else
-	{
-		nklog( log::error, "got a dispatch request but cannot lookup the atom" );
-		assert( 0 );
-	}
+	m_func( this );
 }
 
 
-runloop_win32::atom::atom()
-:
-	m_network_events( 0 ),
-	m_relative_time( 0 ),
-	m_absolute_time( 0 ),
-	m_scheduled( false ),
-	m_source( nullptr )
-{
-}
-
-
-runloop_win32::atom::~atom()
-{
-}
-
-
-unsigned __stdcall
-runloop_win32::worker::main( void * arg )
-{
-	worker *self = reinterpret_cast< worker* >( arg );
-
-	while ( self->running() )
-	{
-		self->run( mode::normal );
-	}
-
-	return 0;
-}
-
-
-runloop_win32::worker*
-runloop_win32::worker::get_main_worker()
-{
-	return &runloop_win32::main()->m_main;
-}
-
-
+#if 0
 runloop_win32::worker::worker()
 :
 	m_id( 0 ),
 	m_wakeup( INVALID_HANDLE_VALUE ),
 	m_thread( INVALID_HANDLE_VALUE ),
 	m_done( FALSE ),
-	m_num_sources( 0 ),
 	m_result( 0 ),
 	m_running( true )
 {
@@ -696,33 +415,101 @@ runloop_win32::worker::~worker()
 		m_wakeup = INVALID_HANDLE_VALUE;
 	}
 }
+#endif
 
 
 bool
-runloop_win32::worker::init()
+runloop_win32::init()
 {
-	atom	*a;
 	source	*s;
 	DWORD	err = 0;
 
+	m_port = CreateIoCompletionPort( INVALID_HANDLE_VALUE , nullptr, NULL, 0 );
+
+	if ( m_port == nullptr )
+	{
+		err = -1;
+	}
+
+	std::thread t( [=]()
+	{
+		while ( 1 )
+		{
+			DWORD				bytes_transferred;
+			fd_win32			*fd;
+			fd_win32::context	*context;
+			BOOL				ok;
+
+			ok = GetQueuedCompletionStatus( m_port, &bytes_transferred, ( PULONG_PTR ) &fd, ( LPOVERLAPPED* ) &context, INFINITE );
+
+			if ( !ok )
+			{
+				nklog( log::error, "GetQueuedCompletionStatus failed: %d", ::GetLastError() );
+			}
+
+			if ( fd && context )
+			{
+				switch ( context->m_type )
+				{
+					case fd_win32::context::iocp_connect:
+					{
+						push( [=]()
+						{
+							fd->handle_connect( ok ? 0 : -1 );
+						} );
+					}
+					break;
+
+					case fd_win32::context::iocp_accept:
+					{
+						push( [=]()
+						{
+							fd->handle_accept( ok ? 0 : -1 );
+						} );
+					}
+					break;
+
+					case fd_win32::context::iocp_send:
+					{
+						push( [=]()
+						{
+							fd->handle_send( ok ? 0 : -1, reinterpret_cast< fd_win32::send_context* >( context ) );
+						} );
+					}
+					break;
+
+					case fd_win32::context::iocp_recv:
+					{
+						push( [=]()
+						{
+							fd->handle_recv( ok ? 0 : -1, bytes_transferred );
+						} );
+					}
+					break;
+				}
+			}
+		}
+	} );
+
+	t.detach();
+
 	try
 	{
-		a = new atom;
 		s = new source;
 	}
 	catch ( ... )
 	{
-		a = nullptr;
 		s = nullptr;
 	}
 
-	if ( !a || !s )
+	if ( !s )
 	{
 		err = -1;
-		goto exit;
 	}
 	
-	a->m_func = [=]( event e )
+	m_wakeup = CreateEvent( nullptr, FALSE, FALSE, nullptr );
+
+	schedule( create( m_wakeup ), [=]( event e )
 	{
 		std::pair< void*, dispatch_f > item;
 
@@ -730,108 +517,51 @@ runloop_win32::worker::init()
 		{
 			item.second();
 		}
-	};
-
-	a->m_source = s;
-	s->m_handle	= CreateEvent( nullptr, FALSE, FALSE, nullptr );
-	s->m_atoms.push_back( a );
-	m_wakeup = s->m_handle;
-	
-	schedule( s );
-
-exit:
+	} );
 
 	return ( err == 0 ) ? true : false;
 }
 
 
-
 void
-runloop_win32::worker::schedule( source *s )
+runloop_win32::schedule( source *s )
 {
 	s->m_scheduled	= true;
-	s->m_owner		= this;
 
 	if ( !s->is_timer() )
 	{
-		m_sources[ m_num_sources ] = s;
-		m_handles[ m_num_sources ] = s->m_handle;
-
-		m_num_sources++;
+		m_sources.push_back( s );
 	}
 	else
 	{
-		m_timers.push_back( s->m_atoms.front() );
+		m_timers.push_back( s );
 
-		m_timers.sort( &atom::compare );
+		m_timers.sort( &source::compare );
 	}
-}
-
-
-int
-runloop_win32::worker::source_to_index( source *s )
-{
-	int index;
-
-	for ( index = 0; index < ( int ) m_num_sources; index++ )
-	{
-		if ( m_sources[ index ] == s )
-		{
-			break;
-		}
-	}
-
-	if ( index == ( int ) m_num_sources )
-	{
-		index = -1;
-	}
-
-	return index;
 }
 
 
 void
-runloop_win32::worker::suspend( source *s )
+runloop_win32::suspend( source *s )
 {
-	if ( !s->is_timer() )
+	if ( s->is_timer() )
 	{
-		int		source_index = source_to_index( s );
-		DWORD	delta;
-
-		if ( source_index == -1 )
-		{
-			nklog( log::error, "source not found in list" );
-			goto exit;
-		}
-
-		delta = ( m_num_sources - source_index - 1 );
-
-		// If this Source is not at the end of the list, then move memory
-
-		if ( delta > 0 )
-		{
-			ShiftDown( m_sources, m_num_sources, sizeof( m_sources[ 0 ] ), source_index + 1 );
-			ShiftDown( m_handles, m_num_sources, sizeof( m_handles[ 0 ] ), source_index + 1 );
-		}
-		         
-		m_num_sources--;
+		m_timers.remove( s );
 	}
 	else
 	{
-		m_timers.remove( s->m_atoms.front() );
+		m_sources.erase( std::remove( m_sources.begin(), m_sources.end(), s ), m_sources.end() );
 	}
 
 	s->m_scheduled = false;
-
-exit:
-
-	return;
 }
 
 
 void
-runloop_win32::worker::run( mode how, bool &input_event )
+runloop_win32::run( mode how, bool &input_event )
 {
+	HANDLE		handles[ MAXIMUM_WAIT_OBJECTS ];
+	std::size_t	index = 0;
 	DWORD		result;
 	DWORD		err		= 0;
 	DWORD		timeout = INFINITE;
@@ -844,29 +574,33 @@ runloop_win32::worker::run( mode how, bool &input_event )
 
 		while ( m_timers.size() )
 		{
-			atom *a = m_timers.front();
+			source *s = m_timers.front();
 
-			if ( now < a->m_absolute_time )
+			if ( now < s->m_absolute_time )
 			{
-				timeout = ( DWORD ) ( a->m_absolute_time - now );
+				timeout = ( DWORD ) ( s->m_absolute_time - now );
 				break;
 			}
 			else
 			{
 				m_timers.pop_front();
-				a->m_scheduled				= false;
-				a->m_source->m_scheduled	= false;
-				a->m_source->dispatch();
+				s->m_scheduled = false;
+				s->dispatch();
 
-				if ( a->m_oneshot )
+				if ( s->m_oneshot )
 				{
-					runloop::main()->cancel( a );
+					runloop::main()->cancel( s );
 				}
 			}
 		}
 	}
 
-	result = MsgWaitForMultipleObjects( m_num_sources, m_handles, FALSE, timeout, ( how == mode::input_events ) ? QS_ALLEVENTS : 0 );
+	for ( auto it = m_sources.begin(); it != m_sources.end(); it++ )
+	{
+		handles[ index++ ] = ( *it )->m_handle;
+	}
+
+	result = MsgWaitForMultipleObjects( ( DWORD ) m_sources.size(), handles, FALSE, timeout, ( how == mode::input_events ) ? QS_ALLEVENTS : 0 );
 
 	if ( result == WAIT_FAILED )
 	{
@@ -877,60 +611,20 @@ runloop_win32::worker::run( mode how, bool &input_event )
 	{
 		nklog( log::error, "WaitForMultipleObjects() returned error: %d", err );
 
-#if defined( DEBUG_RUNLOOP )
-
-		for ( unsigned i = 0; i < m_num_sources; i++ )
-		{
-			auto ret = WaitForSingleObject( m_handles[ i ], 0 );
-
-			if ( ret == WAIT_FAILED )
-			{
-				nklog( log::error, "found bad handle...dumping atom contexts:" );
-				
-				for ( auto it = m_sources[ i ]->m_atoms.begin(); it != m_sources[ i ]->m_atoms.end(); it++ )
-				{
-					nklog( log::error, "   bad atom(%d): %s", ( *it )->m_scheduled, ( *it )->m_context.c_str() );
-				}
-			}
-		}
-
-		exit( -1 );
-
-#else
-
-		source::list sources;	
-
-		for ( unsigned i = 0; i < m_num_sources; i++ )
-		{
-			auto ret = WaitForSingleObject( m_handles[ i ], 0 );
-
-			if ( ret == WAIT_FAILED )
-			{
-				nklog( log::error, "found bad handle...suspending" );
-				
-				sources.push_back( m_sources[ i ] );
-			}
-		}
-
-		for ( auto it = sources.begin(); it != sources.end(); it++ )
-		{
-			suspend( *it );
-		}
-
-#endif
-
 		goto exit;
 	}
 
 	if ( result == WAIT_TIMEOUT )
 	{
-		auto a = m_timers.front();
-		m_timers.pop_front();
-		a->m_scheduled				= false;
-		a->m_source->m_scheduled	= false;
-		a->m_source->dispatch();
+		if ( m_timers.size() )
+		{
+			auto s = m_timers.front();
+			m_timers.pop_front();
+			s->m_scheduled	= false;
+			s->dispatch();
+		}
 	}
-	else if ( result == WAIT_OBJECT_0 + m_num_sources )
+	else if ( result == WAIT_OBJECT_0 + m_sources.size() )
 	{
 		input_event = true;
 	}
@@ -941,28 +635,343 @@ runloop_win32::worker::run( mode how, bool &input_event )
 		
 		// Sanity check
 
-		if ( waitItemIndex >= m_num_sources )
+		if ( waitItemIndex >= m_sources.size() )
 		{
-			nklog( log::error, "waitItemIndex (%d) is >= numSources (%d)", waitItemIndex, m_num_sources );
+			nklog( log::error, "waitItemIndex (%d) is >= numSources (%d)", waitItemIndex, m_sources.size() );
 			goto exit;
 		}
 
 		s = m_sources[ waitItemIndex ];
 
-		if ( ( get_main_worker() == this ) || ( waitItemIndex == 0 ) )
-		{
-			s->dispatch();
-		}
-		else
-		{
-			get_main_worker()->push( s, [=]()
-			{
-				s->dispatch();
-			} );
-		}
+		s->dispatch();
 	}
 
 exit:
 
 	return;
+}
+
+LPFN_CONNECTEX				runloop_win32::fd_win32::m_connect_ex;
+LPFN_ACCEPTEX				runloop_win32::fd_win32::m_accept_ex;
+LPFN_GETACCEPTEXSOCKADDRS	runloop_win32::fd_win32::m_get_accept_sockaddrs;
+
+runloop_win32::fd_win32::fd_win32( SOCKET fd, int domain, HANDLE port )
+:
+	m_domain( domain ),
+	m_port( port ),
+	m_fd( fd )
+{
+	assert( m_fd != INVALID_SOCKET );
+
+	m_in_buf.resize( 8192 );
+
+	if ( CreateIoCompletionPort( ( HANDLE ) m_fd, m_port, ( ULONG_PTR ) this, 0 ) == NULL )
+	{
+		nklog( log::error, "CreateIoCompletionPort() failed: %d", ::GetLastError() );
+	}
+
+	if ( !m_connect_ex || !m_accept_ex || !m_get_accept_sockaddrs )
+	{
+		SOCKET sock = socket( AF_INET, SOCK_STREAM, 0 );
+
+		if ( sock != INVALID_SOCKET )
+		{
+			DWORD	dwBytes;
+			int		rc;
+
+			if ( !m_connect_ex )
+			{
+				GUID guid = WSAID_CONNECTEX;
+
+				rc = WSAIoctl( sock, SIO_GET_EXTENSION_FUNCTION_POINTER, &guid, sizeof( guid ), &m_connect_ex, sizeof( m_connect_ex ), &dwBytes, NULL, NULL );
+
+				if ( rc != 0 )
+				{
+				}
+			}
+
+			if ( !m_accept_ex )
+			{
+				GUID guid = WSAID_ACCEPTEX;
+
+				rc = WSAIoctl( sock, SIO_GET_EXTENSION_FUNCTION_POINTER, &guid, sizeof( guid ), &m_accept_ex, sizeof ( m_accept_ex ), &dwBytes, NULL, NULL );
+
+				if ( rc != 0 )
+				{
+				}
+			}
+
+			if ( !m_get_accept_sockaddrs )
+			{
+				GUID guid = WSAID_GETACCEPTEXSOCKADDRS;
+
+				rc = WSAIoctl( sock, SIO_GET_EXTENSION_FUNCTION_POINTER, &guid, sizeof( guid ), &m_get_accept_sockaddrs, sizeof ( m_get_accept_sockaddrs ), &dwBytes, NULL, NULL );
+
+				if ( rc != 0 )
+				{
+				}
+			}
+
+			::closesocket( sock );
+		}
+    }
+}
+
+
+runloop_win32::fd_win32::~fd_win32()
+{
+	nklog( log::verbose, "" );
+
+	if ( m_fd != INVALID_SOCKET )
+	{
+		closesocket( m_fd );
+	}
+}
+
+
+void
+runloop_win32::fd_win32::connect( endpoint::ref to, connect_reply_f reply )
+{
+	sockaddr_storage	this_addr;
+	sockaddr_storage	that_addr;
+	std::size_t			that_addr_len;
+	int					ret;
+	BOOL				ok;
+
+	ZeroMemory( &that_addr, sizeof( that_addr ) );
+	that_addr_len = to->to_sockaddr( that_addr );
+
+	ZeroMemory( &this_addr, sizeof( this_addr ) );
+	this_addr.ss_family = that_addr.ss_family;
+
+	ret = ::bind( m_fd, ( SOCKADDR* ) &this_addr, sizeof( this_addr ) );
+
+	if ( ret != 0 )
+	{
+		nklog( log::error, "bind() failed: %d", ::GetLastError() );
+		reply( -1, nullptr );
+		goto exit;
+    }
+
+	assert( !m_connect_context.m_reply );
+	m_connect_context.m_reply	= reply;
+	m_connect_context.m_to		= to;
+
+	ok = m_connect_ex( m_fd, ( SOCKADDR* ) &that_addr, ( int ) that_addr_len, NULL, 0, NULL, &m_connect_context );
+
+	if ( ok || ( WSAGetLastError() == ERROR_IO_PENDING ) )
+	{
+		retain();
+	}
+	else
+	{
+		nklog( log::error, "ConnectEx() failed: %d", ::GetLastError() );
+		reply( -1, nullptr );
+    }
+ 
+exit:
+
+	return;
+}
+
+
+void
+runloop_win32::fd_win32::handle_connect( int status )
+{
+	if ( m_fd != INVALID_SOCKET )
+	{
+		if ( status == 0 )
+		{
+			auto ret = setsockopt( m_fd, SOL_SOCKET, SO_UPDATE_CONNECT_CONTEXT, NULL, 0 );
+
+			if ( ret != 0 )
+			{
+				nklog( log::warning, "setsockopt() failed: %d", ::GetLastError() );
+			}
+		}
+
+		auto reply					= m_connect_context.m_reply;
+		m_connect_context.m_reply	= nullptr;
+
+		reply( status, m_connect_context.m_to );
+	}
+
+	release();
+}
+
+
+void
+runloop_win32::fd_win32::accept( accept_reply_f reply )
+{
+	DWORD	dwBytes;
+	BOOL	ok;
+
+	m_accept_context.m_fd = WSASocket( m_domain, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED );
+
+	if ( m_accept_context.m_fd == INVALID_SOCKET )
+	{
+		nklog( log::error, "WSASocket() failed: %d", ::GetLastError() );
+		reply( -1, nullptr, nullptr );
+		goto exit;
+	}
+
+	assert( !m_accept_context.m_reply );
+	m_accept_context.m_reply = reply;
+
+	ok = m_accept_ex( m_fd, m_accept_context.m_fd, &m_in_buf[ 0 ], 0, sizeof( sockaddr_storage ) + 16, sizeof( sockaddr_storage ) + 16, &dwBytes, &m_accept_context );
+
+	if ( ok || ( ::GetLastError() == ERROR_IO_PENDING ) )
+	{
+		retain();
+	}
+	else
+	{
+		nklog( log::error, "AcceptEx() failed: %d", ::GetLastError() );
+		reply( -1, nullptr, nullptr );
+	}
+
+exit:
+
+	return;
+}
+
+
+void
+runloop_win32::fd_win32::handle_accept( int status )
+{
+	if ( m_fd != INVALID_SOCKET )
+	{
+		netkit::endpoint::ref	from;
+		fd_win32::ref			fd;
+
+		if ( status == 0 )
+		{
+			endpoint::ref		to;
+			sockaddr_storage	*to_addr;
+			int					to_addr_len = 0;
+			sockaddr_storage	*from_addr;
+			int					from_addr_len = 0;
+	
+			auto ret = setsockopt( m_accept_context.m_fd, SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT, ( char* ) &m_accept_context.m_fd, sizeof( m_accept_context.m_fd ) );
+	
+			if ( ret != 0 )
+			{
+				nklog( log::warning, "setsockopt() failed: %d", ::GetLastError() );
+			}
+
+			m_get_accept_sockaddrs( &m_in_buf[ 0 ], 0, sizeof( sockaddr_storage ) + 16, sizeof( sockaddr_storage ) + 16, ( SOCKADDR** ) &to_addr, &to_addr_len, ( SOCKADDR** ) &from_addr, &from_addr_len );
+
+			to		= netkit::endpoint::from_sockaddr( *to_addr );
+			from	= netkit::endpoint::from_sockaddr( *from_addr );
+	
+			fd		= new fd_win32( m_accept_context.m_fd, m_domain, m_port );
+		}
+
+		auto reply					= m_accept_context.m_reply;
+		m_accept_context.m_reply	= nullptr;
+
+		reply( status, fd, from );
+	}
+
+	release();
+}
+
+
+void
+runloop_win32::fd_win32::send( const std::uint8_t *buf, std::size_t len, send_reply_f reply )
+{
+	WSABUF	bufs[ 1 ];
+	DWORD	bytes_sent;
+	DWORD	err;
+
+	bufs[ 0 ].buf = ( char* ) buf;
+	bufs[ 0 ].len = ( ULONG ) len;
+
+	// We can have multiple send's inflight, so we need to allocate
+	// a unique context here
+
+	auto context		= new send_context;
+	context->m_reply	= reply;
+
+	err = WSASend( m_fd, bufs, 1, &bytes_sent, 0, context, NULL );
+
+	if ( !err || ( ::GetLastError() == ERROR_IO_PENDING ) )
+	{
+		retain();
+	}
+	else
+	{
+		nklog( log::error, "WSASend failed: %d", ::GetLastError() );
+		reply( -1 );
+	}
+}
+
+
+void
+runloop_win32::fd_win32::handle_send( int status, send_context *context )
+{
+	assert( context );
+
+	if ( m_fd != INVALID_SOCKET )
+	{
+		context->m_reply( status );
+		delete context;
+	}
+
+	release();
+}
+
+
+void
+runloop_win32::fd_win32::recv( recv_reply_f reply )
+{
+	WSABUF	bufs[ 1 ];
+	DWORD	bytes_read;
+	DWORD	flags = 0;
+	DWORD	err;
+
+	bufs[ 0 ].buf = ( char* ) &m_in_buf[ 0 ];
+	bufs[ 0 ].len = ( ULONG ) m_in_buf.size();
+
+	assert( !m_recv_context.m_reply );
+	m_recv_context.m_reply = reply;
+
+	err = WSARecv( m_fd, bufs, 1, &bytes_read, &flags, &m_recv_context, nullptr );
+
+	if ( !err || ( ::GetLastError() == ERROR_IO_PENDING ) )
+	{
+		retain();
+	}
+	else
+	{
+		nklog( log::error, "WSARecv failed: %d", ::GetLastError() );
+		reply( -1, nullptr, 0 );
+	}
+}
+
+
+void
+runloop_win32::fd_win32::handle_recv( int status, DWORD bytes_read )
+{
+	if ( m_fd != INVALID_SOCKET )
+	{
+		auto reply				= m_recv_context.m_reply;
+		m_recv_context.m_reply	= nullptr;
+
+		reply( 0, &m_in_buf[ 0 ], bytes_read );
+	}
+
+	release();
+}
+
+
+void
+runloop_win32::fd_win32::close()
+{
+	if ( m_fd != INVALID_SOCKET )
+	{
+		nklog( log::verbose, "sock = %d", m_fd );
+		::closesocket( m_fd );
+		m_fd = INVALID_SOCKET;
+	}
 }

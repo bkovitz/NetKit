@@ -32,7 +32,8 @@
 #define _netkit_runloop_h
 
 #include <NetKit/NKObject.h>
-#if defined( WIN32 )
+#include <NetKit/NKEndpoint.h>
+#if defined( _WIN32 )
 #	include <WinSock2.h>
 #endif
 #include <functional>
@@ -44,48 +45,70 @@ class NETKIT_DLL runloop : public object
 {
 public:
 
+	class NETKIT_DLL fd : public object
+	{
+	public:
+
+		typedef smart_ref< fd >																	ref;
+		typedef std::function< void ( int status, const endpoint::ref &peer ) >					connect_reply_f;
+		typedef std::function< void ( int status, fd::ref fd, const endpoint::ref &peer ) >	accept_reply_f;
+		typedef std::function< void ( int status ) >											send_reply_f;
+		typedef std::function< void ( int status, const std::uint8_t *buf, std::size_t len ) >	recv_reply_f;
+
+		virtual void
+		connect( endpoint::ref to, connect_reply_f reply ) = 0;
+
+		virtual void
+		accept( accept_reply_f reply ) = 0;
+
+		virtual void
+		send( const std::uint8_t *buf, std::size_t len, send_reply_f reply ) = 0;
+
+		virtual void
+		recv( recv_reply_f reply ) = 0;
+
+		virtual void
+		close() = 0;
+	};
+
 	typedef void *event;
 	
 	enum class event_mask
 	{
-		read		= ( 1 << 2 ),
-		write		= ( 1 << 3 ),
-		oob			= ( 1 << 4 ),
-		timer		= ( 1 << 5 )
+		timer = ( 1 << 0 )
 	};
 
 	enum class mode
 	{
 		normal			= 0,
 		once			= 1,
-#if defined( WIN32 )
+#if defined( _WIN32 )
 		input_events	= 2,
 #endif
 	};
 
-	typedef smart_ref< runloop > ref;
-
+	typedef smart_ref< runloop >				ref;
 	typedef std::function< void ( void ) >		dispatch_f;
 	typedef std::function< void ( event e ) >	event_f;
 
 	static runloop::ref
 	main();
+
+	virtual fd::ref
+	create( std::int32_t domain, std::int32_t type, std::int32_t protocol ) = 0;
+
+	virtual fd::ref
+	create( netkit::endpoint::ref in_endpoint, netkit::endpoint::ref &out_endpoint, std::int32_t domain, std::int32_t type, std::int32_t protocol ) = 0;
+
+#if defined( _WIN32 )
 	
-	virtual event
-	create( int fd, event_mask m ) = 0;
-
-#if defined( WIN32 )
-
 	virtual event
 	create( HANDLE h ) = 0;
 
 #endif
-	
+
 	virtual event
 	create( std::time_t msec ) = 0;
-	
-	virtual void
-	modify( event e, std::time_t msec ) = 0;
 	
 	virtual void
 	schedule( event e, event_f func ) = 0;

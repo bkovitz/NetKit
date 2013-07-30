@@ -139,31 +139,25 @@ protected:
 
 	struct send_info
 	{
-		send_info( const std::uint8_t *buf, std::size_t len, send_reply_f reply )
+		send_info( const std::uint8_t *buf, std::size_t len )
 		:
 			m_buf( buf, buf + len ),
-			m_idx( 0 ),
-			m_reply( reply )
+			m_idx( 0 )
 		{
 		}
 	
 		buf_t			m_buf;
 		std::size_t		m_idx;
-		send_reply_f	m_reply;
 	};
 	
+	virtual void
+	start_connect( const endpoint::ref &to, connect_reply_f reply ) = 0;
+
+	virtual void
+	start_send( const std::uint8_t *buf, std::size_t len, send_reply_f reply ) = 0;
 	
-	virtual int
-	start_connect( const endpoint::ref &peer, bool &would_block ) = 0;
-	
-	virtual int
-	finish_connect() = 0;
-	
-	virtual std::streamsize
-	start_send( const std::uint8_t *buf, std::size_t len, bool &would_block ) = 0;
-	
-	virtual std::streamsize
-	start_recv( std::uint8_t *buf, std::size_t len, bool &would_block ) = 0;
+	virtual void
+	start_recv( recv_reply_f reply ) = 0;
 	
 	void
 	handle_resolve( ip::address::list addrs, const uri::ref &uri, connect_reply_f reply );
@@ -175,9 +169,6 @@ protected:
 	recv_internal( bool peek, recv_reply_f reply );
 	
 	void
-	send_internal();
-
-	void
 	teardown_notifications();
 	
 	typedef std::queue< send_info* >	send_queue;
@@ -185,8 +176,6 @@ protected:
 
 	adapter::list	m_adapters;
 	close_handlers	m_close_handlers;
-	runloop::event	m_send_event;
-	runloop::event	m_recv_event;
 	
 	send_queue		m_send_queue;
 	recv_queue		m_recv_queue;
