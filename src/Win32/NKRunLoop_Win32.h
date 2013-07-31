@@ -246,19 +246,13 @@ private:
 		dispatch();
 	};
 
-	bool			m_setup;
-	source::vector	m_sources;
-	source::list	m_timers;
-	bool			m_running;
-
 	typedef netkit::concurrent::queue< std::pair< void*, dispatch_f > >		queue;
 
-	HANDLE			m_iocp_thread;
-	HANDLE			m_wakeup;
-	HANDLE			m_port;
-	HANDLE			m_network;
-	DWORD			m_result;
-
+	source::vector			m_sources;
+	source::list			m_timers;
+	bool					m_running;
+	HANDLE					m_wakeup;
+	HANDLE					m_port;
 	queue					m_queue;
 	std::recursive_mutex	m_mutex;
 		
@@ -300,7 +294,6 @@ private:
 
 	void
 	run( mode how, bool &input_event );
-	
 };
 
 

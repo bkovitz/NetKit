@@ -45,7 +45,8 @@ runloop_win32::main()
 
 runloop_win32::runloop_win32()
 :
-	m_running( FALSE )
+	m_running( false ),
+	m_port( INVALID_HANDLE_VALUE )
 {
 	init();
 }
@@ -53,6 +54,7 @@ runloop_win32::runloop_win32()
 
 runloop_win32::~runloop_win32()
 {
+	nklog( log::verbose, "" );
 }
 
 
@@ -392,30 +394,6 @@ runloop_win32::source::dispatch()
 }
 
 
-#if 0
-runloop_win32::worker::worker()
-:
-	m_id( 0 ),
-	m_wakeup( INVALID_HANDLE_VALUE ),
-	m_thread( INVALID_HANDLE_VALUE ),
-	m_done( FALSE ),
-	m_result( 0 ),
-	m_running( true )
-{
-}
-
-
-runloop_win32::worker::~worker()
-{
-	if ( m_wakeup )
-	{
-		CloseHandle( m_wakeup );
-		m_wakeup = INVALID_HANDLE_VALUE;
-	}
-}
-#endif
-
-
 bool
 runloop_win32::init()
 {
@@ -424,81 +402,89 @@ runloop_win32::init()
 
 	m_port = CreateIoCompletionPort( INVALID_HANDLE_VALUE , nullptr, NULL, 0 );
 
-	if ( m_port == nullptr )
+	if ( m_port != nullptr )
 	{
-		err = -1;
-	}
-
-	std::thread t( [=]()
-	{
-		while ( 1 )
+		std::thread t( [=]()
 		{
-			DWORD				bytes_transferred;
-			fd_win32			*fd;
-			fd_win32::context	*context;
-			BOOL				ok;
-
-			ok = GetQueuedCompletionStatus( m_port, &bytes_transferred, ( PULONG_PTR ) &fd, ( LPOVERLAPPED* ) &context, INFINITE );
-
-			if ( !ok )
+			while ( 1 )
 			{
-				nklog( log::error, "GetQueuedCompletionStatus failed: %d", ::GetLastError() );
-			}
+				DWORD				bytes_transferred;
+				fd_win32			*fd;
+				fd_win32::context	*context;
+				BOOL				ok;
 
-			if ( fd && context )
-			{
-				switch ( context->m_type )
+				ok = GetQueuedCompletionStatus( m_port, &bytes_transferred, ( PULONG_PTR ) &fd, ( LPOVERLAPPED* ) &context, INFINITE );
+
+				if ( !ok )
 				{
-					case fd_win32::context::iocp_connect:
-					{
-						push( [=]()
-						{
-							fd->handle_connect( ok ? 0 : -1 );
-						} );
-					}
-					break;
+					nklog( log::error, "GetQueuedCompletionStatus failed: %d", ::GetLastError() );
+				}
 
-					case fd_win32::context::iocp_accept:
+				if ( fd && context )
+				{
+					switch ( context->m_type )
 					{
-						push( [=]()
+						case fd_win32::context::iocp_connect:
 						{
-							fd->handle_accept( ok ? 0 : -1 );
-						} );
-					}
-					break;
+							push( [=]()
+							{
+								fd->handle_connect( ok ? 0 : -1 );
+							} );
+						}
+						break;
 
-					case fd_win32::context::iocp_send:
-					{
-						push( [=]()
+						case fd_win32::context::iocp_accept:
 						{
-							fd->handle_send( ok ? 0 : -1, reinterpret_cast< fd_win32::send_context* >( context ) );
-						} );
-					}
-					break;
+							push( [=]()
+							{
+								fd->handle_accept( ok ? 0 : -1 );
+							} );
+						}
+						break;
 
-					case fd_win32::context::iocp_recv:
-					{
-						push( [=]()
+						case fd_win32::context::iocp_send:
 						{
-							fd->handle_recv( ok ? 0 : -1, bytes_transferred );
-						} );
-					}
-					break;
+							push( [=]()
+							{
+								fd->handle_send( ok ? 0 : -1, reinterpret_cast< fd_win32::send_context* >( context ) );
+							} );
+						}
+						break;
 
-					case fd_win32::context::iocp_recvfrom:
-					{
-						push( [=]()
+						case fd_win32::context::iocp_recv:
 						{
-							fd->handle_recvfrom( ok ? 0 : -1, bytes_transferred );
-						} );
+							push( [=]()
+							{
+								fd->handle_recv( ok ? 0 : -1, bytes_transferred );
+							} );
+						}
+						break;
+
+						case fd_win32::context::iocp_recvfrom:
+						{
+							push( [=]()
+							{
+								fd->handle_recvfrom( ok ? 0 : -1, bytes_transferred );
+							} );
+						}
+						break;
 					}
-					break;
+				}
+				else if ( ok )
+				{
+					// nklog( log::verbose, "exiting iocp loop" );
+					// break;
 				}
 			}
-		}
-	} );
+		} );
 
-	t.detach();
+		t.detach();
+	}
+	else
+	{
+		nklog( log::error, "CreateIoCompletionPort() failed: %d", ::WSAGetLastError() );
+		err = -1;
+	}
 
 	try
 	{
