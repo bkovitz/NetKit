@@ -191,7 +191,7 @@ public:
 
 TEST_CASE( "NetKit/json/3", "json rpc" )
 {
-	ip::tcp::acceptor::ref	acceptor	= new ip::tcp::acceptor( new ip::endpoint( 0 ) );
+	ip::tcp::acceptor::ref	acceptor	= new ip::tcp::acceptor( new ip::endpoint( AF_INET, 0 ) );
 	echo::ref				e			= new echo;
 	
 	acceptor->accept( [=]( int status, socket::ref sock )

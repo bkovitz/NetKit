@@ -36,7 +36,7 @@ using namespace netkit;
 
 TEST_CASE( "NetKit/http/server/1", "http server tests" )
 {
-	ip::tcp::acceptor::ref	acceptor	= new ip::tcp::acceptor( new ip::endpoint( 0 ) );
+	ip::tcp::acceptor::ref	acceptor	= new ip::tcp::acceptor( new ip::endpoint( AF_INET, 0 ) );
 	http::request::ref		request;
 	std::ostringstream		os;
 	
@@ -81,7 +81,7 @@ TEST_CASE( "NetKit/http/server/1", "http server tests" )
 
 TEST_CASE( "NetKit/http/server/2", "http server tests" )
 {
-	ip::tcp::acceptor::ref	acceptor	= new ip::tcp::acceptor( new ip::endpoint( 0 ) );
+	ip::tcp::acceptor::ref	acceptor	= new ip::tcp::acceptor( new ip::endpoint( AF_INET, 0 ) );
 	http::request::ref		request;
 	std::ostringstream		os;
 	
@@ -121,6 +121,26 @@ TEST_CASE( "NetKit/http/server/2", "http server tests" )
 TEST_CASE( "NetKit/http/server/3", "http redirect tests" )
 {
 	http::request::ref request = new http::request( http::method::get, 1, 1, new uri( "http://www.apple.com/bonjour" ) );
+
+	request->set_max_redirects( 1 );
+	
+	request->on_reply( [=]( http::response::ref response )
+	{
+		REQUIRE( response->status() == 302 );
+		runloop::main()->stop();
+	} );
+	
+	http::client::send( request );
+	
+	runloop::main()->run();
+}
+
+
+TEST_CASE( "NetKit/http/server/4", "http redirect tests" )
+{
+	http::request::ref request = new http::request( http::method::get, 1, 1, new uri( "http://www.apple.com/bonjour" ) );
+
+	request->set_max_redirects( 10 );
 	
 	request->on_reply( [=]( http::response::ref response )
 	{
@@ -141,8 +161,6 @@ do_accept( ip::tcp::acceptor::ref acceptor )
 
 	acceptor->accept( [=]( int status, socket::ref sock ) mutable
 	{
-nklog( log::verbose, "accepted %d connections\n", ++i );
-
 		sink::ref sink = http::server::adopt( sock.get() );
 		sink->bind( sock.get() );
 
@@ -151,9 +169,9 @@ nklog( log::verbose, "accepted %d connections\n", ++i );
 }
 
 
-TEST_CASE( "NetKit/http/server/4", "http stress tests" )
+TEST_CASE( "NetKit/http/server/5", "http stress tests" )
 {
-	ip::tcp::acceptor::ref	acceptor		= new ip::tcp::acceptor( new ip::endpoint( 0 ) );
+	ip::tcp::acceptor::ref	acceptor		= new ip::tcp::acceptor( new ip::endpoint( AF_INET, 0 ) );
 	std::int32_t			max_count		= 500;
 	std::int32_t			*messages_rcvd	= new std::int32_t;
 	std::int32_t			*errors			= new std::int32_t;

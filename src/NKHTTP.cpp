@@ -1597,6 +1597,7 @@ client::process_will_begin( connection::ref connection )
 void
 client::message_will_begin( connection::ref connection )
 {
+	m_request->set_redirect( "" );
 }
 
 
@@ -1621,10 +1622,15 @@ client::headers_were_received( connection::ref connection, message::header &head
 	{
 		for ( auto it = header.begin(); it != header.end(); it++ )
 		{
-			if ( ( it->first == "Location" ) && m_request->can_redirect() )
+			if ( it->first == "Location" )
 			{
-				m_redirect = it->second;
-				m_request->redirect();
+				if ( m_request->can_redirect() )
+				{
+					m_redirect = it->second;
+					m_request->redirect();
+				}
+
+				ret = 1;
 			}
 		}
 	}
