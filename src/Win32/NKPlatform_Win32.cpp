@@ -4,6 +4,8 @@
 #include <NetKit/NKHTTP.h>
 #include <NetKit/NKJSON.h>
 #include <NetKit/NKLog.h>
+#include <NetKit/NKBase64.h>
+#include <WinCrypt.h>
 #include <winsock2.h>
 #include <iphlpapi.h>
 #include <windows.h>
@@ -450,6 +452,8 @@ platform::machine_id()
 					 pAdapterInfo->Address[5] );
 
 				id = buf;
+
+				nklog( log::info, "machine id is %s", buf );
 
 				break;
 			}
