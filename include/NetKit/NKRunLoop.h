@@ -49,14 +49,18 @@ public:
 	{
 	public:
 
-		typedef smart_ref< fd >																	ref;
-		typedef std::function< void ( int status, const endpoint::ref &peer ) >					connect_reply_f;
-		typedef std::function< void ( int status, fd::ref fd, const endpoint::ref &peer ) >	accept_reply_f;
-		typedef std::function< void ( int status ) >											send_reply_f;
-		typedef std::function< void ( int status, const std::uint8_t *buf, std::size_t len ) >	recv_reply_f;
+		typedef smart_ref< fd >																								ref;
+		typedef std::function< void ( int status, const endpoint::ref &peer ) >												connect_reply_f;
+		typedef std::function< void ( int status, fd::ref fd, const endpoint::ref &peer ) >									accept_reply_f;
+		typedef std::function< void ( int status ) >																		send_reply_f;
+		typedef std::function< void ( int status, const std::uint8_t *buf, std::size_t len ) >								recv_reply_f;
+		typedef std::function< void ( int status, const std::uint8_t *buf, std::size_t len, netkit::endpoint::ref from ) >	recvfrom_reply_f;
+
+		virtual int
+		bind( netkit::endpoint::ref to ) = 0;
 
 		virtual void
-		connect( endpoint::ref to, connect_reply_f reply ) = 0;
+		connect( netkit::endpoint::ref to, connect_reply_f reply ) = 0;
 
 		virtual void
 		accept( accept_reply_f reply ) = 0;
@@ -65,7 +69,13 @@ public:
 		send( const std::uint8_t *buf, std::size_t len, send_reply_f reply ) = 0;
 
 		virtual void
+		sendto( const std::uint8_t *buf, std::size_t len, netkit::endpoint::ref to, send_reply_f reply ) = 0;
+
+		virtual void
 		recv( recv_reply_f reply ) = 0;
+
+		virtual void
+		recvfrom( recvfrom_reply_f reply ) = 0;
 
 		virtual void
 		close() = 0;

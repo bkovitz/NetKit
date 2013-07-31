@@ -60,15 +60,15 @@ public:
 	
 public:
 
-	endpoint( std::uint16_t port );
-
 	endpoint( addrinfo &ai );
 	
 	endpoint( const sockaddr_storage &addr );
 	
 	endpoint( const uri::ref &uri );
 	
-	endpoint( const address::ref &host, uint16_t port );
+	endpoint( int domain, std::uint16_t port );
+
+	endpoint( const address::ref &host, std::uint16_t port );
 
 	endpoint( const netkit::json::value_ref &json );
 	

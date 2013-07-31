@@ -428,6 +428,30 @@ public:
 		m_reply = reply;
 	}
 
+	inline std::int32_t
+	max_redirects() const
+	{
+		return m_max_redirects;
+	}
+
+	inline void
+	set_max_redirects( std::int32_t val )
+	{
+		m_max_redirects = val;
+	}
+
+	inline bool
+	can_redirect()
+	{
+		return ( m_num_redirects < m_max_redirects ) ? true : false;
+	}
+
+	inline void
+	redirect()
+	{
+		m_num_redirects++;
+	}
+
 protected:
 
 	request( const request &that );
@@ -435,6 +459,8 @@ protected:
 	void
 	init();
 
+	std::int32_t	m_max_redirects;
+	std::int32_t	m_num_redirects;
 	auth_f			m_auth;
 	headers_reply_f	m_headers_reply;
 	body_reply_f	m_body_reply;

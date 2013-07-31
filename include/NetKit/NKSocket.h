@@ -173,6 +173,12 @@ public:
 	acceptor( const endpoint::ref &endpoint, int domain, int type );
 	
 	virtual ~acceptor();
+
+	inline bool
+	is_listening() const
+	{
+		return ( m_fd ) ? true : false;
+	}
 	
 	virtual void
 	accept( accept_reply_f reply ) = 0;
@@ -264,10 +270,6 @@ public:
 	
 	virtual void
 	accept( accept_reply_f reply );
-
-protected:
-
-	runloop::event m_event;
 };
 
 }

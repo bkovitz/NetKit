@@ -58,12 +58,6 @@ endpoint::from_sockaddr( const sockaddr_storage &addr )
 #	pragma mark ip::endpoint implementation
 #endif
 
-ip::endpoint::endpoint( std::uint16_t port )
-:
-	m_addr( new ip::address( INADDR_ANY ) ),
-	m_port( port )
-{
-}
 
 
 ip::endpoint::endpoint( addrinfo &ai )
@@ -108,6 +102,27 @@ ip::endpoint::endpoint( const uri::ref &uri )
 {
 }
 
+
+ip::endpoint::endpoint( int domain, std::uint16_t port )
+:
+	m_port( port )
+{
+	switch ( domain )
+	{
+		case AF_INET:
+		{
+			m_addr = new ip::address( INADDR_ANY );
+		}
+		break;
+
+		case AF_INET6:
+		{
+			m_addr = new ip::address( in6addr_any );
+		}
+		break;
+	}
+}
+
 	
 ip::endpoint::endpoint( const address::ref &addr, uint16_t port )
 :
@@ -132,6 +147,8 @@ std::size_t
 ip::endpoint::to_sockaddr( sockaddr_storage &addr ) const
 {
 	std::size_t len = 0;
+
+	memset( &addr, 0, sizeof( addr ) );
 
 	if ( m_addr->is_v4() )
 	{

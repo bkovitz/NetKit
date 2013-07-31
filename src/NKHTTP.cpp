@@ -676,6 +676,8 @@ message::send_body( connection_ref conn ) const
 request::request( int method, std::uint16_t major, std::uint16_t minor, const netkit::uri::ref &uri )
 :
 	message( major, minor ),
+	m_max_redirects( 3 ),
+	m_num_redirects( 0 ),
 	m_method( method ),
 	m_uri( uri )
 {
@@ -1619,9 +1621,10 @@ client::headers_were_received( connection::ref connection, message::header &head
 	{
 		for ( auto it = header.begin(); it != header.end(); it++ )
 		{
-			if ( it->first == "Location" )
+			if ( ( it->first == "Location" ) && m_request->can_redirect() )
 			{
 				m_redirect = it->second;
+				m_request->redirect();
 			}
 		}
 	}

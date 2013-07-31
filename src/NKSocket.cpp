@@ -281,11 +281,6 @@ ip::tcp::acceptor::acceptor( const ip::endpoint::ref &endpoint )
 ip::tcp::acceptor::~acceptor()
 {
 	nklog( log::verbose, "" );
-
-	if ( m_event )
-	{
-		runloop::main()->cancel( m_event );
-	}
 }
 
 

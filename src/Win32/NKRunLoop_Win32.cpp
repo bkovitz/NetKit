@@ -177,8 +177,6 @@ runloop_win32::create( std::time_t msec )
 	s->m_relative_time	= msec;
 	s->m_oneshot		= false;
 
-	m_timers.push_back( s );
-
 exit:
 
 	return s;
@@ -486,6 +484,15 @@ runloop_win32::init()
 						} );
 					}
 					break;
+
+					case fd_win32::context::iocp_recvfrom:
+					{
+						push( [=]()
+						{
+							fd->handle_recvfrom( ok ? 0 : -1, bytes_transferred );
+						} );
+					}
+					break;
 				}
 			}
 		}
@@ -729,6 +736,25 @@ runloop_win32::fd_win32::~fd_win32()
 }
 
 
+int
+runloop_win32::fd_win32::bind( netkit::endpoint::ref to )
+{
+	struct sockaddr_storage addr;
+	std::size_t				len;
+
+	len = to->to_sockaddr( addr );
+
+	auto ret = ::bind( m_fd, ( SOCKADDR* ) &addr, ( int ) len );
+
+	if ( ret != 0 )
+	{
+		nklog( log::error, "bind() failed: %d", ::WSAGetLastError() );
+	}
+
+	return ret;
+}
+
+
 void
 runloop_win32::fd_win32::connect( endpoint::ref to, connect_reply_f reply )
 {
@@ -908,6 +934,40 @@ runloop_win32::fd_win32::send( const std::uint8_t *buf, std::size_t len, send_re
 
 
 void
+runloop_win32::fd_win32::sendto( const std::uint8_t *buf, std::size_t len, netkit::endpoint::ref to, send_reply_f reply )
+{
+	struct sockaddr_storage addr;
+	std::size_t				addr_len;
+	WSABUF					bufs[ 1 ];
+	DWORD					bytes_sent;
+	DWORD					err;
+
+	bufs[ 0 ].buf = ( char* ) buf;
+	bufs[ 0 ].len = ( ULONG ) len;
+
+	// We can have multiple send's inflight, so we need to allocate
+	// a unique context here
+
+	auto context		= new send_context;
+	context->m_reply	= reply;
+
+	addr_len = to->to_sockaddr( addr );
+
+	err = WSASendTo( m_fd, bufs, 1, &bytes_sent, 0, ( SOCKADDR* ) &addr, ( int ) addr_len, context, NULL );
+
+	if ( !err || ( ::GetLastError() == ERROR_IO_PENDING ) )
+	{
+		retain();
+	}
+	else
+	{
+		nklog( log::error, "WSASend failed: %d", ::GetLastError() );
+		reply( -1 );
+	}
+}
+
+
+void
 runloop_win32::fd_win32::handle_send( int status, send_context *context )
 {
 	assert( context );
@@ -927,7 +987,6 @@ runloop_win32::fd_win32::recv( recv_reply_f reply )
 {
 	WSABUF	bufs[ 1 ];
 	DWORD	bytes_read;
-	DWORD	flags = 0;
 	DWORD	err;
 
 	bufs[ 0 ].buf = ( char* ) &m_in_buf[ 0 ];
@@ -935,8 +994,9 @@ runloop_win32::fd_win32::recv( recv_reply_f reply )
 
 	assert( !m_recv_context.m_reply );
 	m_recv_context.m_reply = reply;
+	m_recv_context.m_flags = 0;
 
-	err = WSARecv( m_fd, bufs, 1, &bytes_read, &flags, &m_recv_context, nullptr );
+	err = WSARecv( m_fd, bufs, 1, &bytes_read, &m_recv_context.m_flags, &m_recv_context, nullptr );
 
 	if ( !err || ( ::GetLastError() == ERROR_IO_PENDING ) )
 	{
@@ -959,6 +1019,53 @@ runloop_win32::fd_win32::handle_recv( int status, DWORD bytes_read )
 		m_recv_context.m_reply	= nullptr;
 
 		reply( 0, &m_in_buf[ 0 ], bytes_read );
+	}
+
+	release();
+}
+
+
+void
+runloop_win32::fd_win32::recvfrom( recvfrom_reply_f reply )
+{
+	WSABUF	bufs[ 1 ];
+	DWORD	bytes_read;
+	DWORD	flags = 0;
+	DWORD	err;
+
+	bufs[ 0 ].buf = ( char* ) &m_in_buf[ 0 ];
+	bufs[ 0 ].len = ( ULONG ) m_in_buf.size();
+
+	assert( !m_recvfrom_context.m_reply );
+	m_recvfrom_context.m_reply		= reply;
+	m_recvfrom_context.m_flags		= 0;
+	m_recvfrom_context.m_addr_len	= sizeof( m_recvfrom_context.m_addr );
+
+	err = WSARecvFrom( m_fd, bufs, 1, &bytes_read, &m_recvfrom_context.m_flags, ( SOCKADDR* ) &m_recvfrom_context.m_addr, &m_recvfrom_context.m_addr_len, &m_recvfrom_context, nullptr );
+
+	if ( !err || ( ::GetLastError() == ERROR_IO_PENDING ) )
+	{
+		retain();
+	}
+	else
+	{
+		nklog( log::error, "WSARecvFrom failed: %d", ::GetLastError() );
+		m_recvfrom_context.m_reply = nullptr;
+		reply( -1, nullptr, 0, nullptr );
+	}
+}
+
+
+void
+runloop_win32::fd_win32::handle_recvfrom( int status, DWORD bytes_read )
+{
+	if ( m_fd != INVALID_SOCKET )
+	{
+		endpoint::ref from			= endpoint::from_sockaddr( m_recvfrom_context.m_addr );
+		auto reply					= m_recvfrom_context.m_reply;
+		m_recvfrom_context.m_reply	= nullptr;
+
+		reply( 0, &m_in_buf[ 0 ], bytes_read, from );
 	}
 
 	release();

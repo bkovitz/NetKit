@@ -28,7 +28,8 @@ public:
 				iocp_connect	= 1,
 				iocp_accept		= 2,
 				iocp_send		= 3,
-				iocp_recv		= 4
+				iocp_recv		= 4,
+				iocp_recvfrom	= 5
 			};
 
 			context( type val )
@@ -44,7 +45,8 @@ public:
 		{
 			connect_context()
 			:
-				context( iocp_connect )
+				context( iocp_connect ),
+				m_reply( nullptr )
 			{
 			}
 
@@ -56,7 +58,8 @@ public:
 		{
 			accept_context()
 			:
-				context( iocp_accept )
+				context( iocp_accept ),
+				m_reply( nullptr )
 			{
 			}
 
@@ -68,7 +71,8 @@ public:
 		{
 			send_context()
 			:
-				context( iocp_send )
+				context( iocp_send ),
+				m_reply( nullptr )
 			{
 			}
 
@@ -79,16 +83,36 @@ public:
 		{
 			recv_context()
 			:
-				context( iocp_recv )
+				context( iocp_recv ),
+				m_reply( nullptr )
 			{
 			}
 
-			recv_reply_f m_reply;
+			DWORD			m_flags;
+			recv_reply_f	m_reply;
+		};
+
+		struct recvfrom_context : public context
+		{
+			recvfrom_context()
+			:
+				context( iocp_recvfrom ),
+				m_reply( nullptr )
+			{
+			}
+
+			sockaddr_storage	m_addr;
+			INT					m_addr_len;
+			DWORD				m_flags;
+			recvfrom_reply_f	m_reply;
 		};
 
 		fd_win32( SOCKET fd, int domain, HANDLE port );
 
 		virtual ~fd_win32();
+
+		virtual int
+		bind( netkit::endpoint::ref to );
 
 		virtual void
 		connect( netkit::endpoint::ref to, connect_reply_f reply );
@@ -105,6 +129,9 @@ public:
 		virtual void
 		send( const std::uint8_t *buf, std::size_t len, send_reply_f reply );
 
+		virtual void
+		sendto( const std::uint8_t *buf, std::size_t len, netkit::endpoint::ref to, send_reply_f reply );
+
 		void
 		handle_send( int status, send_context *context );
 
@@ -113,6 +140,12 @@ public:
 
 		void
 		handle_recv( int status, DWORD bytes_read );
+
+		virtual void
+		recvfrom( recvfrom_reply_f reply );
+
+		void
+		handle_recvfrom( int status, DWORD bytes_read );
 
 		virtual void
 		close();
@@ -126,6 +159,7 @@ public:
 		connect_context						m_connect_context;
 		accept_context						m_accept_context;
 		recv_context						m_recv_context;
+		recvfrom_context					m_recvfrom_context;
 		std::vector< std::uint8_t >			m_in_buf;
 		int									m_domain;
 		HANDLE								m_port;
