@@ -45,15 +45,6 @@ std::recursive_mutex	*log::m_mutex;
 static std::uint8_t		*g_ptr	= nullptr;
 
 
-log::level
-log::get_level()
-{
-	std::lock_guard<std::recursive_mutex> lock( *m_mutex );
-
-	return m_log_level;
-}
-
-
 netkit::cookie
 log::on_set( set_f handler )
 {

@@ -75,8 +75,11 @@ public:
 	init( const char *name );
 #endif
 
-	static level
-	get_level();
+	inline static level
+	get_level()
+	{
+		return m_log_level;
+	}
 
 	static void
 	set_level( level l );

@@ -94,76 +94,73 @@ exit:
 void
 log::put( log::level l, const char * filename, const char * function, int line, const char * format, ... )
 {
-	if ( l <= m_log_level )
+	std::lock_guard< std::recursive_mutex > guard( *m_mutex );
+
+	static char buf[ 32000 ];
+	static char msg[ 32512 ];
+	static char timeStr[ 1024 ];
+	time_t t;
+	int n = 0; 
+	va_list ap;
+
+	va_start( ap, format );
+	n = vsnprintf_s( buf, sizeof( buf ), _TRUNCATE, format, ap );
+	va_end( ap );
+		
+	t = time( NULL );
+	ctime_s( timeStr, sizeof( timeStr ), &t );
+		
+	if ( timeStr )
 	{
-		std::lock_guard< std::recursive_mutex > guard( *m_mutex );
-
-		static char buf[ 32000 ];
-		static char msg[ 32512 ];
-		static char timeStr[ 1024 ];
-		time_t t;
-		int n = 0; 
-		va_list ap;
-
-		va_start( ap, format );
-		n = vsnprintf_s( buf, sizeof( buf ), _TRUNCATE, format, ap );
-		va_end( ap );
-		
-		t = time( NULL );
-		ctime_s( timeStr, sizeof( timeStr ), &t );
-		
-		if ( timeStr )
+		for ( unsigned i = 0; i < strlen( timeStr ); i++ )
 		{
-			for ( unsigned i = 0; i < strlen( timeStr ); i++ )
+			if ( timeStr[ i ] == '\n' )
 			{
-				if ( timeStr[ i ] == '\n' )
-				{
-					timeStr[ i ] = '\0';
-				}
+				timeStr[ i ] = '\0';
 			}
 		}
-		
-		_snprintf_s( msg, sizeof( msg ), _TRUNCATE, "%d:%d %s %s:%d %s %s", GetCurrentProcessId(), GetCurrentThreadId(), timeStr, prune( filename ).c_str(), line, function, buf );
-		
-		for ( unsigned i = 0; i < strlen( msg ); i++ )
-		{
-			if ( msg[ i ] == '\n' )
-			{
-				msg[ i ] = '\0';
-			}
-		}
-
-		if ( g_event_source )
-		{
-			WORD		type;
-			const char	*array[ 1 ];
-			BOOL		ok;
-
-			// Map the debug level to a Windows EventLog type.
-	
-			if ( l == log::warning )
-			{
-				type = EVENTLOG_WARNING_TYPE;
-			}
-			else if ( l == log::error )
-			{
-				type = EVENTLOG_ERROR_TYPE;
-			}
-			else
-			{
-				type = EVENTLOG_INFORMATION_TYPE;
-			}
-	
-			// Add the the string to the event log.
-	
-			array[ 0 ] = msg;
-	
-			ok = ReportEventA( g_event_source, type, 0, NETKIT_LOG, NULL, 1, 0, array, NULL );
-		}
-
-		OutputDebugStringA( msg );
-		OutputDebugStringA( "\n" );
-		
-		fprintf( stderr, "%s\n", msg );
 	}
+		
+	_snprintf_s( msg, sizeof( msg ), _TRUNCATE, "%d:%d %s %s:%d %s %s", GetCurrentProcessId(), GetCurrentThreadId(), timeStr, prune( filename ).c_str(), line, function, buf );
+		
+	for ( unsigned i = 0; i < strlen( msg ); i++ )
+	{
+		if ( msg[ i ] == '\n' )
+		{
+			msg[ i ] = '\0';
+		}
+	}
+
+	if ( g_event_source )
+	{
+		WORD		type;
+		const char	*array[ 1 ];
+		BOOL		ok;
+
+		// Map the debug level to a Windows EventLog type.
+	
+		if ( l == log::warning )
+		{
+			type = EVENTLOG_WARNING_TYPE;
+		}
+		else if ( l == log::error )
+		{
+			type = EVENTLOG_ERROR_TYPE;
+		}
+		else
+		{
+			type = EVENTLOG_INFORMATION_TYPE;
+		}
+	
+		// Add the the string to the event log.
+	
+		array[ 0 ] = msg;
+	
+		ok = ReportEventA( g_event_source, type, 0, NETKIT_LOG, NULL, 1, 0, array, NULL );
+	}
+
+	OutputDebugStringA( msg );
+	OutputDebugStringA( "\n" );
+		
+	fprintf( stderr, "%s\n", msg );
 }
