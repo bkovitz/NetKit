@@ -409,8 +409,8 @@ runloop_win32::init()
 			while ( 1 )
 			{
 				DWORD				bytes_transferred;
-				fd_win32			*fd;
-				fd_win32::context	*context;
+				fd_win32			*fd			= nullptr;
+				fd_win32::context	*context	= nullptr;
 				BOOL				ok;
 
 				ok = GetQueuedCompletionStatus( m_port, &bytes_transferred, ( PULONG_PTR ) &fd, ( LPOVERLAPPED* ) &context, INFINITE );
