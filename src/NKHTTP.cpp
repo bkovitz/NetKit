@@ -1023,6 +1023,18 @@ connection::flush()
 }
 
 
+void
+connection::close()
+{
+	if ( m_handler )
+	{
+		m_handler->will_close( this );
+	}
+
+	sink::close();
+}
+
+
 bool
 connection::process( const std::uint8_t *buf, size_t len )
 {
@@ -1526,6 +1538,12 @@ server::handler::process_did_end( connection::ref connection )
 }
 
 
+void
+server::handler::will_close( connection::ref connection )
+{
+}
+
+
 #if defined( __APPLE__ )
 #	pragma mark client implementation
 #endif
@@ -1641,11 +1659,17 @@ client::headers_were_received( connection::ref connection, message::header &head
 		m_request->set_uri( new netkit::uri( m_redirect ) );
 
 		client::send( m_request );
+
+		m_request = nullptr;
 	}
 	else if ( connection->status_code() != http::status::proxy_authentication )
 	{
 		m_request->headers_reply( m_response );
 		m_request->on_headers_reply( nullptr );
+	}
+	else
+	{
+		ret = 1;
 	}
 
 	return ret;
@@ -1695,5 +1719,15 @@ client::process_did_end( connection::ref connection )
 	{
 		m_connection->close();
 		m_connection = nullptr;
+	}
+}	
+
+
+void
+client::will_close( connection::ref connection )
+{
+	if ( !m_done && m_request )
+	{
+		m_request->reply( nullptr );
 	}
 }

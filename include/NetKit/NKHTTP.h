@@ -550,6 +550,9 @@ public:
 
 		virtual void
 		process_did_end( connection::ref connection ) = 0;
+
+		virtual void
+		will_close( connection::ref connection ) = 0;
 	};
 
 	connection( handler::ref handler );
@@ -614,7 +617,10 @@ public:
 
 	bool
 	flush();
-	
+
+	virtual void
+	close();
+
 protected:
 
 	enum
@@ -809,6 +815,9 @@ protected:
 		virtual void
 		process_did_end( connection::ref connection );
 
+		virtual void
+		will_close( connection::ref connection );
+
 		std::string		m_uri;
 		binding::ref	m_binding;
 		request::ref	m_request;
@@ -875,6 +884,9 @@ protected:
 
 	virtual void
 	process_did_end( connection::ref connection );
+
+	virtual void
+	will_close( connection::ref connection );
 
 	connection::ref	m_connection;
 	request::ref	m_request;
