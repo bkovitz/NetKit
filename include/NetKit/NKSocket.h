@@ -188,6 +188,9 @@ public:
 	{
 		return m_endpoint;
 	}
+
+	virtual void
+	close();
 	
 protected:
 

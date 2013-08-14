@@ -205,6 +205,18 @@ acceptor::~acceptor()
 	}
 }
 
+
+void
+acceptor::close()
+{
+	if ( m_fd )
+	{
+		m_fd->close();
+		m_fd = nullptr;
+	}
+}
+
+
 #if defined( __APPLE__ )
 #	pragma mark ip::socket implementation
 #endif
