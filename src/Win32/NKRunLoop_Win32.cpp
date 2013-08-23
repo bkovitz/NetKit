@@ -593,7 +593,7 @@ runloop_win32::run( mode how, bool &input_event )
 		handles[ index++ ] = ( *it )->m_handle;
 	}
 
-	result = MsgWaitForMultipleObjects( ( DWORD ) m_sources.size(), handles, FALSE, timeout, ( how == mode::input_events ) ? QS_ALLEVENTS : 0 );
+	result = MsgWaitForMultipleObjectsEx( ( DWORD ) m_sources.size(), handles, timeout, ( how == mode::input_events ) ? QS_ALLEVENTS : 0, MWMO_ALERTABLE );
 
 	if ( result == WAIT_FAILED )
 	{
@@ -617,6 +617,10 @@ runloop_win32::run( mode how, bool &input_event )
 			s->dispatch();
 		}
 	}
+	else if ( result == WAIT_IO_COMPLETION )
+	{
+	}
+
 	else if ( result == WAIT_OBJECT_0 + m_sources.size() )
 	{
 		input_event = true;
