@@ -417,7 +417,12 @@ runloop_win32::init()
 
 				if ( !ok )
 				{
-					nklog( log::error, "GetQueuedCompletionStatus failed: %d", ::GetLastError() );
+					auto err = ::GetLastError();
+
+					if ( ( err != ERROR_OPERATION_ABORTED ) && ( err != ERROR_CONNECTION_ABORTED ) && ( err != ERROR_NETNAME_DELETED ) )
+					{
+						nklog( log::error, "GetQueuedCompletionStatus failed: %d", ::GetLastError() );
+					}
 				}
 
 				if ( fd && context )
