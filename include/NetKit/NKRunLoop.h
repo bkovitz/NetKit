@@ -51,7 +51,7 @@ public:
 
 		typedef smart_ref< fd >																								ref;
 		typedef std::function< void ( int status, const endpoint::ref &peer ) >												connect_reply_f;
-		typedef std::function< void ( int status, fd::ref fd, const endpoint::ref &peer ) >									accept_reply_f;
+		typedef std::function< void ( int status, fd::ref fd, const endpoint::ref &peer, const std::uint8_t *peek_buf, std::size_t peek_len ) >									accept_reply_f;
 		typedef std::function< void ( int status ) >																		send_reply_f;
 		typedef std::function< void ( int status, const std::uint8_t *buf, std::size_t len ) >								recv_reply_f;
 		typedef std::function< void ( int status, const std::uint8_t *buf, std::size_t len, netkit::endpoint::ref from ) >	recvfrom_reply_f;
@@ -63,7 +63,7 @@ public:
 		connect( netkit::endpoint::ref to, connect_reply_f reply ) = 0;
 
 		virtual void
-		accept( accept_reply_f reply ) = 0;
+		accept( std::size_t peek, accept_reply_f reply ) = 0;
 
 		virtual void
 		send( const std::uint8_t *buf, std::size_t len, send_reply_f reply ) = 0;

@@ -822,17 +822,18 @@ runloop_win32::fd_win32::handle_connect( int status )
 
 
 void
-runloop_win32::fd_win32::accept( accept_reply_f reply )
+runloop_win32::fd_win32::accept( std::size_t peek, accept_reply_f reply )
 {
 	DWORD	dwBytes;
 	BOOL	ok;
 
-	m_accept_context.m_fd = WSASocket( m_domain, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED );
+	m_accept_context.m_peek = peek;
+	m_accept_context.m_fd	= WSASocket( m_domain, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED );
 
 	if ( m_accept_context.m_fd == INVALID_SOCKET )
 	{
 		nklog( log::error, "WSASocket() failed: %d", ::GetLastError() );
-		reply( -1, nullptr, nullptr );
+		reply( -1, nullptr, nullptr, nullptr, 0 );
 		goto exit;
 	}
 
@@ -848,7 +849,7 @@ runloop_win32::fd_win32::accept( accept_reply_f reply )
 	else
 	{
 		nklog( log::error, "AcceptEx() failed: %d", ::GetLastError() );
-		reply( -1, nullptr, nullptr );
+		reply( -1, nullptr, nullptr, nullptr, 0 );
 	}
 
 exit:
@@ -862,8 +863,10 @@ runloop_win32::fd_win32::handle_accept( int status )
 {
 	if ( m_fd != INVALID_SOCKET )
 	{
-		netkit::endpoint::ref	from;
-		fd_win32::ref			fd;
+		netkit::endpoint::ref		from;
+		fd_win32::ref				fd;
+		std::vector< std::uint8_t > peek_buf( m_accept_context.m_peek );
+		std::size_t					peek_len = 0;
 
 		if ( status == 0 )
 		{
@@ -886,12 +889,62 @@ runloop_win32::fd_win32::handle_accept( int status )
 			from	= netkit::endpoint::from_sockaddr( *from_addr );
 	
 			fd		= new fd_win32( m_accept_context.m_fd, m_domain, m_port );
+
+			if ( m_accept_context.m_peek > 0 )
+			{
+				std::thread t( [=]() mutable
+				{
+					fd_set read_fds;
+
+					FD_ZERO( &read_fds );
+					FD_SET( m_accept_context.m_fd, &read_fds );
+
+					auto num = ::select( ( int ) m_accept_context.m_fd + 1, &read_fds, nullptr, nullptr, nullptr );
+
+					if ( num > 0 )
+					{
+						num = ::recv( m_accept_context.m_fd, ( char* ) &peek_buf[ 0 ], ( int ) peek_buf.size(), MSG_PEEK );
+
+						if ( num > 0 )
+						{
+							peek_len = num;
+						}
+						else
+						{
+							status = num;
+						}
+					}
+					else
+					{
+						status = num;
+					}
+
+					runloop::main()->dispatch( [=]()
+					{
+						auto reply					= m_accept_context.m_reply;
+						m_accept_context.m_reply	= nullptr;
+
+						reply( status, fd, from, &peek_buf[ 0 ], peek_len );
+					} );
+				} );
+
+				t.detach();
+			}
+			else
+			{
+				auto reply					= m_accept_context.m_reply;
+				m_accept_context.m_reply	= nullptr;
+
+				reply( status, fd, from, &peek_buf[ 0 ], peek_len );
+			}
 		}
+		else
+		{
+			auto reply					= m_accept_context.m_reply;
+			m_accept_context.m_reply	= nullptr;
 
-		auto reply					= m_accept_context.m_reply;
-		m_accept_context.m_reply	= nullptr;
-
-		reply( status, fd, from );
+			reply( status, fd, from, &peek_buf[ 0 ], peek_len );
+		}
 	}
 
 	release();

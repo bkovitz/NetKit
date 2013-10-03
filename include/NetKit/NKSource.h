@@ -47,7 +47,6 @@ public:
 
 	typedef std::function< void ( int status, const endpoint::ref &peer ) >					connect_reply_f;
 	typedef std::function< void ( int status ) >											send_reply_f;
-	typedef std::function< void ( int status, const std::size_t len ) >						peek_reply_f;
 	typedef std::function< void ( int status, const std::uint8_t *buf, std::size_t len ) >	recv_reply_f;
 	typedef std::function< void ( void ) >													close_f;
 	typedef smart_ref< source >																ref;
@@ -104,9 +103,6 @@ public:
 	
 	void
 	send( adapter *adapter, const std::uint8_t *buf, std::size_t len, send_reply_f reply );
-	
-	void
-	peek( recv_reply_f reply );
 	
 	void
 	recv( recv_reply_f reply );
@@ -166,7 +162,7 @@ protected:
 	connect_internal( const uri::ref &uri, const endpoint::ref &to, connect_reply_f reply );
 	
 	void
-	recv_internal( bool peek, recv_reply_f reply );
+	recv_internal( recv_reply_f reply );
 	
 	void
 	teardown_notifications();

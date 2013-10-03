@@ -64,6 +64,7 @@ public:
 			}
 
 			accept_reply_f	m_reply;
+			std::size_t		m_peek;
 			SOCKET			m_fd;
 		};
 
@@ -121,7 +122,7 @@ public:
 		handle_connect( int status );
 
 		virtual void
-		accept( accept_reply_f reply );
+		accept( std::size_t peek, accept_reply_f reply );
 
 		void
 		handle_accept( int status );

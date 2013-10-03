@@ -156,7 +156,7 @@ protected:
 	
 	virtual void
 	start_recv( source::recv_reply_f reply ); 
-	
+
 	bool				m_connected;
 	endpoint::ref		m_peer;
 	runloop::fd::ref	m_fd;
@@ -167,8 +167,8 @@ class NETKIT_DLL acceptor : public object
 {
 public:
 
-	typedef std::function< void ( int status, socket::ref sock ) >	accept_reply_f;
-	typedef smart_ref< acceptor >									ref;
+	typedef std::function< void ( int status, socket::ref sock, const std::uint8_t *peek_buf, std::size_t peek_len ) >	accept_reply_f;
+	typedef smart_ref< acceptor >																						ref;
 	
 	acceptor( const endpoint::ref &endpoint, int domain, int type );
 	
@@ -181,7 +181,7 @@ public:
 	}
 	
 	virtual void
-	accept( accept_reply_f reply ) = 0;
+	accept( std::size_t peek, accept_reply_f reply ) = 0;
 	
 	inline const netkit::endpoint::ref&
 	endpoint() const
@@ -272,7 +272,7 @@ public:
 	virtual ~acceptor();
 	
 	virtual void
-	accept( accept_reply_f reply );
+	accept( std::size_t peek, accept_reply_f reply );
 };
 
 }

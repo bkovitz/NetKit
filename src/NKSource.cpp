@@ -231,28 +231,6 @@ source::send( adapter *adapter, const std::uint8_t *in_buf, size_t in_len, send_
 
 
 void
-source::peek( recv_reply_f reply )
-{
-	if ( m_adapters.head() )
-	{
-		if ( !m_recv_queue.empty() )
-		{
-			buf_t buf = m_recv_queue.front();
-			reply( 0, &buf[ 0 ], buf.size() );
-		}
-		else
-		{
-			recv_internal( true, reply );
-		}
-	}
-	else
-	{
-		reply( -1, nullptr, 0 );
-	}
-}
-
-	
-void
 source::recv( recv_reply_f reply )
 {
 	if ( m_adapters.head() )
@@ -266,7 +244,7 @@ source::recv( recv_reply_f reply )
 		}
 		else
 		{
-			recv_internal( false, reply );
+			recv_internal( reply );
 		}
 	}
 	else
@@ -277,7 +255,7 @@ source::recv( recv_reply_f reply )
 
 
 void
-source::recv_internal( bool peek_flag, recv_reply_f reply )
+source::recv_internal( recv_reply_f reply )
 {
 	bool			would_block	= false;
 	std::streamsize num			= 0;
@@ -297,14 +275,7 @@ source::recv_internal( bool peek_flag, recv_reply_f reply )
 	
 					if ( !more_coming )
 					{
-						if ( peek_flag )
-						{
-							peek( reply );
-						}
-						else
-						{
-							recv( reply );
-						}
+						recv( reply );
 					}
 				}
 				else

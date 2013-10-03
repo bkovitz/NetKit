@@ -297,13 +297,13 @@ ip::tcp::acceptor::~acceptor()
 
 
 void
-ip::tcp::acceptor::accept( accept_reply_f reply )
+ip::tcp::acceptor::accept( std::size_t peek, accept_reply_f reply )
 {
 	assert( m_fd );
 
 	if ( m_fd )
 	{
-		m_fd->accept( [=]( int status, runloop::fd::ref fd, const netkit::endpoint::ref &peer )
+		m_fd->accept( peek, [=]( int status, runloop::fd::ref fd, const netkit::endpoint::ref &peer, const std::uint8_t *peek_buf, std::size_t peek_len )
 		{
 			if ( status == 0 )
 			{
@@ -311,7 +311,7 @@ ip::tcp::acceptor::accept( accept_reply_f reply )
 			
 				new_sock = new ip::tcp::socket( fd, ( ip::endpoint* ) peer.get() );
 				
-				reply( 0, new_sock.get() );
+				reply( 0, new_sock.get(), peek_buf, peek_len );
 			}
 			else
 			{
