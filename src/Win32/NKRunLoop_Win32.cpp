@@ -935,7 +935,7 @@ runloop_win32::fd_win32::handle_accept( int status )
 				auto reply					= m_accept_context.m_reply;
 				m_accept_context.m_reply	= nullptr;
 
-				reply( status, fd, from, &peek_buf[ 0 ], peek_len );
+				reply( status, fd, from, nullptr, 0 );
 			}
 		}
 		else
@@ -943,7 +943,7 @@ runloop_win32::fd_win32::handle_accept( int status )
 			auto reply					= m_accept_context.m_reply;
 			m_accept_context.m_reply	= nullptr;
 
-			reply( status, fd, from, &peek_buf[ 0 ], peek_len );
+			reply( status, fd, from, nullptr, 0 );
 		}
 	}
 
