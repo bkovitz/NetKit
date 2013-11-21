@@ -48,7 +48,10 @@ public:
 	typedef smart_ref< proxy >									ref;
 
 	static source::adapter::ref
-	create( bool secure );
+	create_adapter( bool secure );
+
+	static ref
+	create( const std::string &uri_string );
 
 	static void
 	on_auth_challenge( auth_challenge_f handler );

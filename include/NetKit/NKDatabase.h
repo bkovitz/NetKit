@@ -13,7 +13,7 @@
 
 
 #define DECLARE_PERSISTENT_OBJECT( NAME, TABLENAME )		\
-typedef netkit::database::iterator< NAME, ref > iterator;	\
+typedef netkit::database::iterator< NAME, NAME > iterator;	\
 static const std::string&							\
 table_name()										\
 {													\
@@ -23,8 +23,10 @@ table_name()										\
 virtual const std::string&							\
 table_name_v() const								\
 {													\
-	return table_name();								\
+	return table_name();							\
 }													\
+static NAME*										\
+create_from_database(const netkit::database::statement::ref &stmt);\
 static size_t										\
 count()												\
 {													\
@@ -33,18 +35,18 @@ count()												\
 static iterator										\
 find()												\
 {													\
-	return netkit::database::object::find<NAME, ref>();		\
+	return netkit::database::object::find<NAME, NAME>();		\
 }													\
 static ref											\
 find( int64_t oid )									\
 {													\
-	return netkit::database::object::find<NAME, ref>( oid );	\
+	return netkit::database::object::find<NAME, NAME>( oid );	\
 }													\
 template <class T>									\
 static iterator										\
 find( const std::string &key, T val )				\
 {													\
-	return netkit::database::object::find<NAME, ref>( key, val );	\
+	return netkit::database::object::find<NAME, NAME>( key, val );	\
 }													\
 static void											\
 clear()												\
@@ -97,10 +99,12 @@ public:
 };
 
 
-template <class Type, class Ptr>
+template <class BaseType, class ConcreteType>
 class NETKIT_DLL iterator
 {
 public:
+
+	typedef typename ConcreteType::ref Ref;
 
 	iterator()
 	{
@@ -134,12 +138,12 @@ public:
 		return *this;
 	}
 
-	Ptr
+	Ref
 	operator++()
 	{
 		if ( m_stmt->step() )
 		{
-			m_object = new Type( m_stmt );
+			m_object = dynamic_cast< ConcreteType* >( BaseType::create_from_database( m_stmt ) );
 		}
 		else
 		{
@@ -149,13 +153,13 @@ public:
 		return m_object;
 	}
 
-	Ptr
+	Ref
 	operator++( int i )
 	{
 		return operator++();
 	}
 
-	Ptr
+	Ref
 	operator*() const
 	{
 		return m_object;
@@ -163,7 +167,7 @@ public:
 
 private:
 
-	Ptr				m_object;
+	Ref				m_object;
 	statement::ref	m_stmt;
 };
 
@@ -204,6 +208,12 @@ public:
 	
 	virtual int64_t
 	last_row_id() = 0;
+
+	virtual std::uint32_t
+	version() const = 0;
+
+	virtual void
+	set_version( std::uint32_t version ) = 0;
 
 	virtual bool
 	close() = 0;
@@ -291,34 +301,34 @@ public:
 		return ( size_t ) rows;
 	}
 	
-	template <class Type, class Ptr>
-	static iterator< Type, Ptr >
+	template <class BaseType, class ConcreteType>
+	static iterator< BaseType, ConcreteType >
 	find()
 	{
 		std::ostringstream os;
 
-		os << "SELECT * FROM " << Type::table_name() << ";";
+		os << "SELECT * FROM " << BaseType::table_name() << ";";
 
 		statement::ref s = manager::instance()->select( os.str() );
 
-		return iterator<Type, Ptr>( s );
+		return iterator<BaseType, ConcreteType>( s );
 	}
 
-	template <class Type, class Ptr>
-	static Ptr
+	template <class BaseType, class ConcreteType>
+	static typename ConcreteType::ref
 	find( int64_t oid )
 	{
 		std::ostringstream	os;
 		statement::ref		stmt;
-		Type			*	t;
+		ConcreteType		*t = nullptr;
 		
-		os << "SELECT * FROM " << Type::table_name() << " WHERE oid = " << oid << ";";
+		os << "SELECT * FROM " << BaseType::table_name() << " WHERE oid = " << oid << ";";
 		
 		stmt = manager::instance()->select( os.str() );
 		
 		if ( stmt->step() )
 		{
-			t = new Type( stmt );
+			t = dynamic_cast< ConcreteType* >( BaseType::create_from_database( stmt ) );
 		}
 		else
 		{
@@ -328,56 +338,56 @@ public:
 		return t;
 	}
 
-	template <class Type, class Ptr>
-	static iterator< Type, Ptr >
+	template <class BaseType, class ConcreteType>
+	static iterator< BaseType, ConcreteType >
 	find( const std::string &key, bool val )
 	{
 		std::ostringstream os;
 
-		os << "SELECT * FROM " << Type::table_name() << " WHERE " << key << "=" << val << ";";
+		os << "SELECT * FROM " << BaseType::table_name() << " WHERE " << key << "=" << val << ";";
 
 		statement::ref s = manager::instance()->select( os.str() );
 
-		return iterator<Type, Ptr>( s );
+		return iterator<BaseType, ConcreteType>( s );
 	}
 
-	template <class Type, class Ptr>
-	static iterator< Type, Ptr >
+	template <class BaseType, class ConcreteType>
+	static iterator< BaseType, ConcreteType >
 	find( const std::string &key, std::uint64_t val )
 	{
 		std::ostringstream os;
 
-		os << "SELECT * FROM " << Type::table_name() << " WHERE " << key << "=" << val << ";";
+		os << "SELECT * FROM " << BaseType::table_name() << " WHERE " << key << "=" << val << ";";
 
 		statement::ref s = manager::instance()->select( os.str() );
 
-		return iterator<Type, Ptr>( s );
+		return iterator<BaseType, ConcreteType>( s );
 	}
 
-	template <class Type, class Ptr>
-	static iterator< Type, Ptr >
+	template <class BaseType, class ConcreteType>
+	static iterator< BaseType, ConcreteType >
 	find( const std::string &key, const char *val )
 	{
 		std::ostringstream os;
 
-		os << "SELECT * FROM " << Type::table_name() << " WHERE " << key << " LIKE '" << sanitize( val ) << "';";
+		os << "SELECT * FROM " << BaseType::table_name() << " WHERE " << key << " LIKE '" << sanitize( val ) << "';";
 
 		statement::ref s = manager::instance()->select( os.str() );
 
-		return iterator<Type, Ptr>( s );
+		return iterator<BaseType, ConcreteType>( s );
 	}
 
-	template <class Type, class Ptr>
-	static iterator< Type, Ptr >
+	template <class BaseType, class ConcreteType>
+	static iterator< BaseType, ConcreteType >
 	find( const std::string &key, const std::string &val )
 	{
 		std::ostringstream os;
 
-		os << "SELECT * FROM " << Type::table_name() << " WHERE " << key << " LIKE '" << sanitize( val ) << "';";
+		os << "SELECT * FROM " << BaseType::table_name() << " WHERE " << key << " LIKE '" << sanitize( val ) << "';";
 
 		statement::ref s = manager::instance()->select( os.str() );
 
-		return iterator<Type, Ptr>( s );
+		return iterator<BaseType, ConcreteType>( s );
 	}
 	
 	virtual const std::string&

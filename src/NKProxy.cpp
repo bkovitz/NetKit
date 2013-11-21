@@ -179,7 +179,7 @@ proxy::set_handlers			proxy::m_set_handlers;
 static std::uint8_t			*g_ptr = nullptr;
 
 source::adapter::ref
-proxy::create( bool secure )
+proxy::create_adapter( bool secure )
 {
 	if ( g_proxy->uri() )
 	{
@@ -198,6 +198,21 @@ proxy::create( bool secure )
 	}
 	
 	return nullptr;
+}
+
+
+proxy::ref
+proxy::create( const std::string &uri_string )
+{
+	proxy::ref proxy = proxy::null();
+
+	if ( uri_string.size() > 0 )
+	{
+		netkit::uri::ref uri = new netkit::uri( uri_string );
+		proxy = new netkit::proxy( uri );
+	}
+
+	return proxy;
 }
 
 

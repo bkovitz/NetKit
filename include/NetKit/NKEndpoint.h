@@ -95,6 +95,9 @@ public:
 	virtual bool
 	equals( const object &that ) const;
 
+	virtual bool
+	equals( const ip::endpoint::ref &that ) const;
+
 	virtual void
 	flatten( json::value_ref &root ) const;
 

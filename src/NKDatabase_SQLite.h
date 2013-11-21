@@ -107,6 +107,12 @@ public:
 		return sqlite3_last_insert_rowid( m_db );
 	}
 
+	virtual std::uint32_t
+	version() const;
+
+	virtual void
+	set_version( std::uint32_t version );
+
 	bool
 	close();
 

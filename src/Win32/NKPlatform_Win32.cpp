@@ -469,6 +469,22 @@ exit:
 
 
 std::string
+platform::username()
+{
+	TCHAR username[ 1024 ];
+	DWORD size;
+
+	ZeroMemory( username, sizeof( username ) );
+
+	size = sizeof( username ) / sizeof( TCHAR );
+
+	GetUserName( username, &size );
+
+	return narrow( username );
+}
+
+
+std::string
 platform::make_filesystem_safe( const std::string &name )
 {
 	std::string safe;
@@ -495,6 +511,24 @@ platform::make_filesystem_safe( const std::string &name )
 	}
 
 	return safe;
+}
+
+
+bool
+platform::file_exists( const std::string &name )
+{
+	DWORD attrib = GetFileAttributes( widen( name ).c_str() );
+
+	return ( ( attrib != INVALID_FILE_ATTRIBUTES ) && !( attrib & FILE_ATTRIBUTE_DIRECTORY ) );
+}
+
+
+bool
+directory_exists( const std::string &name )
+{
+	DWORD attrib = GetFileAttributes( widen( name ).c_str() );
+
+	return ( ( attrib != INVALID_FILE_ATTRIBUTES ) && ( attrib & FILE_ATTRIBUTE_DIRECTORY ) );
 }
 
 

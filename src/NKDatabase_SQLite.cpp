@@ -122,6 +122,43 @@ database::manager_impl::select( const std::string &str )
 }
 
 
+std::uint32_t
+database::manager_impl::version() const
+{
+	static sqlite3_stmt	*stmt;
+	std::uint32_t		version = 0;
+
+	if ( sqlite3_prepare_v2( m_db, "PRAGMA user_version;", -1, &stmt, nullptr ) == SQLITE_OK )
+	{
+		while ( sqlite3_step( stmt ) == SQLITE_ROW )
+		{
+			version = sqlite3_column_int( stmt, 0 );
+        }
+
+		sqlite3_finalize( stmt );
+	}
+
+	return version;
+}
+
+
+void
+database::manager_impl::set_version( std::uint32_t version )
+{
+	char				*error = nullptr;
+	std::ostringstream	os;
+
+	os << "PRAGMA user_version = " << version << ";";
+
+	int ret = sqlite3_exec( m_db, os.str().c_str(), 0, 0, &error );
+	
+	if ( ret )
+	{
+		nklog( log::error, "sqlite3_exec() failed: %d, %s", ret, error );
+	}
+}
+
+
 bool
 database::manager_impl::close()
 {

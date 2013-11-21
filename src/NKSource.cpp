@@ -108,14 +108,14 @@ source::connect( const uri::ref &uri, connect_reply_f reply )
 	{
 		if ( !proxy::get()->bypass( uri ) )
 		{
-			add( proxy::get()->create( false ) );
+			add( proxy::get()->create_adapter( false ) );
 		}
 	}
 	else if ( ( uri->scheme() == "https" ) || ( uri->scheme() == "xmpps" ) || ( uri->scheme() == "wss" ) )
 	{
 		if ( !proxy::get()->bypass( uri ) )
 		{
-			add( proxy::get()->create( true ) );
+			add( proxy::get()->create_adapter( true ) );
 		}
 
 		add( tls::client::create() );

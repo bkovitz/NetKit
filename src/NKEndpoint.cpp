@@ -236,14 +236,21 @@ ip::endpoint::equals( const object &that ) const
 	else
 	{
 		const ip::endpoint *actual = dynamic_cast< const ip::endpoint* >( &that );
-	
+
 		if ( actual )
 		{
-			ret = m_addr->equals( *actual->m_addr ) && ( m_port == actual->m_port );
+			ret = equals( *actual );
 		}
 	}
 	
 	return ret;
+}
+
+
+bool
+ip::endpoint::equals( const ip::endpoint::ref &that ) const
+{
+	return m_addr->equals( *that->m_addr ) && ( m_port == that->m_port );
 }
 
 
