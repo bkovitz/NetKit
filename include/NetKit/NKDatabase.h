@@ -227,10 +227,10 @@ public:
 	typedef smart_ref< object > ref;
 	typedef std::uint64_t		oid_t;
 
-	object()
+	object( std::uint64_t oid = 0 )
 	:
 		m_dirty( false ),
-		m_oid( 0 )
+		m_oid( oid )
 	{
 	}
 
