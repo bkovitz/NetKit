@@ -3242,6 +3242,8 @@ server::route_request( const value::ref &request, reply_f r )
 			{
 				value::ref reply;
 				value::ref error;
+
+				nklog( log::error, "incorrect parameter count for '%s'", request[ "method" ]->as_string() );
 							
 				error[ "code" ]			= netkit::status::bad_params;
 				error[ "message" ]		= "Invalid Paramaters.";

@@ -785,13 +785,13 @@ public:
 	inline smart_ref< json::value >
 	operator[]( std::uint64_t index )
 	{
-		return m_ref->at_index( index );
+		return m_ref->at_index( static_cast< std::size_t >( index ) );
 	}
 
 	inline smart_ref< json::value >
 	operator[]( std::int64_t index )
 	{
-		return m_ref->at_index( index );
+		return m_ref->at_index( static_cast< std::size_t >( index ) );
 	}
 	
 #if defined( __APPLE__ )
@@ -841,13 +841,13 @@ public:
 	inline const smart_ref< json::value >
 	operator[]( std::uint64_t index ) const
 	{
-		return m_ref->at_index( index );
+		return m_ref->at_index( static_cast< std::size_t >( index ) );
 	}
 
 	inline const smart_ref< json::value >
 	operator[]( std::int64_t index ) const
 	{
-		return m_ref->at_index( index );
+		return m_ref->at_index( static_cast< std::size_t >( index ) );
 	}
 
 #if defined( __APPLE__ )
