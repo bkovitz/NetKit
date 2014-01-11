@@ -31,7 +31,10 @@
 #include "NKRunLoop_Mac.h"
 #include <CoreFoundation/CoreFoundation.h>
 #include <NetKit/NKSocket.h>
+#include <NetKit/NKLog.h>
 #include <dispatch/dispatch.h>
+#include <sys/errno.h>
+#include <thread>
 
 using namespace netkit;
 
@@ -49,12 +52,6 @@ runloop_mac::runloop_mac()
 	// Make sure there is at least one thing added to runloop
 	
 	int fd = ::socket( AF_INET, SOCK_STREAM, 0 );
-	
-	auto event = create( fd, runloop::event_mask::read );
-	
-	schedule( event, [=]( runloop::event e )
-	{
-	} );
 }
 
 
@@ -63,9 +60,28 @@ runloop_mac::~runloop_mac()
 }
 
 
-runloop::event
-runloop_mac::create( int fd, event_mask m )
+runloop::fd::ref
+runloop_mac::create( std::int32_t domain, std::int32_t type, std::int32_t protocol )
 {
+	runloop::fd::ref    fd;
+	int					s;
+
+	s = ::socket( domain, type, protocol );
+
+	if ( s == -1 )
+    {
+        nklog( log::error, "socket() failed: %d", errno );
+        goto exit;
+    }
+
+    fd = new fd_mac( s, domain );
+
+exit:
+
+    return fd;
+}
+
+#if 0
 	dispatch_source_t event = nullptr;
 	
 	if ( m == event_mask::write )
@@ -83,6 +99,55 @@ runloop_mac::create( int fd, event_mask m )
 	
 	return event;
 }
+#endif
+
+
+runloop::fd::ref
+runloop_mac::create( netkit::endpoint::ref in_endpoint, netkit::endpoint::ref &out_endpoint, std::int32_t domain, std::int32_t type, std::int32_t protocol )
+{
+	runloop::fd::ref	fd;
+	sockaddr_storage	addr;
+	socklen_t			len;
+	int					s;
+
+	s = ::socket( domain, type, protocol );
+
+	if ( s == -1 )
+    {
+        nklog( log::error, "socket() failed: %d", errno );
+        goto exit;
+    }
+
+    len = ( int ) in_endpoint->to_sockaddr( addr );
+
+	if ( ::bind( s, ( sockaddr* ) &addr, len ) != 0 )
+    {
+        nklog( log::error, "bind() failed: %d", errno );
+        goto exit;
+    }
+
+    if ( ::listen( s, SOMAXCONN ) != 0 )
+    {
+        nklog( log::error, "listen() failed: %d", errno );
+        goto exit;
+    }
+
+    len = sizeof( addr );
+
+    if ( ::getsockname( s, ( sockaddr* ) &addr, &len ) != 0 )
+    {
+        nklog( log::error, "getsockname() failed: %d", errno );
+        goto exit;
+    }
+
+    out_endpoint = endpoint::from_sockaddr( addr );
+
+    fd = new fd_mac( s, domain );
+
+exit:
+
+    return fd;
+}
 
 
 runloop::event
@@ -93,14 +158,6 @@ runloop_mac::create( std::time_t msec )
 	dispatch_source_set_timer( event, dispatch_time( DISPATCH_TIME_NOW, msec * NSEC_PER_MSEC ), msec * NSEC_PER_MSEC, 0 );
 
 	return event;
-}
-
-
-void
-runloop_mac::modify( event e, std::time_t msec )
-{
-	auto event = reinterpret_cast< dispatch_source_t >( e );
-	dispatch_source_set_timer( event, dispatch_time( DISPATCH_TIME_NOW, msec * NSEC_PER_MSEC ), msec * NSEC_PER_MSEC, 0 );
 }
 
 
@@ -177,4 +234,368 @@ void
 runloop_mac::stop()
 {
 	CFRunLoopStop( CFRunLoopGetCurrent() );
+}
+
+
+runloop_mac::fd_mac::fd_mac( int fd, int domain )
+:
+	m_domain( domain ),
+	m_fd( fd ),
+	m_send_source( dispatch_source_create( DISPATCH_SOURCE_TYPE_WRITE, fd, 0, dispatch_get_main_queue() ) ),
+	m_recv_source( dispatch_source_create( DISPATCH_SOURCE_TYPE_READ, fd, 0, dispatch_get_main_queue() ) )
+{
+	assert( m_fd != -1 );
+}
+
+
+runloop_mac::fd_mac::~fd_mac()
+{
+	nklog( log::verbose, "" );
+	
+	if ( m_send_source )
+	{
+		dispatch_release( m_send_source );
+	}
+	
+	if ( m_recv_source )
+	{
+		dispatch_release( m_recv_source );
+	}
+
+	if ( m_fd != -1 )
+	{
+		::close( m_fd );
+	}
+}
+
+
+int
+runloop_mac::fd_mac::bind( netkit::endpoint::ref to )
+{
+	struct sockaddr_storage addr;
+	std::size_t				len;
+
+	len = to->to_sockaddr( addr );
+
+	auto ret = ::bind( m_fd, ( sockaddr* ) &addr, ( int ) len );
+
+	if ( ret != 0 )
+	{
+		nklog( log::error, "bind() failed: %d", errno );
+	}
+
+	return ret;
+}
+
+
+void
+runloop_mac::fd_mac::connect( endpoint::ref to, connect_reply_f reply )
+{
+	sockaddr_storage	this_addr;
+	sockaddr_storage	that_addr;
+	socklen_t			that_addr_len;
+	int					ret;
+
+	memset( &that_addr, 0, sizeof( that_addr ) );
+	that_addr_len = static_cast< socklen_t >( to->to_sockaddr( that_addr ) );
+
+	memset( &this_addr, 0, sizeof( this_addr ) );
+	this_addr.ss_family = that_addr.ss_family;
+
+	ret = ::bind( m_fd, ( sockaddr* ) &this_addr, sizeof( this_addr ) );
+
+	if ( ret != 0 )
+	{
+		nklog( log::error, "bind() failed: %d", errno );
+		reply( -1, nullptr );
+		goto exit;
+    }
+	
+	ret = ::connect( m_fd, ( sockaddr* ) &that_addr, that_addr_len );
+	
+	if ( ret == 0 )
+	{
+		reply( 0, to );
+	}
+	else if ( errno == EWOULDBLOCK )
+	{
+		dispatch_source_set_event_handler( m_send_source, ^()
+		{
+			sockaddr_storage	addr;
+			socklen_t			len;
+			int					ret;
+			
+			dispatch_suspend( m_send_source );
+			
+			memset( &addr, 0, sizeof( addr ) );
+			len = sizeof( addr );
+			
+			ret = ::getpeername( m_fd, ( sockaddr* ) &addr, &len );
+			
+			if ( ret == 0 )
+			{
+				reply( 0, to );
+			}
+			else
+			{
+				nklog( log::error, "connect() failed" );
+				reply( -1, nullptr );
+			}
+		} );
+		
+		dispatch_resume( m_send_source );
+	}
+	else
+	{
+		nklog( log::error, "connect() failed: %d", errno );
+		reply( -1, nullptr );
+    }
+ 
+exit:
+
+	return;
+}
+
+
+void
+runloop_mac::fd_mac::accept( std::size_t peek, accept_reply_f reply )
+{
+	if ( m_fd != -1 )
+	{
+		dispatch_source_set_event_handler( m_recv_source, ^()
+		{
+			struct sockaddr_storage from_addr;
+			socklen_t				from_len;
+			int						sock;
+			
+			memset( &from_addr, 0, sizeof( from_addr ) );
+			from_len = sizeof( from_addr );
+			
+			sock = ::accept( m_fd, ( sockaddr* ) &from_addr, &from_len );
+		
+			if ( sock >= 0 )
+			{
+				auto from	= netkit::endpoint::from_sockaddr( from_addr );
+				auto fd		= new fd_mac( sock, m_domain );
+				int	status = 0;
+				
+				if ( peek > 0 )
+				{
+					auto context = std::make_shared< accept_context >( peek );
+					
+					std::thread t( [=]() mutable
+					{
+						fd_set read_fds;
+
+						FD_ZERO( &read_fds );
+						FD_SET( sock, &read_fds );
+
+						auto num = ::select( ( int ) sock + 1, &read_fds, nullptr, nullptr, nullptr );
+
+						if ( num > 0 )
+						{
+							num = ( int ) ::recv( sock, context->m_peek_buf.data(), context->m_peek_buf.size(), MSG_PEEK );
+
+							if ( num > 0 )
+							{
+								context->m_peek_len = num;
+								status				= 0;
+							}
+							else
+							{
+								nklog( log::error, "::recv() failed: %d", errno );
+								status = -1;
+							}
+						}
+						else
+						{
+							nklog( log::error, "::select() failed: %d", errno );
+							status = -1;
+						}
+
+						runloop::main()->dispatch( [=]()
+						{
+							reply( status, fd, from, context->m_peek_buf.data(), context->m_peek_len );
+						} );
+					} );
+
+					t.detach();
+				
+				}
+				else
+				{
+					reply( 0, new fd_mac( sock, m_domain ), from, nullptr, 0 );
+				}
+			}
+			else
+			{
+				nklog( log::error, "::accept() failed: %d", errno );
+				reply( -1, nullptr, nullptr, nullptr, 0 );
+			}
+		} );
+		
+		dispatch_resume( m_recv_source );
+	}
+	else
+	{
+		nklog( log::error, "fd is invalid" );
+		reply( -1, nullptr, nullptr, nullptr, 0 );
+	}
+}
+
+
+void
+runloop_mac::fd_mac::send( const std::uint8_t *buf, std::size_t len, send_reply_f reply )
+{
+	m_send_queue.push( std::make_shared< send_context >( buf, len ) );
+	
+	if ( m_send_queue.size() == 1 )
+	{
+		try_send( [=]( send_context::ref &context ) -> ssize_t
+		{
+			return ::send( m_fd, context->m_buffer.data() + context->m_bytes_written, context->m_buffer.size() - context->m_bytes_written, 0 );
+		} );
+	}
+}
+
+
+void
+runloop_mac::fd_mac::sendto( const std::uint8_t *buf, std::size_t len, netkit::endpoint::ref to, send_reply_f reply )
+{
+	m_send_queue.push( std::make_shared< send_context >( buf, len, to ) );
+	
+	if ( m_send_queue.size() == 1 )
+	{
+		try_send( [=]( send_context::ref &context ) -> ssize_t
+		{
+			return ::sendto( m_fd, context->m_buffer.data() + context->m_bytes_written, context->m_buffer.size() - context->m_bytes_written, 0, ( sockaddr* ) &context->m_to, context->m_to_len );
+		} );
+	}
+}
+
+
+void
+runloop_mac::fd_mac::try_send( send_f func )
+{
+	while ( !m_send_queue.empty() )
+	{
+		auto context = m_send_queue.top();
+	
+		while ( context->m_bytes_written < context->m_buffer.size() )
+		{
+			auto ret = func( context );
+			
+			if ( ret > 0 )
+			{
+				context->m_bytes_written += ret;
+			}
+			else if ( ret == 0 )
+			{
+				nklog( log::verbose, "::send/to() returns 0" );
+				deliver_reply( context, -1 );
+				goto exit;
+			}
+			else if ( errno == EWOULDBLOCK )
+			{
+				dispatch_source_set_event_handler( m_send_source, ^()
+				{
+					dispatch_suspend( m_send_source );
+	
+					try_send( func );
+				} );
+		
+				dispatch_resume( m_send_source );
+			}
+			else
+			{
+				nklog( log::verbose, "::send/to() failed: %d", errno );
+				deliver_reply( context, -1 );
+				goto exit;
+			}
+		}
+			
+		deliver_reply( context, 0 );
+	}
+
+exit:
+
+	return;
+}
+	
+
+void
+runloop_mac::fd_mac::recv( recv_reply_f reply )
+{
+	dispatch_source_set_event_handler( m_recv_source, ^()
+	{
+		ssize_t ret;
+		
+		dispatch_suspend( m_recv_source );
+		
+		ret = ::recv( m_fd, m_in_buf.data(), m_in_buf.size(), 0 );
+		
+		if ( ret > 0 )
+		{
+			reply( 0, m_in_buf.data(), ret );
+		}
+		else if ( ret == 0 )
+		{
+			reply( -1, nullptr, 0 );
+		}
+		else
+		{
+			reply( -1, nullptr, 0 );
+		}
+	} );
+	
+	dispatch_resume( m_recv_source );
+}
+
+
+void
+runloop_mac::fd_mac::recvfrom( recvfrom_reply_f reply )
+{
+	dispatch_source_set_event_handler( m_recv_source, ^()
+	{
+		sockaddr_storage			from_addr;
+		socklen_t					from_len;
+		std::vector< std::uint8_t > buffer( 8192, 0 );
+		ssize_t						ret;
+		
+		dispatch_suspend( m_recv_source );
+		
+		memset( &from_addr, 0, sizeof( from_addr ) );
+		from_len = sizeof( from_addr );
+		
+		ret = ::recvfrom( m_fd, buffer.data(), buffer.size(), 0, ( sockaddr* ) &from_addr, &from_len );
+		
+		if ( ret > 0 )
+		{
+			endpoint::ref from = endpoint::from_sockaddr( from_addr );
+			
+			reply( 0, buffer.data(), ret, from );
+		}
+		else if ( ret == 0 )
+		{
+			reply( -1, nullptr, 0, nullptr );
+		}
+		else
+		{
+			reply( -1, nullptr, 0, nullptr );
+		}
+	} );
+	
+	dispatch_resume( m_recv_source );
+}
+
+
+void
+runloop_mac::fd_mac::close()
+{
+	if ( m_fd != -1 )
+	{
+		nklog( log::verbose, "sock = %d", m_fd );
+		::close( m_fd );
+		m_fd = -1;
+	}
 }

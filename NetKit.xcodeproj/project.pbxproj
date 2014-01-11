@@ -139,6 +139,8 @@
 		D28BEE2A1739AEFB00BD7587 /* NKSHA1.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D28BEE271739AEFB00BD7587 /* NKSHA1.cpp */; };
 		D28BEE2B1739AEFB00BD7587 /* NKUUID.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D28BEE281739AEFB00BD7587 /* NKUUID.cpp */; };
 		D28BEE2C1739AEFB00BD7587 /* NKUUID.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D28BEE281739AEFB00BD7587 /* NKUUID.cpp */; };
+		D293E21E1880A44E00A59668 /* NKLDAP.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D293E21D1880A44E00A59668 /* NKLDAP.cpp */; };
+		D293E21F1880A44E00A59668 /* NKLDAP.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D293E21D1880A44E00A59668 /* NKLDAP.cpp */; };
 		D29B900A17A1930700CAE680 /* NKKeychain.h in Headers */ = {isa = PBXBuildFile; fileRef = D29B900717A1930700CAE680 /* NKKeychain.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D29B900B17A1930700CAE680 /* NKKeychain.h in Headers */ = {isa = PBXBuildFile; fileRef = D29B900717A1930700CAE680 /* NKKeychain.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D29B900C17A1930700CAE680 /* NKLDAP.h in Headers */ = {isa = PBXBuildFile; fileRef = D29B900817A1930700CAE680 /* NKLDAP.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -206,6 +208,20 @@
 			proxyType = 1;
 			remoteGlobalIDString = D23DF52515F698390027A8F1;
 			remoteInfo = NetKit;
+		};
+		D293E20F1880753300A59668 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D23DF51C15F698390027A8F1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D2740F2F15FBA83E00589649;
+			remoteInfo = "http-parser";
+		};
+		D293E2111880753500A59668 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D23DF51C15F698390027A8F1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D26F04F215FA5B6A003F7389;
+			remoteInfo = uriparser;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -318,6 +334,7 @@
 		D28BEE301739AF2A00BD7587 /* test_uri.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = test_uri.cpp; path = tests/test_uri.cpp; sourceTree = SOURCE_ROOT; };
 		D28BEE351739B11500BD7587 /* test_uuid.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = test_uuid.cpp; path = tests/test_uuid.cpp; sourceTree = SOURCE_ROOT; };
 		D28BEE371739B18D00BD7587 /* test_ws.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = test_ws.cpp; path = tests/test_ws.cpp; sourceTree = SOURCE_ROOT; };
+		D293E21D1880A44E00A59668 /* NKLDAP.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = NKLDAP.cpp; path = src/NKLDAP.cpp; sourceTree = "<group>"; };
 		D29B900717A1930700CAE680 /* NKKeychain.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NKKeychain.h; path = include/NetKit/NKKeychain.h; sourceTree = "<group>"; };
 		D29B900817A1930700CAE680 /* NKLDAP.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NKLDAP.h; path = include/NetKit/NKLDAP.h; sourceTree = "<group>"; };
 		D29B900917A1930700CAE680 /* NKStackWalk.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NKStackWalk.h; path = include/NetKit/NKStackWalk.h; sourceTree = "<group>"; };
@@ -477,6 +494,7 @@
 				D2597C041725E5BB00FD3D63 /* NKIntrusiveList.h */,
 				D29B900717A1930700CAE680 /* NKKeychain.h */,
 				D29B900817A1930700CAE680 /* NKLDAP.h */,
+				D293E21D1880A44E00A59668 /* NKLDAP.cpp */,
 				D2C33E851771F30B00DAC202 /* NKLog.cpp */,
 				D23DF58715F69F980027A8F1 /* NKLog.h */,
 				D2C33E881771F31800DAC202 /* NKLog_Mac.mm */,
@@ -793,6 +811,8 @@
 			buildRules = (
 			);
 			dependencies = (
+				D293E2101880753300A59668 /* PBXTargetDependency */,
+				D293E2121880753500A59668 /* PBXTargetDependency */,
 			);
 			name = "NetKit Static Library";
 			productName = "NetKit Static Library";
@@ -950,6 +970,7 @@
 				D20ED13216D8379900177887 /* NKRunLoop_Mac.mm in Sources */,
 				D20ED13616DB123C00177887 /* NKProxy.cpp in Sources */,
 				D2033DC616E1813C00DBE69B /* NKUnicode.cpp in Sources */,
+				D293E21E1880A44E00A59668 /* NKLDAP.cpp in Sources */,
 				D2A1180716FCD7E300FAD80F /* NKComponent.cpp in Sources */,
 				D2A1180916FCD7E300FAD80F /* NKMIME.cpp in Sources */,
 				D2A1180F16FD111800FAD80F /* NKPlatform.mm in Sources */,
@@ -993,6 +1014,7 @@
 				D26B0ECB16F7C74C008379E0 /* NKDatabase_SQLite.cpp in Sources */,
 				D26B0ECC16F7C754008379E0 /* NKHTTP.cpp in Sources */,
 				D26B0ED016F7C75C008379E0 /* NKJSON.cpp in Sources */,
+				D293E21F1880A44E00A59668 /* NKLDAP.cpp in Sources */,
 				D2A1180816FCD7E300FAD80F /* NKComponent.cpp in Sources */,
 				D2A1180A16FCD7E300FAD80F /* NKMIME.cpp in Sources */,
 				D2A1181016FD111800FAD80F /* NKPlatform.mm in Sources */,
@@ -1056,6 +1078,16 @@
 			isa = PBXTargetDependency;
 			target = D23DF52515F698390027A8F1 /* NetKit Framework */;
 			targetProxy = D23DF5B115F6B10A0027A8F1 /* PBXContainerItemProxy */;
+		};
+		D293E2101880753300A59668 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D2740F2F15FBA83E00589649 /* http-parser */;
+			targetProxy = D293E20F1880753300A59668 /* PBXContainerItemProxy */;
+		};
+		D293E2121880753500A59668 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D26F04F215FA5B6A003F7389 /* uriparser */;
+			targetProxy = D293E2111880753500A59668 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -1224,9 +1256,9 @@
 				CLANG_WARN_INT_CONVERSION = YES;
 				EXECUTABLE_PREFIX = lib;
 				HEADER_SEARCH_PATHS = (
-					./include,
-					"./ThirdParty/http-parser",
-					./ThirdParty/uriparser/include,
+					"$(PROJECT_DIR)/include",
+					"$(PROJECT_DIR)/ThirdParty/http-parser",
+					"$(PROJECT_DIR)/ThirdParty/uriparser/include",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				PRODUCT_NAME = NetKit;
@@ -1246,9 +1278,9 @@
 				CLANG_WARN_INT_CONVERSION = YES;
 				EXECUTABLE_PREFIX = lib;
 				HEADER_SEARCH_PATHS = (
-					./include,
-					"./ThirdParty/http-parser",
-					./ThirdParty/uriparser/include,
+					"$(PROJECT_DIR)/include",
+					"$(PROJECT_DIR)/ThirdParty/http-parser",
+					"$(PROJECT_DIR)/ThirdParty/uriparser/include",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				PRODUCT_NAME = NetKit;
