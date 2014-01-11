@@ -114,7 +114,11 @@ public:
 
 		if ( is_v4() )
 		{
+#if defined( WIN32 )
 			ok = ( ( m_addr.m_v4.S_un.S_un_b.s_b1 == 169 ) && ( m_addr.m_v4.S_un.S_un_b.s_b2 == 254 ) );
+#else
+//			ok = ( ( m_addr.m_v4.s_addr.    .S_un_b.s_b1 == 169 ) && ( m_addr.m_v4.S_un.S_un_b.s_b2 == 254 ) );
+#endif
 		}
 
 		return ok;

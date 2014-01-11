@@ -1482,6 +1482,14 @@ value::value( std::uint64_t val )
 }
 
 
+value::value( std::time_t val )
+:
+	m_kind( type::integer ),
+	m_data( new std::uint64_t( val ) )
+{
+}
+
+
 value::value( status v )
 :
 	m_kind( type::integer ),
@@ -3243,7 +3251,7 @@ server::route_request( const value::ref &request, reply_f r )
 				value::ref reply;
 				value::ref error;
 
-				nklog( log::error, "incorrect parameter count for '%s'", request[ "method" ]->as_string() );
+				nklog( log::error, "incorrect parameter count for '%s'", request[ "method" ]->as_string().c_str() );
 							
 				error[ "code" ]			= netkit::status::bad_params;
 				error[ "message" ]		= "Invalid Paramaters.";

@@ -40,6 +40,7 @@
 #include <sys/file.h>
 #include <sys/socket.h>
 #include <sys/sysctl.h>
+#include <sys/stat.h>
 
 #include <net/if.h>
 #include <net/if_dl.h>
@@ -184,6 +185,13 @@ platform::machine_id()
 
 
 std::string
+platform::username()
+{
+	return [ NSUserName() UTF8String ];
+}
+
+
+std::string
 platform::make_filesystem_safe( const std::string &name )
 {
 	std::string safe;
@@ -209,6 +217,14 @@ platform::create_folder( const std::string &folder )
 {
 	//return SHCreateDirectoryEx( NULL, folder, NULL ) == ERROR_SUCCESS ? true : false;
 	return false;
+}
+
+
+bool
+platform::file_exists( const std::string &name )
+{
+	struct stat buf;
+	return ::stat( name.c_str(), &buf ) == 0 ? true : false;
 }
 
 
