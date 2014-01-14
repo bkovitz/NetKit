@@ -1482,12 +1482,14 @@ value::value( std::uint64_t val )
 }
 
 
+#if defined( __clang__ )
 value::value( std::time_t val )
 :
 	m_kind( type::integer ),
 	m_data( new std::uint64_t( val ) )
 {
 }
+#endif
 
 
 value::value( status v )
