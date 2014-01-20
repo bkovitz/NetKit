@@ -85,7 +85,7 @@ log::put( log::level l, const char * filename, const char * function, int line, 
 			}
 		}
 		
-		snprintf( msg, sizeof( msg ), "%d %s %s:%d %s() %s", getpid(), time_str, prune( filename ).c_str(), line, function, buf );
+		snprintf( msg, sizeof( msg ), "%d %s %s:%d %s %s", getpid(), time_str, prune( filename ).c_str(), line, function, buf );
 		fprintf( stderr, "%s\n", msg );
 	}
 }

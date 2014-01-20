@@ -115,11 +115,11 @@ public:
 	private:
 	
 		std::string			m_name;
-		std::uint8_t		m_min_num_values;
-		std::uint8_t		m_max_num_values;
-		bool				m_required;
+		std::uint8_t		m_min_num_values	= 0;
+		std::uint8_t		m_max_num_values	= 0;
+		bool				m_required			= false;
 		json::value::ref	m_values;
-		bool				m_set;
+		bool				m_set				= false;
 	};
 
 	application( const std::string &name, const option::list &options, int argc, char **argv );

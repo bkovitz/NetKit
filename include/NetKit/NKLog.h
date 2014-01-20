@@ -44,9 +44,9 @@
 #	include <stdio.h>
 #	define nklog( LEVEL, MESSAGE, ... ) if ( LEVEL <= log::get_level() ) { netkit::log::put( LEVEL, __FILE__, __FUNCTION__, __LINE__, MESSAGE, __VA_ARGS__ ); }
 
-#else
+#elif defined( __clang__ )
 
-#	define nklog( LEVEL, MESSAGE, ... ) netkit::log::put( LEVEL, __FILE__, __FUNCTION__, __LINE__, MESSAGE, ##__VA_ARGS__ );
+#	define nklog( LEVEL, MESSAGE, ... ) netkit::log::put( LEVEL, __FILE__, __PRETTY_FUNCTION__, __LINE__, MESSAGE, ##__VA_ARGS__ );
 
 #endif
 
