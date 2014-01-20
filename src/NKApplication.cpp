@@ -27,77 +27,104 @@
  * either expressed or implied, of the FreeBSD Project.
  *
  */
- 
+
+#include <NetKit/NKApplication.h>
+#include <NetKit/NKJSON.h>
 #include <NetKit/NKLog.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <time.h>
-#include <string.h>
+#include <limits>
+#include <sstream>
 #include <vector>
-#include <mutex>
+
 
 using namespace netkit;
 
 
-log::level				log::m_log_level = log::info;
-log::set_handlers		*log::m_set_handlers;
-std::recursive_mutex	*log::m_mutex;
-
-cookie::ref
-log::on_set( set_f handler )
+application::application( const std::string &name, const option::list &options, int argc, char **argv )
 {
-	static std::uint64_t					tag = 0;
-	std::uint64_t							t	= ++tag;
-	cookie::ref								cookie;
-	std::lock_guard<std::recursive_mutex>	lock( *m_mutex );
+	log::init( name );
 	
-    m_set_handlers->push_back( std::make_pair( t, handler ) );
-	
-	cookie.reset( reinterpret_cast< void* >( t ), [=]( void *v )
+#if defined( DEBUG )
+	log::set_level( log::verbose );
+#else
+	log::set_level( log::info );
+#endif
+
+	for ( auto it = options.begin(); it != options.end(); it++ )
 	{
-		std::lock_guard<std::recursive_mutex> lock( *m_mutex );
+		m_options[ ( *it )->name() ] = *it;
+	}
 	
-		for ( auto it = m_set_handlers->begin(); it != m_set_handlers->end(); it++ )
+	parse_command_line( argc, argv );
+}
+
+
+application::~application()
+{
+}
+
+
+bool
+application::parse_command_line( int argc, std::tchar_t **argv )
+{
+	for ( auto i = 1; i < argc; i++ )
+	{
+		auto it = m_options.find( argv[ i ] );
+		
+		if ( it != m_options.end() )
 		{
-			if ( it->first == t )
+			it->second->set_is_set( true );
+
+			while ( ( ++i < argc ) && ( argv[ i ][ 0 ] == '-' ) )
 			{
-				m_set_handlers->erase( it );
+				it->second->values()->append( argv[ i ] );
+			}
+			
+			if ( ( it->second->values()->size() < it->second->min_num_values() ) ||
+			     ( it->second->values()->size() > it->second->max_num_values() ) )
+			{
+				nklog( log::error, "syntax error for option '%s'", it->second->name().c_str() );
+				m_okay = false;
 				break;
 			}
 		}
-	} );
+		else
+		{
+			nklog( log::error, "unknown option '%s'", argv[ i ] );
+			m_okay = false;
+			break;
+		}
+	}
 	
-	return cookie;
+	return m_okay;
 }
 
 
-void
-log::set_level( log::level l )
+bool
+application::is_option_set( const std::string &name )
 {
-	std::lock_guard<std::recursive_mutex> lock( *m_mutex );
+	auto it = m_options.find( name );
+	bool ok = false;
 	
-	if ( m_log_level != l )
+	if ( it != m_options.end() )
 	{
-		m_log_level = l;
-		
-		for ( auto it = m_set_handlers->begin(); it != m_set_handlers->end(); it++ )
-		{
-			( it->second )( l );
-		}
+		ok = ( *it ).second->is_set();
 	}
+	
+	return ok;
 }
 
-
-std::string
-log::prune( const char *filename )
+	
+bool
+application::is_option_set( const std::string &name, json::value::ref &values )
 {
-	for ( auto i = strlen( filename ) - 1; i > 0; i-- )
+	auto it = m_options.find( name );
+	bool ok = false;
+	
+	if ( it != m_options.end() )
 	{
-		if ( ( filename[ i ] == '/' ) || ( filename[ i ] == '\\' ) )
-		{
-			return filename + i + 1;
-		}
+		ok		= ( *it ).second->is_set();
+		values	= ( *it ).second->values();
 	}
-
-	return filename;
+	
+	return ok;
 }

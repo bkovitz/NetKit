@@ -75,29 +75,28 @@ exit:
 }
 
 
-cookie
+cookie::ref
 source::on_close( close_f c )
 {
-	static int		tags	= 0;
-	std::uint32_t	t		= ++tags;
+	static std::uint64_t	tags	= 0;
+	std::uint64_t			t		= ++tags;
+	cookie::ref				cookie;
 	
 	m_close_handlers.push_back( std::make_pair( t, c ) );
 	
-	return reinterpret_cast< void* >( t );
-}
-
-
-void
-source::cancel( cookie c )
-{
-	for ( auto it = m_close_handlers.begin(); it != m_close_handlers.end(); it++ )
+	cookie.reset( reinterpret_cast< void* >( t ), [=]( void *v )
 	{
-		if ( it->first == reinterpret_cast< std::uint64_t >( c.get() ) )
+		for ( auto it = m_close_handlers.begin(); it != m_close_handlers.end(); it++ )
 		{
-			m_close_handlers.erase( it );
-			break;
+			if ( it->first == t )
+			{
+				m_close_handlers.erase( it );
+				break;
+			}
 		}
-	}
+	} );
+	
+	return cookie;
 }
 
 

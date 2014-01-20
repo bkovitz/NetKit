@@ -245,6 +245,8 @@ runloop_mac::fd_mac::fd_mac( int fd, int domain )
 	m_recv_source( dispatch_source_create( DISPATCH_SOURCE_TYPE_READ, fd, 0, dispatch_get_main_queue() ) )
 {
 	assert( m_fd != -1 );
+	assert( m_send_source );
+	assert( m_recv_source );
 }
 
 
@@ -252,20 +254,7 @@ runloop_mac::fd_mac::~fd_mac()
 {
 	nklog( log::verbose, "" );
 	
-	if ( m_send_source )
-	{
-		dispatch_release( m_send_source );
-	}
-	
-	if ( m_recv_source )
-	{
-		dispatch_release( m_recv_source );
-	}
-
-	if ( m_fd != -1 )
-	{
-		::close( m_fd );
-	}
+	close();
 }
 
 
@@ -325,7 +314,7 @@ runloop_mac::fd_mac::connect( endpoint::ref to, connect_reply_f reply )
 			socklen_t			len;
 			int					ret;
 			
-			dispatch_suspend( m_send_source );
+			suspend_send();
 			
 			memset( &addr, 0, sizeof( addr ) );
 			len = sizeof( addr );
@@ -343,7 +332,7 @@ runloop_mac::fd_mac::connect( endpoint::ref to, connect_reply_f reply )
 			}
 		} );
 		
-		dispatch_resume( m_send_source );
+		resume_send();
 	}
 	else
 	{
@@ -367,6 +356,8 @@ runloop_mac::fd_mac::accept( std::size_t peek, accept_reply_f reply )
 			struct sockaddr_storage from_addr;
 			socklen_t				from_len;
 			int						sock;
+			
+			suspend_recv();
 			
 			memset( &from_addr, 0, sizeof( from_addr ) );
 			from_len = sizeof( from_addr );
@@ -434,7 +425,7 @@ runloop_mac::fd_mac::accept( std::size_t peek, accept_reply_f reply )
 			}
 		} );
 		
-		dispatch_resume( m_recv_source );
+		resume_recv();
 	}
 	else
 	{
@@ -499,12 +490,12 @@ runloop_mac::fd_mac::try_send( send_f func )
 			{
 				dispatch_source_set_event_handler( m_send_source, ^()
 				{
-					dispatch_suspend( m_send_source );
+					suspend_send();
 	
 					try_send( func );
 				} );
 		
-				dispatch_resume( m_send_source );
+				resume_send();
 			}
 			else
 			{
@@ -528,11 +519,9 @@ runloop_mac::fd_mac::recv( recv_reply_f reply )
 {
 	dispatch_source_set_event_handler( m_recv_source, ^()
 	{
-		ssize_t ret;
+		suspend_recv();
 		
-		dispatch_suspend( m_recv_source );
-		
-		ret = ::recv( m_fd, m_in_buf.data(), m_in_buf.size(), 0 );
+		auto ret = ::recv( m_fd, m_in_buf.data(), m_in_buf.size(), 0 );
 		
 		if ( ret > 0 )
 		{
@@ -548,7 +537,7 @@ runloop_mac::fd_mac::recv( recv_reply_f reply )
 		}
 	} );
 	
-	dispatch_resume( m_recv_source );
+	resume_recv();
 }
 
 
@@ -562,7 +551,7 @@ runloop_mac::fd_mac::recvfrom( recvfrom_reply_f reply )
 		std::vector< std::uint8_t > buffer( 8192, 0 );
 		ssize_t						ret;
 		
-		dispatch_suspend( m_recv_source );
+		suspend_recv();
 		
 		memset( &from_addr, 0, sizeof( from_addr ) );
 		from_len = sizeof( from_addr );
@@ -585,13 +574,27 @@ runloop_mac::fd_mac::recvfrom( recvfrom_reply_f reply )
 		}
 	} );
 	
-	dispatch_resume( m_recv_source );
+	resume_recv();
 }
 
 
 void
 runloop_mac::fd_mac::close()
 {
+	if ( m_send_source && m_send_active )
+	{
+		dispatch_release( m_send_source );
+		m_send_source = nullptr;
+		m_send_active = false;
+	}
+	
+	if ( m_recv_source && m_recv_active )
+	{
+		dispatch_release( m_recv_source );
+		m_recv_source = nullptr;
+		m_recv_active = false;
+	}
+	
 	if ( m_fd != -1 )
 	{
 		nklog( log::verbose, "sock = %d", m_fd );

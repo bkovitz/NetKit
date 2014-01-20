@@ -40,7 +40,7 @@
 using namespace netkit;
 
 void
-log::init( const char *name )
+log::init( const std::string &name )
 {
 	if ( !m_set_handlers )
 	{
@@ -85,7 +85,7 @@ log::put( log::level l, const char * filename, const char * function, int line, 
 			}
 		}
 		
-		snprintf( msg, sizeof( msg ), "%d %s %s %s:%d %s", getpid(), time_str, prune( filename ).c_str(), function, line, buf );
+		snprintf( msg, sizeof( msg ), "%d %s %s:%d %s() %s", getpid(), time_str, prune( filename ).c_str(), line, function, buf );
 		fprintf( stderr, "%s\n", msg );
 	}
 }

@@ -61,39 +61,38 @@ sink::bind( source::ref source )
 void
 sink::unbind()
 {
-	m_source->cancel( m_on_close );
-	m_source = nullptr;
+	m_on_close	= nullptr;
+	m_source	= nullptr;
 
 	source_was_closed();
 }
 
 
-cookie
+cookie::ref
 sink::on_close( close_f c )
 {
-	static std::uint32_t	tags	= 0;
-	std::uint32_t			t		= ++tags;
+	static std::uint64_t	tags	= 0;
+	std::uint64_t			t		= ++tags;
+	cookie::ref				cookie;
 	
 	m_close_handlers.push_back( std::make_pair( t, c ) );
 	
-	return reinterpret_cast< void* >( t );
+	cookie.reset( reinterpret_cast< void* >( t ), [=]( void *v )
+	{
+		for ( auto it = m_close_handlers.begin(); it != m_close_handlers.end(); it++ )
+		{
+			if ( it->first == t )
+			{
+				m_close_handlers.erase( it );
+				break;
+			}
+		}
+	} );
+	
+	return cookie;
 }
 
 	
-void
-sink::cancel( cookie c )
-{
-	for ( auto it = m_close_handlers.begin(); it != m_close_handlers.end(); it++ )
-	{
-		if ( it->first == ( std::uint64_t ) c.get() )
-		{
-			m_close_handlers.erase( it );
-			break;
-		}
-	}
-}
-
-
 void
 sink::source_was_closed()
 {

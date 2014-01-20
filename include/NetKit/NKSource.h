@@ -113,12 +113,9 @@ public:
 	virtual void
 	close( bool notify = true );
 	
-	virtual cookie
+	cookie::ref
 	on_close( close_f func );
 	
-	virtual void
-	cancel( cookie c );
-
 	virtual endpoint::ref
 	peer() const;
 

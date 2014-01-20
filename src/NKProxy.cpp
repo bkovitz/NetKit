@@ -176,7 +176,6 @@ static proxy::ref g_proxy;
 
 proxy::auth_challenge_f		proxy::m_auth_challenge_handler;
 proxy::set_handlers			proxy::m_set_handlers;
-static std::uint8_t			*g_ptr = nullptr;
 
 source::adapter::ref
 proxy::create_adapter( bool secure )
@@ -244,28 +243,28 @@ proxy::get()
 }
 
 
-netkit::cookie
+cookie::ref
 proxy::on_set( set_f handler )
 {
-	netkit::cookie cookie( g_ptr++ );
+	static std::uint64_t	tag = 0;
+	std::uint64_t			t	= ++tag;
+	cookie::ref				cookie;
 	
-	m_set_handlers.push_back( std::make_pair( cookie, handler ) );
+	m_set_handlers.push_back( std::make_pair( t, handler ) );
+	
+	cookie.reset( reinterpret_cast< void* >( t ), [=]( void *v )
+	{
+		for ( auto it = m_set_handlers.begin(); it != m_set_handlers.end(); it++ )
+		{
+			if ( it->first == t )
+			{
+				m_set_handlers.erase( it );
+				break;
+			}
+		}
+	} );
 	
 	return cookie;
-}
-
-
-void
-proxy::cancel( netkit::cookie cookie )
-{
-	for ( auto it = m_set_handlers.begin(); it != m_set_handlers.end(); it++ )
-	{
-		if ( it->first.get() == cookie.get() )
-		{
-			m_set_handlers.erase( it );
-			break;
-		}
-	}
 }
 
 

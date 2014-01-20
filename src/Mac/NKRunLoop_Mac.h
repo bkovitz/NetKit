@@ -124,6 +124,34 @@ public:
 		
 	private:
 	
+		inline void
+		resume_send()
+		{
+			dispatch_resume( m_send_source );
+			m_send_active = true;
+		}
+		
+		inline void
+		suspend_send()
+		{
+			dispatch_suspend( m_send_source );
+			m_send_active = false;
+		}
+		
+		inline void
+		resume_recv()
+		{
+			dispatch_resume( m_recv_source );
+			m_recv_active = true;
+		}
+		
+		inline void
+		suspend_recv()
+		{
+			dispatch_suspend( m_recv_source );
+			m_recv_active = false;
+		}
+		
 		void
 		try_send( send_f func );
 		
@@ -138,8 +166,10 @@ public:
 		std::vector< std::uint8_t >	m_out_buf;
 		std::vector< std::uint8_t >	m_in_buf;
 		int							m_domain;
-		dispatch_source_t			m_send_source;
-		dispatch_source_t			m_recv_source;
+		dispatch_source_t			m_send_source	= nullptr;
+		bool						m_send_active	= false;
+		dispatch_source_t			m_recv_source	= nullptr;
+		bool						m_recv_active	= false;
 		int							m_fd;
 	};
 

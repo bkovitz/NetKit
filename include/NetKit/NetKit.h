@@ -32,6 +32,7 @@
 #define _netkit_netkit_h
 
 #include <NetKit/NKObject.h>
+#include <NetKit/NKApplication.h>
 #include <NetKit/NKURI.h>
 #include <NetKit/NKCookie.h>
 #include <NetKit/NKUUID.h>
@@ -43,7 +44,7 @@
 #include <NetKit/NKMIME.h>
 #include <NetKit/NKHTTP.h>
 #include <NetKit/NKBase64.h>
-#include <NetKit/cstring.h>
+#include <NetKit/NKString.h>
 #include <NetKit/NKPlatform.h>
 #include <NetKit/NKJSON.h>
 #include <NetKit/NKDatabase.h>

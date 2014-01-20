@@ -34,7 +34,7 @@
 #include <NetKit/NKSource.h>
 #include <NetKit/NKProxy.h>
 #include <NetKit/NKURI.h>
-#include <NetKit/cstring.h>
+#include <NetKit/NKString.h>
 #include <sstream>
 #include <string>
 #include <vector>

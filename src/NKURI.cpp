@@ -29,7 +29,7 @@
  */
  
 #include <NetKit/NKURI.h>
-#include <NetKit/cstring.h>
+#include <NetKit/NKString.h>
 #include <uriparser/Uri.h>
 #include <string>
 #include <algorithm>

@@ -69,12 +69,9 @@ public:
 	virtual void
 	close();
 	
-	virtual cookie
+	cookie::ref
 	on_close( close_f func );
 	
-	virtual void
-	cancel( cookie c );
-
 	endpoint::ref
 	peer() const;
 	
@@ -91,10 +88,10 @@ protected:
 	void
 	source_was_closed();
 	
-	close_handlers	m_close_handlers;
-	netkit::cookie	m_on_close;
-	source::ref		m_source;
-	std::uint8_t	m_buf[ 4192 ];
+	close_handlers		m_close_handlers;
+	netkit::cookie::ref	m_on_close;
+	source::ref			m_source;
+	std::uint8_t		m_buf[ 4192 ];
 };
 
 }
