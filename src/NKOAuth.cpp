@@ -76,54 +76,64 @@ oauth::get_access_token( token_result_f result )
 {
 	if ( m_token.expire_time < system_clock::now() )
 	{
-		http::request::ref request = new http::request( http::method::post, 1, 1, new uri( m_auth_server_uri ) );
-		request->add_to_header( "Content-Type", std::string( "application/x-www-form-urlencoded" ) );
+		m_update_queue.push( result );
 
-		*request << "client_id=" << m_client_id << "&client_secret=" << m_client_secret << "&refresh_token="
+		if ( m_update_queue.size() == 1 )
+		{
+			http::request::ref request = new http::request( http::method::post, 1, 1, new uri( m_auth_server_uri ) );
+
+			request->add_to_header( "Content-Type", std::string( "application/x-www-form-urlencoded" ) );
+
+			*request << "client_id=" << m_client_id << "&client_secret=" << m_client_secret << "&refresh_token="
 		         << m_token.refresh_token << "&grant_type=" << "refresh_token";
 
-		request->on_reply( [=]( http::response::ref response )
-		{
-			bool success = false;
-
-			m_token.expire_time = system_clock::now();
-
-			if ( response )
+			request->on_reply( [=]( http::response::ref response )
 			{
-				if ( response->status() == 200 )
+				bool success = false;
+	
+				m_token.expire_time = system_clock::now();
+	
+				if ( response )
 				{
-					json::value::ref root = new json::value();
-
-					root->load_from_string( response->body() );
-
-					if ( root->is_member( "access_token" ) && root[ "access_token" ]->is_string() )
+					if ( response->status() == 200 )
 					{
-						m_token.access_token = root[ "access_token" ]->as_string();
-		
-						std::uint32_t seconds_until_expire = root[ "expires_in" ]->as_uint32();
-						m_token.expire_time = system_clock::now() + seconds( seconds_until_expire );
-		
-						success = true;
+						json::value::ref root = new json::value();
+	
+						root->load_from_string( response->body() );
+	
+						if ( root->is_member( "access_token" ) && root[ "access_token" ]->is_string() )
+						{
+							m_token.access_token = root[ "access_token" ]->as_string();
+			
+							std::uint32_t seconds_until_expire = root[ "expires_in" ]->as_uint32();
+							m_token.expire_time = system_clock::now() + seconds( seconds_until_expire );
+			
+							success = true;
+						}
+						else
+						{
+							nklog( log::error, "bad json format: %s", root->to_string().c_str() );
+						}
 					}
 					else
 					{
-						nklog( log::error, "bad json format: %s", root->to_string().c_str() );
+						nklog( log::error, "http error trying to refresh access token: %d", response->status() );
 					}
 				}
 				else
 				{
-					nklog( log::error, "http error trying to refresh access token: %d", response->status() );
+					nklog( log::error, "no response from %s", request->uri()->to_string().c_str() );
 				}
-			}
-			else
-			{
-				nklog( log::error, "no response from %s", request->uri()->to_string().c_str() );
-			}
-	
-			result( success, m_token );
-		} );
+		
+				while ( !m_update_queue.empty() )
+				{
+					m_update_queue.top()( success, m_token );
+					m_update_queue.pop();
+				}
+			} );
 
-		http::client::send( request );
+			http::client::send( request );
+		}
 	}
 	else
 	{

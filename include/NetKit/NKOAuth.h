@@ -35,6 +35,7 @@
 #include <chrono>
 #include <string>
 #include <functional>
+#include <stack>
 
 namespace netkit {
 
@@ -60,13 +61,20 @@ public:
 	void
 	get_access_token( token_result_f result );
 
+	inline token&
+	get_token()
+	{
+		return m_token;
+	}
+
 private:
 
-	std::string m_client_id;
-	std::string m_client_secret;
-	std::string m_redirect_uri;
-	std::string m_auth_server_uri;
-	token		m_token;
+	std::stack< token_result_f >	m_update_queue;
+	std::string						m_client_id;
+	std::string						m_client_secret;
+	std::string						m_redirect_uri;
+	std::string						m_auth_server_uri;
+	struct token					m_token;
 };
 
 }

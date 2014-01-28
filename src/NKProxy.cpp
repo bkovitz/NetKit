@@ -175,7 +175,7 @@ protected:
 static proxy::ref g_proxy;
 
 proxy::auth_challenge_f		proxy::m_auth_challenge_handler;
-proxy::set_handlers			proxy::m_set_handlers;
+proxy::set_handlers			*proxy::m_set_handlers;
 static std::uint8_t			*g_ptr = nullptr;
 
 source::adapter::ref
@@ -248,8 +248,13 @@ netkit::cookie
 proxy::on_set( set_f handler )
 {
 	netkit::cookie cookie( g_ptr++ );
+
+	if ( !m_set_handlers )
+	{
+		m_set_handlers = new set_handlers;
+	}
 	
-	m_set_handlers.push_back( std::make_pair( cookie, handler ) );
+	m_set_handlers->push_back( std::make_pair( cookie, handler ) );
 	
 	return cookie;
 }
@@ -258,12 +263,15 @@ proxy::on_set( set_f handler )
 void
 proxy::cancel( netkit::cookie cookie )
 {
-	for ( auto it = m_set_handlers.begin(); it != m_set_handlers.end(); it++ )
+	if ( m_set_handlers )
 	{
-		if ( it->first.get() == cookie.get() )
+		for ( auto it = m_set_handlers->begin(); it != m_set_handlers->end(); it++ )
 		{
-			m_set_handlers.erase( it );
-			break;
+			if ( it->first.get() == cookie.get() )
+			{
+				m_set_handlers->erase( it );
+				break;
+			}
 		}
 	}
 }
@@ -276,9 +284,12 @@ proxy::set( proxy::ref val )
 	{
 		g_proxy = val;
 
-		for ( auto it = m_set_handlers.begin(); it != m_set_handlers.end(); it++ )
+		if ( m_set_handlers )
 		{
-			( it->second )( g_proxy );
+			for ( auto it = m_set_handlers->begin(); it != m_set_handlers->end(); it++ )
+			{
+				( it->second )( g_proxy );
+			}
 		}
 	}
 }

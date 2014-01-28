@@ -160,7 +160,7 @@ protected:
 	std::vector< std::string > 		m_bypass_list;
 	std::string 					m_authorization;
 	static auth_challenge_f 		m_auth_challenge_handler;
-	static set_handlers 			m_set_handlers;
+	static set_handlers 			*m_set_handlers;
 };
 
 }
