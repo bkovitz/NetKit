@@ -44,9 +44,9 @@
 #	include <stdio.h>
 #	define nklog( LEVEL, MESSAGE, ... ) if ( LEVEL <= log::get_level() ) { netkit::log::put( LEVEL, __FILE__, __FUNCTION__, __LINE__, MESSAGE, __VA_ARGS__ ); }
 
-#else
+#elif defined( __clang__ )
 
-#	define nklog( LEVEL, MESSAGE, ... ) netkit::log::put( LEVEL, __FILE__, __FUNCTION__, __LINE__, MESSAGE, ##__VA_ARGS__ );
+#	define nklog( LEVEL, MESSAGE, ... ) netkit::log::put( LEVEL, __FILE__, __PRETTY_FUNCTION__, __LINE__, MESSAGE, ##__VA_ARGS__ );
 
 #endif
 
@@ -72,7 +72,7 @@ public:
 #if defined( WIN32 )
 	init( LPCTSTR name );
 #else
-	init( const char *name );
+	init( const std::string &name );
 #endif
 
 	inline static level
@@ -84,12 +84,9 @@ public:
 	static void
 	set_level( level l );
 
-	static netkit::cookie
+	static cookie::ref
 	on_set( set_f handler );
 	
-	static void
-	cancel( netkit::cookie cookie );
-
 	static void
 	put( level l, const char * filename, const char * function, int line, const char * message, ... );
 	
@@ -98,7 +95,7 @@ protected:
 	static std::string
 	prune( const char *filename );
 
-	typedef std::vector< std::pair< netkit::cookie, set_f > >	set_handlers;
+	typedef std::vector< std::pair< std::uint64_t, set_f > >	set_handlers;
 	static log::level											m_log_level;
 	static set_handlers											*m_set_handlers;
 	static std::recursive_mutex									*m_mutex;

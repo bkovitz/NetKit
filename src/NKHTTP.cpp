@@ -33,7 +33,7 @@
 #include <NetKit/NKWebSocket.h>
 #include <NetKit/NKTLS.h>
 #include <NetKit/NKBase64.h>
-#include <NetKit/cstring.h>
+#include <NetKit/NKString.h>
 #include <NetKit/NKPlatform.h>
 #include <NetKit/NKProxy.h>
 #include <NetKit/NKLog.h>

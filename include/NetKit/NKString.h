@@ -1,10 +1,24 @@
-#ifndef _netkit_cstring_h
-#define _netkit_cstring_h
+#ifndef _netkit_string_h
+#define _netkit_string_h
 
 #include <cstdarg>
 #include <cstring>
 
 namespace std {
+
+#if defined( WIN32 )
+
+#include <tchar.h>
+
+typedef TCHAR tchar_t;
+
+#else
+
+typedef char tchar_t;
+
+#endif
+
+typedef basic_string< tchar_t > tstring;
 
 inline void*
 memmove_s( void *s1, size_t size, const void *s2, size_t n )

@@ -39,7 +39,7 @@
 #	define	netkit_check( X )							\
 	do 													\
 	{													\
-		if( !( X ) ) 									\
+		if ( !( X ) ) 									\
 		{												\
 			nklog( log::error( #X );					\
 		}												\
@@ -72,5 +72,16 @@ do 														\
 }														\
 while( 0 )
 
+
+#define	netkit_require_action( X, ACTION, LABEL )		\
+do 														\
+{														\
+	if ( !( X ) ) 										\
+	{													\
+		nklog( log::error, #X );						\
+		{ ACTION; }										\
+		goto LABEL;										\
+	}													\
+} while( 0 )
 
 #endif

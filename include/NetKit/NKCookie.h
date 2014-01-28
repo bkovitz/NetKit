@@ -32,63 +32,16 @@
 #define _netkit_cookie_h
 
 #include <NetKit/NKPlatform.h>
+#include <memory>
 
 namespace netkit {
 
-class cookie
-{
-public:
+namespace cookie {
 
-	cookie()
-	:
-		m_val( nullptr )
-	{
-	}
+typedef std::unique_ptr< void, void ( * )( void *c ) > unique_ref;
+typedef std::shared_ptr< void > ref;
 
-	cookie( void *val )
-	:
-		m_val( val )
-	{
-	}
-
-	cookie( const cookie &that )
-	:
-		m_val( that.m_val )
-	{
-	}
-
-	~cookie()
-	{
-	}
-
-	inline cookie&
-	operator=( const cookie &that )
-	{
-		m_val = that.m_val;
-		return *this;
-	}
-
-	inline operator void* ()
-	{
-		return m_val;
-	}
-
-	inline void*
-	get()
-	{
-		return m_val;
-	}
-
-	inline const void*
-	get() const
-	{
-		return m_val;
-	}
-
-private:
-
-	void *m_val;
-};
+}
 
 }
 

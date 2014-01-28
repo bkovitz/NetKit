@@ -116,7 +116,7 @@ database::manager_impl::select( const std::string &str )
 {
 	sqlite3_stmt *stmt;
 
-	nklog( log::voluminous, "select: %s\n", str.c_str() );
+	nklog( log::voluminous, "%s\n", str.c_str() );
 
 	return ( sqlite3_prepare_v2( m_db, str.c_str(), -1, &stmt, NULL ) == SQLITE_OK ) ? new statement_impl( stmt ) : new statement_impl( NULL );
 }
@@ -183,12 +183,13 @@ exit:
 }
 
 
-netkit::cookie
+netkit::cookie::ref
 database::manager_impl::on_change( const std::string &tableName, observer_reply_f reply )
 {
 	auto		it	= m_omap.find( tableName );
 	observer	*o	= new observer( tableName, reply );
 	oids		oids;
+	cookie::ref	cookie;
 	
 	if ( it != m_omap.end() )
 	{
@@ -214,8 +215,27 @@ database::manager_impl::on_change( const std::string &tableName, observer_reply_
 	{
 		reply( database::action::update, oids );
 	}
+	
+	cookie.reset( o, [=]( void *v )
+	{
+		auto it1 = m_omap.find( o->table_name() );
+	
+		if ( it1 != m_omap.end() )
+		{
+			for ( auto it2 = it1->second.begin(); it2 != it1->second.end(); it2++ )
+			{
+				if ( *it2 == o )
+				{
+					it1->second.erase( it2 );
+					break;
+				}
+			} 
+		}
 
-	return o;
+		delete o;
+	} );
+
+	return cookie;
 }
 
 
@@ -225,32 +245,6 @@ database::manager_impl::set_ignore_changes( bool val )
 	m_ignore_changes = val;
 }
 		
-
-void
-database::manager_impl::cancel( cookie c )
-{
-	observer *o = reinterpret_cast< observer* >( c.get() );
-
-	if ( o )
-	{
-		auto it1 = m_omap.find( o->table_name() );
-	
-		if ( it1 != m_omap.end() )
-		{
-			for ( auto it2 = it1->second.begin(); it2 != it1->second.end(); it2++ )
-			{
-				if ( *it2 == c.get() )
-				{
-					it1->second.erase( it2 );
-					break;
-				}
-			} 
-		}
-
-		delete o;
-	}
-}
-
 
 void
 database::manager_impl::database_was_changed( void* context, int action, const char* db_name, const char* table_name, sqlite_int64 oid )

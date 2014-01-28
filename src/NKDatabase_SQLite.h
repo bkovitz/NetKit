@@ -86,14 +86,11 @@ public:
 	virtual bool
 	is_connected() const;
 	
-	virtual cookie
+	virtual cookie::ref
 	on_change( const std::string &tableName, observer_reply_f reply );
 	
 	virtual void
 	set_ignore_changes( bool val );
-
-	virtual void
-	cancel( cookie t );
 
 	virtual netkit::status
 	exec( const std::string &str, bool quiet = false );

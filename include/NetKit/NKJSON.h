@@ -58,7 +58,7 @@
 #include <NetKit/NKExpected.h>
 #include <NetKit/NKSink.h>
 #include <NetKit/NKSource.h>
-#include <NetKit/cstring.h>
+#include <NetKit/NKString.h>
 #include <streambuf>
 #include <iostream>
 #include <vector>

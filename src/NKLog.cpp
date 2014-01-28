@@ -42,35 +42,32 @@ using namespace netkit;
 log::level				log::m_log_level = log::info;
 log::set_handlers		*log::m_set_handlers;
 std::recursive_mutex	*log::m_mutex;
-static std::uint8_t		*g_ptr	= nullptr;
 
-
-netkit::cookie
+cookie::ref
 log::on_set( set_f handler )
 {
-	std::lock_guard<std::recursive_mutex> lock( *m_mutex );
+	static std::uint64_t					tag = 0;
+	std::uint64_t							t	= ++tag;
+	cookie::ref								cookie;
+	std::lock_guard<std::recursive_mutex>	lock( *m_mutex );
 	
-	netkit::cookie cookie( g_ptr++ );
+    m_set_handlers->push_back( std::make_pair( t, handler ) );
 	
-    m_set_handlers->push_back( std::make_pair( cookie, handler ) );
+	cookie.reset( reinterpret_cast< void* >( t ), [=]( void *v )
+	{
+		std::lock_guard<std::recursive_mutex> lock( *m_mutex );
+	
+		for ( auto it = m_set_handlers->begin(); it != m_set_handlers->end(); it++ )
+		{
+			if ( it->first == t )
+			{
+				m_set_handlers->erase( it );
+				break;
+			}
+		}
+	} );
 	
 	return cookie;
-}
-
-
-void
-log::cancel( netkit::cookie cookie )
-{
-	std::lock_guard<std::recursive_mutex> lock( *m_mutex );
-	
-	for ( auto it = m_set_handlers->begin(); it != m_set_handlers->end(); it++ )
-	{
-		if ( it->first.get() == cookie.get() )
-		{
-			m_set_handlers->erase( it );
-			break;
-		}
-	}
 }
 
 

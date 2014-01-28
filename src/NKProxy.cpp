@@ -244,36 +244,33 @@ proxy::get()
 }
 
 
-netkit::cookie
+cookie::ref
 proxy::on_set( set_f handler )
 {
-	netkit::cookie cookie( g_ptr++ );
+	static std::uint64_t	tag = 0;
+	std::uint64_t			t	= ++tag;
+	cookie::ref				cookie;
 
 	if ( !m_set_handlers )
 	{
 		m_set_handlers = new set_handlers;
 	}
 	
-	m_set_handlers->push_back( std::make_pair( cookie, handler ) );
+	m_set_handlers->push_back( std::make_pair( t, handler ) );
 	
-	return cookie;
-}
-
-
-void
-proxy::cancel( netkit::cookie cookie )
-{
-	if ( m_set_handlers )
+	cookie.reset( reinterpret_cast< void* >( t ), [=]( void *v )
 	{
 		for ( auto it = m_set_handlers->begin(); it != m_set_handlers->end(); it++ )
 		{
-			if ( it->first.get() == cookie.get() )
+			if ( it->first == t )
 			{
 				m_set_handlers->erase( it );
 				break;
 			}
 		}
-	}
+	} );
+	
+	return cookie;
 }
 
 

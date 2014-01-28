@@ -25,7 +25,7 @@ table_name_v() const								\
 {													\
 	return table_name();							\
 }													\
-static NAME*										\
+static NAME::ref									\
 create_from_database(const netkit::database::statement::ref &stmt);\
 static size_t										\
 count()												\
@@ -143,11 +143,11 @@ public:
 	{
 		if ( m_stmt->step() )
 		{
-			m_object = dynamic_cast< ConcreteType* >( BaseType::create_from_database( m_stmt ) );
+			m_object = netkit::dynamic_pointer_cast< ConcreteType, BaseType >( BaseType::create_from_database( m_stmt ) );
 		}
 		else
 		{
-			m_object = NULL;
+			m_object = nullptr;
 		}
 		
 		return m_object;
@@ -191,14 +191,11 @@ public:
 	virtual bool
 	is_connected() const = 0;
 
-	virtual cookie
+	virtual cookie::ref
 	on_change( const std::string &table_name, observer_reply_f reply ) = 0;
 	
 	virtual void
 	set_ignore_changes( bool val ) = 0;
-
-	virtual void
-	cancel( cookie c ) = 0;
 
 	virtual netkit::status
 	exec( const std::string &str, bool quiet = false ) = 0;
@@ -318,9 +315,9 @@ public:
 	static typename ConcreteType::ref
 	find( int64_t oid )
 	{
-		std::ostringstream	os;
-		statement::ref		stmt;
-		ConcreteType		*t = nullptr;
+		std::ostringstream			os;
+		statement::ref				stmt;
+		typename ConcreteType::ref	t;
 		
 		os << "SELECT * FROM " << BaseType::table_name() << " WHERE oid = " << oid << ";";
 		
@@ -328,11 +325,7 @@ public:
 		
 		if ( stmt->step() )
 		{
-			t = dynamic_cast< ConcreteType* >( BaseType::create_from_database( stmt ) );
-		}
-		else
-		{
-			t = NULL;
+			t = netkit::dynamic_pointer_cast< ConcreteType, BaseType>( BaseType::create_from_database( stmt ) );
 		}
 		
 		return t;

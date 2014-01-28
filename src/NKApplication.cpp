@@ -27,65 +27,104 @@
  * either expressed or implied, of the FreeBSD Project.
  *
  */
- 
+
+#include <NetKit/NKApplication.h>
+#include <NetKit/NKJSON.h>
 #include <NetKit/NKLog.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <time.h>
-#include <string.h>
-#include <pthread.h>
+#include <limits>
+#include <sstream>
 #include <vector>
-#include <mutex>
+
 
 using namespace netkit;
 
-void
-log::init( const std::string &name )
+
+application::application( const std::string &name, const option::list &options, int argc, char **argv )
 {
-	if ( !m_set_handlers )
+	log::init( name );
+	
+#if defined( DEBUG )
+	log::set_level( log::verbose );
+#else
+	log::set_level( log::info );
+#endif
+
+	for ( auto it = options.begin(); it != options.end(); it++ )
 	{
-		m_set_handlers = new set_handlers;
+		m_options[ ( *it )->name() ] = *it;
 	}
 	
-	if ( !m_mutex )
-	{
-		m_mutex = new std::recursive_mutex;
-	}
+	parse_command_line( argc, argv );
 }
 
 
-void
-log::put( log::level l, const char * filename, const char * function, int line, const char * format, ... )
+application::~application()
 {
-	std::lock_guard<std::recursive_mutex> lock( *m_mutex );
-	
-	if ( l <= m_log_level )
-	{
-		static char msg[ 32767 ];
-		static char buf[ 32767 ];
-		char		*time_str;
-		time_t		t;
-		va_list		ap;
+}
 
-		va_start( ap, format );
-		vsnprintf( buf, sizeof( buf ), format, ap );
-		va_end( ap );
+
+bool
+application::parse_command_line( int argc, std::tchar_t **argv )
+{
+	for ( auto i = 1; i < argc; i++ )
+	{
+		auto it = m_options.find( argv[ i ] );
 		
-		t = time( NULL );
-		time_str = ctime( &t );
-		
-		if ( time_str )
+		if ( it != m_options.end() )
 		{
-			for ( unsigned i = 0; i < strlen( time_str ); i++ )
+			it->second->set_is_set( true );
+
+			while ( ( ++i < argc ) && ( argv[ i ][ 0 ] == '-' ) )
 			{
-				if ( time_str[ i ] == '\n' )
-				{
-					time_str[ i ] = '\0';
-				}
+				it->second->values()->append( argv[ i ] );
+			}
+			
+			if ( ( it->second->values()->size() < it->second->min_num_values() ) ||
+			     ( it->second->values()->size() > it->second->max_num_values() ) )
+			{
+				nklog( log::error, "syntax error for option '%s'", it->second->name().c_str() );
+				m_okay = false;
+				break;
 			}
 		}
-		
-		snprintf( msg, sizeof( msg ), "%d %s %s:%d %s %s", getpid(), time_str, prune( filename ).c_str(), line, function, buf );
-		fprintf( stderr, "%s\n", msg );
+		else
+		{
+			nklog( log::error, "unknown option '%s'", argv[ i ] );
+			m_okay = false;
+			break;
+		}
 	}
+	
+	return m_okay;
+}
+
+
+bool
+application::is_option_set( const std::string &name )
+{
+	auto it = m_options.find( name );
+	bool ok = false;
+	
+	if ( it != m_options.end() )
+	{
+		ok = ( *it ).second->is_set();
+	}
+	
+	return ok;
+}
+
+	
+bool
+application::is_option_set( const std::string &name, json::value::ref &values )
+{
+	auto it = m_options.find( name );
+	bool ok = false;
+	
+	if ( it != m_options.end() )
+	{
+		ok		= ( *it ).second->is_set();
+		values	= ( *it ).second->values();
+	}
+	
+	return ok;
 }
