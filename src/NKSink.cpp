@@ -44,6 +44,7 @@ sink::sink()
 
 sink::~sink()
 {
+	nklog( log::verbose, "" );
 }
 
 
@@ -69,27 +70,31 @@ sink::unbind()
 
 
 cookie::ref
-sink::on_close( close_f c )
+sink::on_close( close_f func )
 {
-	static std::uint64_t	tags	= 0;
-	std::uint64_t			t		= ++tags;
-	cookie::ref				cookie;
+	netkit::cookie	*cookie = new netkit::cookie;
+	cookie::ref		ret;
 	
-	m_close_handlers.push_back( std::make_pair( t, c ) );
-	
-	cookie.reset( reinterpret_cast< void* >( t ), [=]( void *v )
+	m_close_handlers.push_back( std::make_pair( cookie, func ) );
+
+	ret.reset( cookie, [=]( netkit::cookie *v ) mutable
 	{
-		for ( auto it = m_close_handlers.begin(); it != m_close_handlers.end(); it++ )
+		if ( cookie->valid() )
 		{
-			if ( it->first == t )
+			for ( auto it = m_close_handlers.begin(); it != m_close_handlers.end(); it++ )
 			{
-				m_close_handlers.erase( it );
-				break;
+				if ( it->first == cookie )
+				{
+					m_close_handlers.erase( it );
+					break;
+				}
 			}
 		}
+
+		delete cookie;
 	} );
 	
-	return cookie;
+	return ret;
 }
 
 	

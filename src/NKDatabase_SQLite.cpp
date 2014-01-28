@@ -186,20 +186,20 @@ exit:
 netkit::cookie::ref
 database::manager_impl::on_change( const std::string &tableName, observer_reply_f reply )
 {
-	auto		it	= m_omap.find( tableName );
-	observer	*o	= new observer( tableName, reply );
+	auto		it		= m_omap.find( tableName );
+	observer	*cookie	= new observer( tableName, reply );
 	oids		oids;
-	cookie::ref	cookie;
+	cookie::ref	ret;
 	
 	if ( it != m_omap.end() )
 	{
-		it->second.push_back( o );
+		it->second.push_back( cookie );
 	}
 	else
 	{
 		list l;
 
-		l.push_back( o );
+		l.push_back( cookie );
 		
 		m_omap[ tableName ] = l;
 	}
@@ -216,15 +216,15 @@ database::manager_impl::on_change( const std::string &tableName, observer_reply_
 		reply( database::action::update, oids );
 	}
 	
-	cookie.reset( o, [=]( void *v )
+	ret.reset( cookie, [=]( netkit::cookie *v )
 	{
-		auto it1 = m_omap.find( o->table_name() );
+		auto it1 = m_omap.find( cookie->table_name() );
 	
 		if ( it1 != m_omap.end() )
 		{
 			for ( auto it2 = it1->second.begin(); it2 != it1->second.end(); it2++ )
 			{
-				if ( *it2 == o )
+				if ( *it2 == cookie )
 				{
 					it1->second.erase( it2 );
 					break;
@@ -232,10 +232,10 @@ database::manager_impl::on_change( const std::string &tableName, observer_reply_
 			} 
 		}
 
-		delete o;
+		delete cookie;
 	} );
 
-	return cookie;
+	return ret;
 }
 
 

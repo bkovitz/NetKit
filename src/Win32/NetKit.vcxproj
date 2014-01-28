@@ -248,7 +248,6 @@ IF EXIST ..\..\ThirdParty\uriparser GOTO DONE
     <ClCompile Include="NKStackWalk_Win32.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\include\NetKit\cstring.h" />
     <ClInclude Include="..\..\include\NetKit\NetKit.h" />
     <ClInclude Include="..\..\include\NetKit\NKAddress.h" />
     <ClInclude Include="..\..\include\NetKit\NKBase64.h" />
@@ -279,6 +278,7 @@ IF EXIST ..\..\ThirdParty\uriparser GOTO DONE
     <ClInclude Include="..\..\include\NetKit\NKSocket.h" />
     <ClInclude Include="..\..\include\NetKit\NKSource.h" />
     <ClInclude Include="..\..\include\NetKit\NKStackWalk.h" />
+    <ClInclude Include="..\..\include\NetKit\NKString.h" />
     <ClInclude Include="..\..\include\NetKit\NKTLS.h" />
     <ClInclude Include="..\..\include\NetKit\NKUnicode.h" />
     <ClInclude Include="..\..\include\NetKit\NKURI.h" />

@@ -127,7 +127,7 @@ public:
 	
 protected:
 
-	typedef std::list< std::pair< std::uint64_t, close_f > >	close_handlers;
+	typedef std::list< std::pair< netkit::cookie*, close_f > >	close_handlers;
 	typedef std::vector< std::uint8_t >							buf_t;
 
 	struct send_info

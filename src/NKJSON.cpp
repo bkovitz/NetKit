@@ -2960,7 +2960,7 @@ connection::~connection()
 void
 connection::init()
 {
-	on_close( [=]()
+	m_cookie = on_close( [=]()
 	{
 		value::ref reply;
 		value::ref error;
@@ -2973,6 +2973,8 @@ connection::init()
 		{
 			it->second( reply );
 		}
+
+		server::remove( this );
 	} );
 }
 
@@ -3178,18 +3180,21 @@ server::adopt( connection::ref connection )
 	}
 
 	m_connections->push_back( connection );
+}
 
-	connection->on_close( [=]()
+
+void
+server::remove( connection *conn )
+{
+	auto it = std::find_if( m_connections->begin(), m_connections->end(), [=]( connection::ref inserted )
 	{
-		auto it = std::find_if( m_connections->begin(), m_connections->end(), [=]( connection::ref inserted )
-		{
-			return ( inserted.get() == connection.get() );
-		} );
-
-		assert( it != m_connections->end() );
-				
-		m_connections->erase( it );
+		return ( inserted.get() == conn );
 	} );
+
+	if ( it != m_connections->end() )
+	{
+		m_connections->erase( it );
+	}
 }
 
 
@@ -3337,7 +3342,7 @@ client::is_open() const
 void
 client::on_close( sink::close_f reply )
 {
-	m_connection->on_close( reply );
+	m_cookie = m_connection->on_close( reply );
 }
 
 

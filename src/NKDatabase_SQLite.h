@@ -115,7 +115,7 @@ public:
 
 private:
 
-	class observer
+	class observer : public netkit::cookie
 	{
 	public:
 

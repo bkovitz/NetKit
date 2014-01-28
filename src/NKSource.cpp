@@ -53,7 +53,8 @@ source::source()
 
 source::~source()
 {
-	teardown_notifications();
+	nklog( log::verbose, "" );
+	close();
 }
 
 
@@ -76,27 +77,31 @@ exit:
 
 
 cookie::ref
-source::on_close( close_f c )
+source::on_close( close_f func )
 {
-	static std::uint64_t	tags	= 0;
-	std::uint64_t			t		= ++tags;
-	cookie::ref				cookie;
+	cookie		*cookie = new netkit::cookie;
+	cookie::ref	ret;
 	
-	m_close_handlers.push_back( std::make_pair( t, c ) );
-	
-	cookie.reset( reinterpret_cast< void* >( t ), [=]( void *v )
+	m_close_handlers.push_back( std::make_pair( cookie, func ) );
+
+	ret.reset( cookie, [=]( netkit::cookie *v )
 	{
-		for ( auto it = m_close_handlers.begin(); it != m_close_handlers.end(); it++ )
+		if ( cookie->valid() )
 		{
-			if ( it->first == t )
+			for ( auto it = m_close_handlers.begin(); it != m_close_handlers.end(); it++ )
 			{
-				m_close_handlers.erase( it );
-				break;
+				if ( it->first == cookie )
+				{
+					m_close_handlers.erase( it );
+					break;
+				}
 			}
 		}
+
+		delete cookie;
 	} );
 	
-	return cookie;
+	return ret;
 }
 
 
@@ -298,45 +303,47 @@ source::recv_internal( recv_reply_f reply )
 void
 source::close( bool notify )
 {
-	m_closed = true;
-
-	teardown_notifications();
-
-	if ( m_close_handlers.size() > 0 )
+	if ( !m_closed )
 	{
-		if ( notify )
+		m_closed = true;
+
+		teardown_notifications();
+
+		for ( auto it = m_close_handlers.begin(); it != m_close_handlers.end(); it++ )
 		{
-			for ( auto it = m_close_handlers.begin(); it != m_close_handlers.end(); it++ )
+			it->first->set_valid( false );
+	
+			if ( notify )
 			{
 				it->second();
 			}
 		}
-
+	
 		m_close_handlers.clear();
-	}
-
-	if ( m_adapters.head() )
-	{
-		source::ref self( this );
-
-		// This is kinda sketchy.  We must artificially bump up our ref count here
-		// to prevent the deletion of an adapter to cause our destructor to be 
-		// called.
-		//
-		// DO NOT MODIFY THIS CODE unless you know what you're doing.
-
-		while ( m_adapters.head() )
+	
+		if ( m_adapters.head() )
 		{
-			adapter::ref adapter = ( adapter::ref ) m_adapters.head();
-			m_adapters.remove( adapter );
-			delete adapter;
+			source::ref self( this );
+
+			// This is kinda sketchy.  We must artificially bump up our ref count here
+			// to prevent the deletion of an adapter to cause our destructor to be 
+			// called.
+			//
+			// DO NOT MODIFY THIS CODE unless you know what you're doing.
+
+			while ( m_adapters.head() )
+			{
+				adapter::ref adapter = ( adapter::ref ) m_adapters.head();
+				m_adapters.remove( adapter );
+				delete adapter;
+			}
 		}
+
+		// DANGER DANGER DANGER
+	
+		// Do not do anything here that references the socket as it could have been deleted
+		// out from under us when we deleted the adapters
 	}
-
-	// DANGER DANGER DANGER
-
-	// Do not do anything here that references the socket as it could have been deleted
-	// out from under us when we deleted the adapters
 }
 
 

@@ -36,12 +36,28 @@
 
 namespace netkit {
 
-namespace cookie {
+class cookie
+{
+public:
 
-typedef std::unique_ptr< void, void ( * )( void *c ) > unique_ref;
-typedef std::shared_ptr< void > ref;
+	typedef std::shared_ptr< cookie > ref;
 
-}
+	inline bool
+	valid() const
+	{
+		return m_valid;
+	}
+
+	inline void
+	set_valid( bool val )
+	{
+		m_valid = val;
+	}
+
+private:
+
+	bool m_valid = true;
+};
 
 }
 

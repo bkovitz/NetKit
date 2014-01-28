@@ -247,30 +247,31 @@ proxy::get()
 cookie::ref
 proxy::on_set( set_f handler )
 {
-	static std::uint64_t	tag = 0;
-	std::uint64_t			t	= ++tag;
-	cookie::ref				cookie;
+	netkit::cookie	*cookie = new netkit::cookie;
+	cookie::ref		ret;
 
 	if ( !m_set_handlers )
 	{
 		m_set_handlers = new set_handlers;
 	}
 	
-	m_set_handlers->push_back( std::make_pair( t, handler ) );
+	m_set_handlers->push_back( std::make_pair( cookie, handler ) );
 	
-	cookie.reset( reinterpret_cast< void* >( t ), [=]( void *v )
+	ret.reset( cookie, [=]( void *v )
 	{
 		for ( auto it = m_set_handlers->begin(); it != m_set_handlers->end(); it++ )
 		{
-			if ( it->first == t )
+			if ( it->first == cookie )
 			{
 				m_set_handlers->erase( it );
 				break;
 			}
 		}
+
+		delete cookie;
 	} );
 	
-	return cookie;
+	return ret;
 }
 
 

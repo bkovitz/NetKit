@@ -429,6 +429,7 @@ protected:
 	shutdown();
 	
 	reply_handlers						m_reply_handlers;
+	netkit::cookie::ref					m_cookie;
 	static std::atomic< std::int32_t >	m_id;
 };
 
@@ -486,6 +487,9 @@ public:
 	{
 		return m_connections->end();
 	}
+
+	static void
+	remove( connection *conn );
 	
 private:
 
@@ -541,7 +545,8 @@ protected:
 	
 protected:
 
-	connection::ref m_connection;
+	connection::ref		m_connection;
+	netkit::cookie::ref	m_cookie;
 };
 
 std::ostream& NETKIT_DLL

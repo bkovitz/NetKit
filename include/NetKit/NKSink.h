@@ -77,7 +77,7 @@ public:
 	
 protected:
 
-	typedef std::list< std::pair< std::uint64_t, close_f > > close_handlers;
+	typedef std::list< std::pair< netkit::cookie*, close_f > > close_handlers;
 
 	virtual bool
 	process( const std::uint8_t *buf, std::size_t len ) = 0;

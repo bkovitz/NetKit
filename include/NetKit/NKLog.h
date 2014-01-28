@@ -95,7 +95,7 @@ protected:
 	static std::string
 	prune( const char *filename );
 
-	typedef std::vector< std::pair< std::uint64_t, set_f > >	set_handlers;
+	typedef std::vector< std::pair< netkit::cookie*, set_f > >	set_handlers;
 	static log::level											m_log_level;
 	static set_handlers											*m_set_handlers;
 	static std::recursive_mutex									*m_mutex;

@@ -158,9 +158,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\include\NetKit\cstring.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\include\NetKit\NetKit.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -315,6 +312,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\NetKit\NKStackWalk.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\NetKit\NKString.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
