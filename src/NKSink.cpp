@@ -59,8 +59,6 @@ sink::bind( source::ref source )
 	m_source->on_close( &m_on_close, [=]()
 	{
 		 source_was_closed();
-		 fprintf( stderr, "refs = %d\n", refs() );
-		 fprintf( stderr, "\n\n\n" );
 	} );
 
 	run();
