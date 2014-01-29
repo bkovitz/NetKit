@@ -33,6 +33,8 @@
 
 #include <NetKit/NKSmartRef.h>
 #include <NetKit/NKExpected.h>
+#include <NetKit/NKStackWalk.h>
+#include <unordered_map>
 #include <cstdint>
 #include <chrono>
 #include <atomic>
@@ -191,19 +193,26 @@ public:
 		
 		return refs;
 	}
-	
+
 	inline int
 	refs() const
 	{
 		return m_refs.fetch_add( 0 );
 	}
 	
+#if defined( NETKIT_REF_COUNT_DEBUG )
+
+	virtual bool
+	ref_count_debug();
+
+#endif
+
 	virtual bool
 	equals( const object &that ) const;
 
 	virtual object&
 	assign( const object &that );
-	
+
 protected:
 
 	void

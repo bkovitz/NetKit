@@ -86,8 +86,8 @@ public:
 	virtual bool
 	is_connected() const;
 	
-	virtual cookie::ref
-	on_change( const std::string &tableName, observer_reply_f reply );
+	virtual void
+	on_change( netkit::cookie::ref *cookie, const std::string &tableName, observer_reply_f reply );
 	
 	virtual void
 	set_ignore_changes( bool val );
@@ -119,8 +119,9 @@ private:
 	{
 	public:
 
-		observer( const std::string &table_name, observer_reply_f reply )
+		observer( const std::string &table_name, observer_reply_f reply, netkit::cookie::cleanup_f func )
 		:
+			netkit::cookie( func ),
 			m_table_name( table_name ),
 			m_reply( reply )
 		{

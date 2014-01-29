@@ -76,32 +76,32 @@ exit:
 }
 
 
-cookie::ref
-source::on_close( close_f func )
+void
+source::on_close( netkit::cookie::ref *cookie, close_f func )
 {
-	cookie		*cookie = new netkit::cookie;
-	cookie::ref	ret;
-	
-	m_close_handlers.push_back( std::make_pair( cookie, func ) );
-
-	ret.reset( cookie, [=]( netkit::cookie *v )
+	if ( cookie )
 	{
-		if ( cookie->valid() )
+		*cookie = std::make_shared< netkit::cookie >( [=]( netkit::cookie::naked_ptr p )
 		{
-			for ( auto it = m_close_handlers.begin(); it != m_close_handlers.end(); it++ )
+			if ( p->is_valid() )
 			{
-				if ( it->first == cookie )
+				for ( auto it = m_close_handlers.begin(); it != m_close_handlers.end(); it++ )
 				{
-					m_close_handlers.erase( it );
-					break;
+					if ( it->first == p )
+					{
+						m_close_handlers.erase( it );
+						break;
+					}
 				}
 			}
-		}
+		} );
 
-		delete cookie;
-	} );
-	
-	return ret;
+		m_close_handlers.push_back( std::make_pair( cookie->get(), func ) );
+	}
+	else
+	{
+		m_close_handlers.push_back( std::make_pair( nullptr, func ) );
+	}
 }
 
 
@@ -311,7 +311,10 @@ source::close( bool notify )
 
 		for ( auto it = m_close_handlers.begin(); it != m_close_handlers.end(); it++ )
 		{
-			it->first->set_valid( false );
+			if ( it->first )
+			{
+				it->first->invalidate();
+			}
 	
 			if ( notify )
 			{

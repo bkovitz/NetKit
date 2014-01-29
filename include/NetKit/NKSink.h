@@ -35,8 +35,12 @@
 #include <NetKit/NKCookie.h>
 #include <NetKit/NKProxy.h>
 #include <NetKit/NKURI.h>
+#include <NetKit/NKStackWalk.h>
+#include <unordered_map>
 #include <string>
 #include <ios>
+
+
 
 namespace netkit {
 
@@ -50,7 +54,7 @@ public:
 	sink();
 
 	virtual ~sink();
-	
+
 	virtual void
 	bind( source::ref source );
 
@@ -68,16 +72,16 @@ public:
 	
 	virtual void
 	close();
-	
-	cookie::ref
-	on_close( close_f func );
+
+	void
+	on_close( netkit::cookie::ref *cookie, close_f func );
 	
 	endpoint::ref
 	peer() const;
 	
 protected:
 
-	typedef std::list< std::pair< netkit::cookie*, close_f > > close_handlers;
+	typedef std::list< std::pair< netkit::cookie::naked_ptr, close_f > > close_handlers;
 
 	virtual bool
 	process( const std::uint8_t *buf, std::size_t len ) = 0;

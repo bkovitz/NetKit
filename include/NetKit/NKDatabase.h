@@ -191,8 +191,8 @@ public:
 	virtual bool
 	is_connected() const = 0;
 
-	virtual cookie::ref
-	on_change( const std::string &table_name, observer_reply_f reply ) = 0;
+	virtual void
+	on_change( netkit::cookie::ref *cookie, const std::string &table_name, observer_reply_f reply ) = 0;
 	
 	virtual void
 	set_ignore_changes( bool val ) = 0;

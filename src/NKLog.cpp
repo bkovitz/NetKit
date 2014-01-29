@@ -43,32 +43,33 @@ log::level				log::m_log_level = log::info;
 log::set_handlers		*log::m_set_handlers;
 std::recursive_mutex	*log::m_mutex;
 
-cookie::ref
-log::on_set( set_f handler )
+void
+log::on_set( cookie::ref *cookie, set_f handler )
 {
-	netkit::cookie							*cookie = new netkit::cookie;
-	cookie::ref								ret;
-	std::lock_guard<std::recursive_mutex>	lock( *m_mutex );
+	std::lock_guard<std::recursive_mutex> lock( *m_mutex );
 	
-    m_set_handlers->push_back( std::make_pair( cookie, handler ) );
-	
-	ret.reset( cookie, [=]( void *v )
+	if ( cookie )
 	{
-		std::lock_guard<std::recursive_mutex> lock( *m_mutex );
-	
-		for ( auto it = m_set_handlers->begin(); it != m_set_handlers->end(); it++ )
+		*cookie = std::make_shared< netkit::cookie >( [=]( netkit::cookie::naked_ptr p )
 		{
-			if ( it->first == cookie )
+			std::lock_guard<std::recursive_mutex> lock( *m_mutex );
+		
+			for ( auto it = m_set_handlers->begin(); it != m_set_handlers->end(); it++ )
 			{
-				m_set_handlers->erase( it );
-				break;
+				if ( it->first == p )
+				{
+					m_set_handlers->erase( it );
+					break;
+				}
 			}
-		}
+		} );
 
-		delete cookie;
-	} );
-	
-	return ret;
+	   m_set_handlers->push_back( std::make_pair( cookie->get(), handler ) );
+	}
+	else
+	{
+	   m_set_handlers->push_back( std::make_pair( nullptr, handler ) );
+	}
 }
 
 

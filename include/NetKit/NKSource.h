@@ -113,8 +113,8 @@ public:
 	virtual void
 	close( bool notify = true );
 	
-	cookie::ref
-	on_close( close_f func );
+	void
+	on_close( netkit::cookie::ref *cookie, close_f func );
 	
 	virtual endpoint::ref
 	peer() const;
@@ -127,8 +127,8 @@ public:
 	
 protected:
 
-	typedef std::list< std::pair< netkit::cookie*, close_f > >	close_handlers;
-	typedef std::vector< std::uint8_t >							buf_t;
+	typedef std::list< std::pair< netkit::cookie::naked_ptr, close_f > >	close_handlers;
+	typedef std::vector< std::uint8_t >										buf_t;
 
 	struct send_info
 	{

@@ -62,8 +62,8 @@ public:
 	static proxy::ref
 	get();
 
-	static cookie::ref
-	on_set( set_f handler );
+	static void
+	on_set( cookie::ref *cookie, set_f handler );
 	
 	static void
 	set( proxy::ref proxy );
@@ -151,7 +151,7 @@ protected:
 	void
 	inflate( const json::value_ref &root );
 	
-	typedef std::vector< std::pair< netkit::cookie*, set_f > > set_handlers;
+	typedef std::vector< std::pair< netkit::cookie::naked_ptr, set_f > > set_handlers;
 	
 	netkit::uri::ref 				m_uri;
 	std::vector< std::string > 		m_bypass_list;

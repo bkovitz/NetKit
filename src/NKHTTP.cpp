@@ -1237,25 +1237,29 @@ server::bindings		server::m_bindings;
 netkit::sink::ref
 server::adopt( netkit::source::ref source )
 {
-	connection::ref sink;
+	connection *sink;
 	
 	sink = new connection( new server::handler );
 
 	m_connections->push_back( sink );
 
-	sink->on_close( [=]()
+	sink->on_close( nullptr, [=]() mutable
 	{
 		auto it = std::find_if( m_connections->begin(), m_connections->end(), [=]( connection::ref inserted )
 		{
-			return ( inserted.get() == sink.get() );
+			return ( inserted.get() == sink );
 		} );
 
 		assert( it != m_connections->end() );
 
 		m_connections->erase( it );
+
+		fprintf( stderr, "\n\n\nafter sink ref count = %d\n", sink->refs() );
 	} );
 	
-	return sink.get();
+	fprintf( stderr, "\n\n\nbefore sink ref count = %d\n", sink->refs() );
+
+	return sink;
 }
 
 	

@@ -31,12 +31,22 @@
 #ifndef _netkit_smart_ref_h
 #define _netkit_smart_ref_h
 
+#include <unordered_map>
 #include <functional>
 #include <assert.h>
 #include <stdio.h>
 #include <typeinfo>
 
+// #define NETKIT_REF_COUNT_DEBUG
+
 namespace netkit {
+
+#if defined( NETKIT_REF_COUNT_DEBUG )
+
+extern std::unordered_map< void*, std::string > ref_count_map;
+extern void ref_count_print( const std::string &message );
+
+#endif
 
 template < class T >
 class smart_ref
@@ -58,6 +68,12 @@ public:
 	{
 		if ( m_ref )
 		{
+#if defined( NETKIT_REF_COUNT_DEBUG )
+			if ( m_ref->ref_count_debug() )
+			{
+				ref_count_map[ this ] = netkit::stackwalk::copy();
+			}
+#endif
 			m_ref->retain();
 		}
 	}
@@ -68,6 +84,12 @@ public:
 	{
 		if ( m_ref )
 		{
+#if defined( NETKIT_REF_COUNT_DEBUG )
+			if ( m_ref->ref_count_debug() )
+			{
+				ref_count_map[ this ] = netkit::stackwalk::copy();
+			}
+#endif
 			m_ref->retain();
 		}
 	}
@@ -76,6 +98,19 @@ public:
 	{
 		if ( m_ref )
 		{
+#if defined( NETKIT_REF_COUNT_DEBUG )
+			if ( m_ref->ref_count_debug() )
+			{
+				auto it = ref_count_map.find( this );
+
+				if ( it != ref_count_map.end() )
+				{
+					ref_count_map.erase( it );
+					ref_count_print( std::string( "in destructor with refs " ) + std::to_string( m_ref->refs() ) );
+				}
+			}
+#endif
+
 			if ( m_ref->release() == 0 )
 			{
 				m_ref = NULL;
@@ -124,6 +159,18 @@ public:
 		{
 			if ( m_ref )
 			{
+#if defined( NETKIT_REF_COUNT_DEBUG )
+				if ( m_ref->ref_count_debug() )
+				{
+					auto it = ref_count_map.find( this );
+	
+					if ( it != ref_count_map.end() )
+					{
+						ref_count_map.erase( it );
+						ref_count_print( std::string( "in assignment operator with refs " ) + std::to_string( m_ref->refs() ) );
+					}
+				}
+#endif
 				m_ref->release();
 				m_ref = NULL;
 			}
@@ -132,6 +179,12 @@ public:
 			
 			if ( m_ref )
 			{
+#if defined( NETKIT_REF_COUNT_DEBUG )
+				if ( m_ref->ref_count_debug() )
+				{
+					ref_count_map[ this ] = netkit::stackwalk::copy();
+				}
+#endif
 				m_ref->retain();
 			}
 		}

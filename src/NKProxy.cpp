@@ -244,34 +244,34 @@ proxy::get()
 }
 
 
-cookie::ref
-proxy::on_set( set_f handler )
+void
+proxy::on_set( cookie::ref *cookie, set_f handler )
 {
-	netkit::cookie	*cookie = new netkit::cookie;
-	cookie::ref		ret;
-
 	if ( !m_set_handlers )
 	{
 		m_set_handlers = new set_handlers;
 	}
 	
-	m_set_handlers->push_back( std::make_pair( cookie, handler ) );
-	
-	ret.reset( cookie, [=]( void *v )
+	if ( cookie )
 	{
-		for ( auto it = m_set_handlers->begin(); it != m_set_handlers->end(); it++ )
+		*cookie = std::make_shared< netkit::cookie >( [=]( netkit::cookie::naked_ptr p )
 		{
-			if ( it->first == cookie )
+			for ( auto it = m_set_handlers->begin(); it != m_set_handlers->end(); it++ )
 			{
-				m_set_handlers->erase( it );
-				break;
+				if ( it->first == p )
+				{
+					m_set_handlers->erase( it );
+					break;
+				}
 			}
-		}
-
-		delete cookie;
-	} );
+		} );
 	
-	return ret;
+		m_set_handlers->push_back( std::make_pair( cookie->get(), handler ) );
+	}
+	else
+	{
+		m_set_handlers->push_back( std::make_pair( nullptr, handler ) );
+	}
 }
 
 

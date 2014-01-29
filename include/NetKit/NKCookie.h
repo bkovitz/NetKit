@@ -40,23 +40,37 @@ class cookie
 {
 public:
 
-	typedef std::shared_ptr< cookie > ref;
+	typedef cookie								*naked_ptr;
+	typedef std::shared_ptr< cookie >			ref;
+	typedef std::function< void ( naked_ptr ) >	cleanup_f;
+
+	cookie( cleanup_f func )
+	:
+		m_cleanup_func( func )
+	{
+	}
+
+	virtual ~cookie()
+	{
+		m_cleanup_func( this );
+	}
 
 	inline bool
-	valid() const
+	is_valid() const
 	{
 		return m_valid;
 	}
 
 	inline void
-	set_valid( bool val )
+	invalidate()
 	{
-		m_valid = val;
+		m_valid = false;
 	}
 
 private:
 
-	bool m_valid = true;
+	cleanup_f	m_cleanup_func;
+	bool		m_valid = true;
 };
 
 }

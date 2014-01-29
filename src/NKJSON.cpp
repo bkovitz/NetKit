@@ -2960,7 +2960,7 @@ connection::~connection()
 void
 connection::init()
 {
-	m_cookie = on_close( [=]()
+	on_close( &m_cookie, [=]()
 	{
 		value::ref reply;
 		value::ref error;
@@ -3342,7 +3342,7 @@ client::is_open() const
 void
 client::on_close( sink::close_f reply )
 {
-	m_cookie = m_connection->on_close( reply );
+	m_connection->on_close( &m_cookie, reply );
 }
 
 

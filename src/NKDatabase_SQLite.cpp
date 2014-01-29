@@ -75,6 +75,17 @@ manager_impl::manager_impl( sqlite3 * db )
 manager_impl::~manager_impl()
 {
 	sqlite3_close( m_db );
+
+	for ( auto it1 = m_omap.begin(); it1 != m_omap.end(); it1++ )
+	{
+		if ( it1 != m_omap.end() )
+		{
+			for ( auto it2 = it1->second.begin(); it2 != it1->second.end(); it2++ )
+			{
+				( *it2 )->invalidate();
+			} 
+		}
+	}
 }
 
 
@@ -183,28 +194,47 @@ exit:
 }
 
 
-netkit::cookie::ref
-database::manager_impl::on_change( const std::string &tableName, observer_reply_f reply )
+void
+database::manager_impl::on_change( netkit::cookie::ref *cookie, const std::string &table_name, observer_reply_f reply )
 {
-	auto		it		= m_omap.find( tableName );
-	observer	*cookie	= new observer( tableName, reply );
+	auto		it		= m_omap.find( table_name );
 	oids		oids;
 	cookie::ref	ret;
+
+	auto o = new observer( table_name, reply, [=]( netkit::cookie::naked_ptr p ) mutable
+	{
+		if ( p->is_valid() )
+		{
+			auto it1 = m_omap.find( table_name );
+	
+			if ( it1 != m_omap.end() )
+			{
+				for ( auto it2 = it1->second.begin(); it2 != it1->second.end(); it2++ )
+				{
+					if ( *it2 == p )
+					{
+						it1->second.erase( it2 );
+						break;
+					}
+				} 
+			}
+		}
+	} );
 	
 	if ( it != m_omap.end() )
 	{
-		it->second.push_back( cookie );
+		it->second.push_back( o );
 	}
 	else
 	{
 		list l;
 
-		l.push_back( cookie );
+		l.push_back( o );
 		
-		m_omap[ tableName ] = l;
+		m_omap[ table_name ] = l;
 	}
 	
-	auto stmt = select( "SELECT oid from " + tableName );
+	auto stmt = select( "SELECT oid from " + table_name );
 		
 	while ( stmt->step() )
 	{
@@ -215,27 +245,11 @@ database::manager_impl::on_change( const std::string &tableName, observer_reply_
 	{
 		reply( database::action::update, oids );
 	}
-	
-	ret.reset( cookie, [=]( netkit::cookie *v )
+
+	if ( cookie )
 	{
-		auto it1 = m_omap.find( cookie->table_name() );
-	
-		if ( it1 != m_omap.end() )
-		{
-			for ( auto it2 = it1->second.begin(); it2 != it1->second.end(); it2++ )
-			{
-				if ( *it2 == cookie )
-				{
-					it1->second.erase( it2 );
-					break;
-				}
-			} 
-		}
-
-		delete cookie;
-	} );
-
-	return ret;
+		cookie->reset( o );
+	}
 }
 
 

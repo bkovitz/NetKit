@@ -35,6 +35,9 @@
 #include <NetKit/NKTLS.h>
 #include <NetKit/NKLog.h>
 
+
+
+
 using namespace netkit;
 
 sink::sink()
@@ -53,8 +56,13 @@ sink::bind( source::ref source )
 {
 	m_source = source;
 
-	m_on_close = m_source->on_close( std::bind( &sink::source_was_closed, this ) );
-	
+	m_source->on_close( &m_on_close, [=]()
+	{
+		 source_was_closed();
+		 fprintf( stderr, "refs = %d\n", refs() );
+		 fprintf( stderr, "\n\n\n" );
+	} );
+
 	run();
 }
 
@@ -69,32 +77,32 @@ sink::unbind()
 }
 
 
-cookie::ref
-sink::on_close( close_f func )
+void
+sink::on_close( netkit::cookie::ref *cookie, close_f func )
 {
-	netkit::cookie	*cookie = new netkit::cookie;
-	cookie::ref		ret;
-	
-	m_close_handlers.push_back( std::make_pair( cookie, func ) );
-
-	ret.reset( cookie, [=]( netkit::cookie *v ) mutable
+	if ( cookie )
 	{
-		if ( cookie->valid() )
+		*cookie = std::make_shared< netkit::cookie >( [=]( netkit::cookie::naked_ptr p )
 		{
-			for ( auto it = m_close_handlers.begin(); it != m_close_handlers.end(); it++ )
+			if ( p->is_valid() )
 			{
-				if ( it->first == cookie )
+				for ( auto it = m_close_handlers.begin(); it != m_close_handlers.end(); it++ )
 				{
-					m_close_handlers.erase( it );
-					break;
+					if ( it->first == p )
+					{
+						m_close_handlers.erase( it );
+						break;
+					}
 				}
 			}
-		}
+		} );
 
-		delete cookie;
-	} );
-	
-	return ret;
+		m_close_handlers.push_back( std::make_pair( cookie->get(), func ) );
+	}
+	else
+	{
+		m_close_handlers.push_back( std::make_pair( nullptr, func ) );
+	}
 }
 
 	
@@ -113,6 +121,8 @@ sink::source_was_closed()
 	{
 		it->second();
 	}
+
+	m_close_handlers.clear();
 }
 
 
