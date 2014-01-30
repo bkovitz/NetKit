@@ -59,6 +59,38 @@ enum class status
 	internal_error		= -32603,
 };
 
+
+typedef std::function< void ( netkit::status status ) > reply_f;
+
+class scout
+{
+public:
+
+	scout( reply_f reply )
+	:
+		m_status( status::ok ),
+		m_reply( reply )
+	{
+	}
+
+	~scout()
+	{
+		m_reply( m_status );
+	}
+
+	inline void
+	set_status( netkit::status status )
+	{
+		m_status = status;
+	}
+
+private:
+
+	netkit::status	m_status;
+	reply_f			m_reply;
+};
+
+
 std::string NETKIT_DLL
 status_to_string( status v );
 

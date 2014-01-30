@@ -110,6 +110,12 @@ public:
 	virtual void
 	set_version( std::uint32_t version );
 
+	virtual bool
+	backup( const std::string &db, backup_hook_f hook );
+
+	virtual bool
+	restore( const std::string &db, backup_hook_f hook );
+
 	bool
 	close();
 

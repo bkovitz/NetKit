@@ -77,6 +77,12 @@ bool NETKIT_DLL
 create_folder( const std::string& folder );
 
 bool NETKIT_DLL
+copy_file( const std::string &from, const std::string &to );
+
+bool NETKIT_DLL
+move_file( const std::string &from, const std::string &to );
+
+bool NETKIT_DLL
 file_exists( const std::string &name );
 
 bool NETKIT_DLL
