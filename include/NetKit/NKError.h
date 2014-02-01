@@ -62,26 +62,29 @@ enum class status
 
 typedef std::function< void ( netkit::status status ) > reply_f;
 
-class scout
+class async_status
 {
 public:
 
-	scout( reply_f reply )
+	async_status( reply_f reply )
 	:
 		m_status( status::ok ),
 		m_reply( reply )
 	{
 	}
 
-	~scout()
+	~async_status()
 	{
 		m_reply( m_status );
 	}
 
 	inline void
-	set_status( netkit::status status )
+	assign( netkit::status status )
 	{
-		m_status = status;
+		if ( status != status::ok )
+		{
+			m_status = status;
+		}
 	}
 
 private:
