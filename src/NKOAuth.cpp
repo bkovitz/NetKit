@@ -72,11 +72,11 @@ oauth::oauth( const std::string &client_id, const std::string &client_secret, co
 
 
 void
-oauth::get_access_token( token_result_f result )
+oauth::access_token( access_token_reply_f reply )
 {
 	if ( m_token.expire_time < system_clock::now() )
 	{
-		m_update_queue.push( result );
+		m_update_queue.push( reply );
 
 		if ( m_update_queue.size() == 1 )
 		{
@@ -87,9 +87,9 @@ oauth::get_access_token( token_result_f result )
 			*request << "client_id=" << m_client_id << "&client_secret=" << m_client_secret << "&refresh_token="
 		         << m_token.refresh_token << "&grant_type=" << "refresh_token";
 
-			request->on_reply( [=]( http::response::ref response )
+			request->on_reply( [=]( http::response::ref response ) mutable
 			{
-				bool success = false;
+				netkit::status status = status::network_error;
 	
 				m_token.expire_time = system_clock::now();
 	
@@ -108,7 +108,7 @@ oauth::get_access_token( token_result_f result )
 							std::uint32_t seconds_until_expire = root[ "expires_in" ]->as_uint32();
 							m_token.expire_time = system_clock::now() + seconds( seconds_until_expire );
 			
-							success = true;
+							status = status::ok;
 						}
 						else
 						{
@@ -127,7 +127,7 @@ oauth::get_access_token( token_result_f result )
 		
 				while ( !m_update_queue.empty() )
 				{
-					m_update_queue.top()( success, m_token );
+					m_update_queue.top()( status, true, m_token );
 					m_update_queue.pop();
 				}
 			} );
@@ -137,6 +137,6 @@ oauth::get_access_token( token_result_f result )
 	}
 	else
 	{
-		result( true, m_token );
+		reply( status::ok, false, m_token );
 	}
 }

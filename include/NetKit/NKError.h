@@ -32,8 +32,11 @@
 #define _netkit_error_h
 
 #include <NetKit/NKObject.h>
-#include <string>
+#include <NetKit/NKLog.h>
+#include <unordered_map>
 #include <iostream>
+#include <string>
+#include <memory>
 
 namespace netkit {
 
@@ -91,6 +94,43 @@ private:
 
 	netkit::status	m_status;
 	reply_f			m_reply;
+};
+
+
+class door
+{
+public:
+
+	inline std::shared_ptr< async_status >
+	lock( const std::string &key, reply_f reply )
+	{
+		std::shared_ptr< async_status > ret;
+
+		if ( m_map.find( key ) == m_map.end() )
+		{
+			nklog( log::verbose, "locked the door with key %s", key.c_str() );
+
+			m_map[ key ] = key;
+
+			ret = std::make_shared< async_status >( [=]( netkit::status status )
+			{
+				m_map.erase( key );
+				reply( status );
+			} );
+		}
+		else
+		{
+			nklog( log::verbose, "failed to lock the door with key %s", key.c_str() );
+		}
+
+		return ret;
+	}
+
+private:
+
+	typedef std::unordered_map< std::string, std::string > map;
+
+	map m_map;
 };
 
 
