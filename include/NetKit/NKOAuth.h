@@ -31,6 +31,7 @@
 #ifndef _netkit_oauth_h
 #define _netkit_oauth_h
 
+#include <NetKit/NKError.h>
 #include <cstdint>
 #include <chrono>
 #include <string>
@@ -50,7 +51,7 @@ public:
 		std::string								refresh_token;
 	};
 
-	typedef std::function< void( bool, const token& ) > token_result_f;
+	typedef std::function< void( netkit::status status, bool token_changed, const token &token ) > access_token_reply_f;
 
 	oauth( const std::string &client_id, const std::string &client_secret, const std::string &auth_server_uri );
 
@@ -59,22 +60,22 @@ public:
 	oauth( const std::string &client_id, const std::string &client_secret, const std::string &auth_server_uri, const std::string &refresh_token, const std::string &access_token, const std::chrono::system_clock::time_point &expire_time );
 
 	void
-	get_access_token( token_result_f result );
+	access_token( access_token_reply_f reply );
 
-	inline token&
-	get_token()
+	inline struct token&
+	token()
 	{
 		return m_token;
 	}
 
 private:
 
-	std::stack< token_result_f >	m_update_queue;
-	std::string						m_client_id;
-	std::string						m_client_secret;
-	std::string						m_redirect_uri;
-	std::string						m_auth_server_uri;
-	struct token					m_token;
+	std::stack< access_token_reply_f >	m_update_queue;
+	std::string							m_client_id;
+	std::string							m_client_secret;
+	std::string							m_redirect_uri;
+	std::string							m_auth_server_uri;
+	struct token						m_token;
 };
 
 }

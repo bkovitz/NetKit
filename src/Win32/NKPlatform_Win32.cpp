@@ -539,6 +539,13 @@ platform::create_folder( const std::string &folder )
 }
 
 
+bool
+platform::copy_file( const std::string &from, const std::string &to )
+{
+	return ::CopyFile( widen( from ).c_str(), widen( to ).c_str(), FALSE ) ? true : false;
+}
+
+
 uuid::ref
 uuid::create()
 {

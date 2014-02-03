@@ -1253,12 +1253,8 @@ server::adopt( netkit::source::ref source )
 		assert( it != m_connections->end() );
 
 		m_connections->erase( it );
-
-		fprintf( stderr, "\n\n\nafter sink ref count = %d\n", sink->refs() );
 	} );
 	
-	fprintf( stderr, "\n\n\nbefore sink ref count = %d\n", sink->refs() );
-
 	return sink;
 }
 

@@ -175,6 +175,8 @@ private:
 class NETKIT_DLL manager : public object {
 public:
 
+	typedef std::function < std::string ( void ) >							backup_hook_f;
+	typedef std::function < std::string ( void ) >							restore_hook_f;
 	typedef std::function< void ( std::int32_t action, const oids &oids ) > observer_reply_f;
 	typedef smart_ref< manager >											ref;
 	
@@ -211,6 +213,12 @@ public:
 
 	virtual void
 	set_version( std::uint32_t version ) = 0;
+
+	virtual bool
+	backup( const std::string &db, backup_hook_f hook ) = 0;
+
+	virtual bool
+	restore( const std::string &db, backup_hook_f hook ) = 0;
 
 	virtual bool
 	close() = 0;

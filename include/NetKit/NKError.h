@@ -32,8 +32,11 @@
 #define _netkit_error_h
 
 #include <NetKit/NKObject.h>
-#include <string>
+#include <NetKit/NKLog.h>
+#include <unordered_map>
 #include <iostream>
+#include <string>
+#include <memory>
 
 namespace netkit {
 
@@ -58,6 +61,78 @@ enum class status
 	bad_params			= -32602,
 	internal_error		= -32603,
 };
+
+
+typedef std::function< void ( netkit::status status ) > reply_f;
+
+class async_status
+{
+public:
+
+	async_status( reply_f reply )
+	:
+		m_status( status::ok ),
+		m_reply( reply )
+	{
+	}
+
+	~async_status()
+	{
+		m_reply( m_status );
+	}
+
+	inline void
+	assign( netkit::status status )
+	{
+		if ( status != status::ok )
+		{
+			m_status = status;
+		}
+	}
+
+private:
+
+	netkit::status	m_status;
+	reply_f			m_reply;
+};
+
+
+class door
+{
+public:
+
+	inline std::shared_ptr< async_status >
+	lock( const std::string &key, reply_f reply )
+	{
+		std::shared_ptr< async_status > ret;
+
+		if ( m_map.find( key ) == m_map.end() )
+		{
+			nklog( log::verbose, "locked the door with key %s", key.c_str() );
+
+			m_map[ key ] = key;
+
+			ret = std::make_shared< async_status >( [=]( netkit::status status )
+			{
+				m_map.erase( key );
+				reply( status );
+			} );
+		}
+		else
+		{
+			nklog( log::verbose, "failed to lock the door with key %s", key.c_str() );
+		}
+
+		return ret;
+	}
+
+private:
+
+	typedef std::unordered_map< std::string, std::string > map;
+
+	map m_map;
+};
+
 
 std::string NETKIT_DLL
 status_to_string( status v );

@@ -171,6 +171,123 @@ database::manager_impl::set_version( std::uint32_t version )
 
 
 bool
+database::manager_impl::backup( const std::string &dest, backup_hook_f hook )
+{
+	sqlite3 *dest_db;
+	bool	ok = false;
+
+	auto err = sqlite3_open( dest.c_str(), &dest_db );
+
+	if ( err )
+	{
+		nklog( log::error, "sqlite3_open('%s') failed: %d", dest.c_str(), err );
+		ok = false;
+		goto exit;
+	}
+
+	if ( hook )
+	{
+		std::string s = hook();
+
+		char *error = NULL;
+	
+		int ret = sqlite3_exec( dest_db, s.c_str(), 0, 0, &error );
+	
+		if ( ret )
+		{
+			nklog( log::error, "sqlite3_exec() failed: %d, %s", ret, error );
+			ok = false;
+			goto exit;
+		}
+	}
+
+	auto backup = sqlite3_backup_init( dest_db, "main", m_db, "main" );
+
+	if ( !backup )
+	{
+		nklog( log::error, "sqlite3_backup_init failed: %d", sqlite3_errcode( dest_db ) );
+		ok = false;
+		goto exit;
+    }
+
+	sqlite3_backup_step( backup, -1 );
+	sqlite3_backup_finish( backup );
+	sqlite3_close( dest_db );
+
+	ok = true;
+
+exit:
+
+	return ok;
+}
+
+
+bool
+database::manager_impl::restore( const std::string &from, restore_hook_f hook )
+{
+	std::string filename;
+	auto		raw	= sqlite3_db_filename( m_db, "main" );
+	auto		ok	= false;
+
+	if ( !raw )
+	{
+		nklog( log::error, "unable to get backing filename" );
+		ok = false;
+		goto exit;
+	}
+
+	filename = raw;
+
+	auto err = sqlite3_close( m_db );
+
+	if ( err )
+	{
+		nklog( log::error, "sqlite3_close() failed: %d", err );
+		ok = false;
+		goto exit;
+	}
+
+	if ( !platform::copy_file( from, filename ) )
+	{
+		nklog( log::error, "unable to copy file" );
+		ok = false;
+		goto exit;
+	}
+
+	err = sqlite3_open( filename.c_str(), &m_db );
+
+	if ( err )
+	{
+		nklog( log::error, "sqlite3_open('%s') failed: %d", filename.c_str(), err );
+		ok = false;
+		goto exit;
+	}
+
+	if ( hook )
+	{
+		std::string s = hook();
+
+		char *error = NULL;
+	
+		int ret = sqlite3_exec( m_db, s.c_str(), 0, 0, &error );
+	
+		if ( ret )
+		{
+			nklog( log::error, "sqlite3_exec() failed: %d, %s", ret, error );
+			ok = false;
+			goto exit;
+		}
+	}
+
+	ok = true;
+
+exit:
+
+	return ok;
+}
+
+
+bool
 database::manager_impl::close()
 {
 	bool ok = false;
