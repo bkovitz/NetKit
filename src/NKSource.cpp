@@ -261,9 +261,6 @@ source::recv( recv_reply_f reply )
 void
 source::recv_internal( recv_reply_f reply )
 {
-	bool			would_block	= false;
-	std::streamsize num			= 0;
-
 	start_recv( [=]( int status, const std::uint8_t *buf, std::size_t len )
 	{
 		if ( len > 0 )

@@ -1462,7 +1462,7 @@ server::handler::headers_were_received( connection::ref connection, message::hea
 		response->add_to_header( "Connection", "Close" );
 		response->add_to_header( "Content-Type", "text/html" );
 		*response << "<html>Error 404: Content Not Found</html>";
-		response->add_to_header( "Content-Length", response->body().size() );
+		response->add_to_header( "Content-Length", static_cast< int >( response->body().size() ) );
 		connection->put( response.get() );
 		goto exit;
 	}

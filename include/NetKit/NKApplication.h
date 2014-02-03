@@ -38,8 +38,6 @@
 
 namespace netkit {
 
-// Forward declaration value
-
 class application
 {
 public:
@@ -48,56 +46,26 @@ public:
 	{
 	public:
 	
-		typedef std::shared_ptr< option > ref;
-		typedef std::vector< ref > list;
+		typedef std::shared_ptr< option >	ref;
+		typedef std::vector< ref >			list;
 	
-		option( const std::string &name, std::uint8_t min_num_values, std::uint8_t max_num_values, bool required )
+		option( const std::string &name, std::int32_t num_values )
 		:
 			m_name( name ),
-			m_min_num_values( min_num_values ),
-			m_max_num_values( max_num_values ),
-			m_required( required )
+			m_num_values( num_values )
 		{
 		}
-		
-		~option()
-		{
-		}
-		
-		inline const std::string&
+	
+	inline const std::string&
 		name() const
 		{
 			return m_name;
 		}
-		
-		inline const std::uint8_t
-		min_num_values() const
+	
+		inline std::size_t
+		num_values() const
 		{
-			return m_min_num_values;
-		}
-		
-		inline const std::uint8_t
-		max_num_values() const
-		{
-			return m_max_num_values;
-		}
-		
-		inline bool
-		required() const
-		{
-			return m_required;
-		}
-		
-		inline json::value::ref&
-		values()
-		{
-			return m_values;
-		}
-		
-		inline const json::value::ref&
-		values() const
-		{
-			return m_values;
+			return m_num_values;
 		}
 		
 		inline bool
@@ -106,31 +74,76 @@ public:
 			return m_set;
 		}
 		
-		inline void
+		inline bool
 		set_is_set( bool val )
 		{
-			m_set = val;
+			bool ok = false;
+			
+			if ( m_values.size() == m_num_values )
+			{
+				m_set = val;
+				ok = true;
+			}
+			
+			return ok;
+		}
+	
+		inline const std::string&
+		string_at_index( std::size_t index )
+		{
+			return m_values[ index ];
 		}
 		
+		inline int
+		int_at_index( std::size_t index )
+		{
+			return std::stoi( m_values[ index ] );
+		}
+		
+		inline bool
+		push_back( const std::string &value )
+		{
+			bool ok = false;
+			
+			if ( m_values.size() < m_num_values )
+			{
+				m_values.push_back( value );
+				ok = true;
+			}
+			
+			return ok;
+		}
+			
 	private:
-	
-		std::string			m_name;
-		std::uint8_t		m_min_num_values	= 0;
-		std::uint8_t		m_max_num_values	= 0;
-		bool				m_required			= false;
-		json::value::ref	m_values;
-		bool				m_set				= false;
-	};
 
+		std::string					m_name;
+		bool						m_set			= false;
+		std::int32_t				m_num_values	= 0;
+		std::vector< std::string >	m_values;
+	};
+	
 	application( const std::string &name, const option::list &options, int argc, char **argv );
 
 	virtual ~application();
 	
-	bool
-	is_option_set( const std::string &name );
+	template < class T >
+	inline typename T::ref
+	lookup_option( const std::string &name )
+	{
+		auto			it = m_options.find( name );
+		typename T::ref opt;
 	
-	bool
-	is_option_set( const std::string &name, json::value::ref &values );
+		if ( it != m_options.end() )
+		{
+			opt = std::dynamic_pointer_cast< T >( *it );
+		}
+		else
+		{
+			opt = std::make_shared< T >();
+		}
+		
+		return opt;
+	}
 	
 	inline bool
 	is_okay() const

@@ -68,15 +68,17 @@ public:
 		{
 			typedef std::shared_ptr< send_context > ref;
 			
-			send_context( const std::uint8_t *buf, std::size_t len )
+			send_context( const std::uint8_t *buf, std::size_t len, send_reply_f reply )
 			:
-				m_buffer( buf, buf + len )
+				m_buffer( buf, buf + len ),
+				m_reply( reply )
 			{
 			}
 			
-			send_context( const std::uint8_t *buf, std::size_t len, const netkit::endpoint::ref &to )
+			send_context( const std::uint8_t *buf, std::size_t len, const netkit::endpoint::ref &to, send_reply_f reply )
 			:
-				m_buffer( buf, buf + len )
+				m_buffer( buf, buf + len ),
+				m_reply( reply )
 			{
 				m_to_len = static_cast< socklen_t >( to->to_sockaddr( m_to ) );
 			}

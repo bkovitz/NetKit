@@ -176,7 +176,6 @@ static proxy::ref g_proxy;
 
 proxy::auth_challenge_f		proxy::m_auth_challenge_handler;
 proxy::set_handlers			*proxy::m_set_handlers;
-static std::uint8_t			*g_ptr = nullptr;
 
 source::adapter::ref
 proxy::create_adapter( bool secure )

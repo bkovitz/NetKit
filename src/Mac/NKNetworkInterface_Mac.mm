@@ -21,7 +21,6 @@ nic::instances()
 	struct ifaddrs	*interface = nullptr;
 	void			*temp_addr = NULL;
 	int				rc = 0;
-	char			addressOutputBuffer[INET6_ADDRSTRLEN];
   
 	rc = getifaddrs( &interfaces );
 	

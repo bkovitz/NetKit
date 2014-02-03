@@ -40,6 +40,8 @@ using namespace netkit;
 
 
 application::application( const std::string &name, const option::list &options, int argc, char **argv )
+:
+	m_okay( true )
 {
 	log::init( name );
 	
@@ -72,15 +74,19 @@ application::parse_command_line( int argc, std::tchar_t **argv )
 		
 		if ( it != m_options.end() )
 		{
-			it->second->set_is_set( true );
-
-			while ( ( ++i < argc ) && ( argv[ i ][ 0 ] == '-' ) )
+			while ( ( ++i < argc ) && ( argv[ i ][ 0 ] != '-' ) )
 			{
-				it->second->values()->append( argv[ i ] );
+				it->second->set_is_set( true );
+				
+				if ( !it->second->push_back( argv[ i ] ) )
+				{
+					nklog( log::error, "syntax error for option '%s'", it->second->name().c_str() );
+					m_okay = false;
+					break;
+				}
 			}
 			
-			if ( ( it->second->values()->size() < it->second->min_num_values() ) ||
-			     ( it->second->values()->size() > it->second->max_num_values() ) )
+			if ( !it->second->set_is_set( true ) )
 			{
 				nklog( log::error, "syntax error for option '%s'", it->second->name().c_str() );
 				m_okay = false;
@@ -96,35 +102,4 @@ application::parse_command_line( int argc, std::tchar_t **argv )
 	}
 	
 	return m_okay;
-}
-
-
-bool
-application::is_option_set( const std::string &name )
-{
-	auto it = m_options.find( name );
-	bool ok = false;
-	
-	if ( it != m_options.end() )
-	{
-		ok = ( *it ).second->is_set();
-	}
-	
-	return ok;
-}
-
-	
-bool
-application::is_option_set( const std::string &name, json::value::ref &values )
-{
-	auto it = m_options.find( name );
-	bool ok = false;
-	
-	if ( it != m_options.end() )
-	{
-		ok		= ( *it ).second->is_set();
-		values	= ( *it ).second->values();
-	}
-	
-	return ok;
 }

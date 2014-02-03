@@ -49,6 +49,7 @@ runloop::main()
 
 runloop_mac::runloop_mac()
 {
+EAGAIN
 	// Make sure there is at least one thing added to runloop
 	
 	int fd = ::socket( AF_INET, SOCK_STREAM, 0 );
@@ -80,26 +81,6 @@ exit:
 
     return fd;
 }
-
-#if 0
-	dispatch_source_t event = nullptr;
-	
-	if ( m == event_mask::write )
-	{
-		event = dispatch_source_create( DISPATCH_SOURCE_TYPE_WRITE, fd, 0, dispatch_get_main_queue() );
-	}
-	else if ( m == event_mask::read )
-	{
-		event = dispatch_source_create( DISPATCH_SOURCE_TYPE_READ, fd, 0, dispatch_get_main_queue() );
-	}
-
-	dispatch_source_set_cancel_handler( event, ^()
-	{
-	} );
-	
-	return event;
-}
-#endif
 
 
 runloop::fd::ref
@@ -205,11 +186,7 @@ runloop_mac::cancel( event e )
 {
 	auto event = reinterpret_cast< dispatch_source_t >( e );
 	dispatch_source_cancel( event );
-	
-	dispatch( [=]()
-	{
-	//	dispatch_release( event );
-	} );
+	dispatch_release( event );
 }
 
 
@@ -247,6 +224,8 @@ runloop_mac::fd_mac::fd_mac( int fd, int domain )
 	assert( m_fd != -1 );
 	assert( m_send_source );
 	assert( m_recv_source );
+
+	m_in_buf.resize( 8192 );
 }
 
 
@@ -290,15 +269,6 @@ runloop_mac::fd_mac::connect( endpoint::ref to, connect_reply_f reply )
 
 	memset( &this_addr, 0, sizeof( this_addr ) );
 	this_addr.ss_family = that_addr.ss_family;
-
-	ret = ::bind( m_fd, ( sockaddr* ) &this_addr, sizeof( this_addr ) );
-
-	if ( ret != 0 )
-	{
-		nklog( log::error, "bind() failed: %d", errno );
-		reply( -1, nullptr );
-		goto exit;
-    }
 	
 	ret = ::connect( m_fd, ( sockaddr* ) &that_addr, that_addr_len );
 	
@@ -438,7 +408,7 @@ runloop_mac::fd_mac::accept( std::size_t peek, accept_reply_f reply )
 void
 runloop_mac::fd_mac::send( const std::uint8_t *buf, std::size_t len, send_reply_f reply )
 {
-	m_send_queue.push( std::make_shared< send_context >( buf, len ) );
+	m_send_queue.push( std::make_shared< send_context >( buf, len, reply ) );
 	
 	if ( m_send_queue.size() == 1 )
 	{
@@ -453,7 +423,7 @@ runloop_mac::fd_mac::send( const std::uint8_t *buf, std::size_t len, send_reply_
 void
 runloop_mac::fd_mac::sendto( const std::uint8_t *buf, std::size_t len, netkit::endpoint::ref to, send_reply_f reply )
 {
-	m_send_queue.push( std::make_shared< send_context >( buf, len, to ) );
+	m_send_queue.push( std::make_shared< send_context >( buf, len, to, reply ) );
 	
 	if ( m_send_queue.size() == 1 )
 	{
