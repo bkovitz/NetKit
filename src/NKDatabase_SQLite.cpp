@@ -173,8 +173,9 @@ database::manager_impl::set_version( std::uint32_t version )
 bool
 database::manager_impl::backup( const std::string &dest, backup_hook_f hook )
 {
-	sqlite3 *dest_db;
-	bool	ok = false;
+	sqlite3_backup	*backup		= nullptr;
+	sqlite3			*dest_db	= nullptr;
+	bool			ok			= false;
 
 	auto err = sqlite3_open( dest.c_str(), &dest_db );
 
@@ -201,7 +202,7 @@ database::manager_impl::backup( const std::string &dest, backup_hook_f hook )
 		}
 	}
 
-	auto backup = sqlite3_backup_init( dest_db, "main", m_db, "main" );
+	backup = sqlite3_backup_init( dest_db, "main", m_db, "main" );
 
 	if ( !backup )
 	{
@@ -211,12 +212,20 @@ database::manager_impl::backup( const std::string &dest, backup_hook_f hook )
     }
 
 	sqlite3_backup_step( backup, -1 );
-	sqlite3_backup_finish( backup );
-	sqlite3_close( dest_db );
 
 	ok = true;
 
 exit:
+
+	if ( backup )
+	{
+		sqlite3_backup_finish( backup );
+	}
+
+	if ( dest_db )
+	{
+		sqlite3_close( dest_db );
+	}
 
 	return ok;
 }
@@ -227,6 +236,7 @@ database::manager_impl::restore( const std::string &from, restore_hook_f hook )
 {
 	std::string filename;
 	auto		raw	= sqlite3_db_filename( m_db, "main" );
+	int			err;
 	auto		ok	= false;
 
 	if ( !raw )
@@ -238,7 +248,7 @@ database::manager_impl::restore( const std::string &from, restore_hook_f hook )
 
 	filename = raw;
 
-	auto err = sqlite3_close( m_db );
+	err = sqlite3_close( m_db );
 
 	if ( err )
 	{

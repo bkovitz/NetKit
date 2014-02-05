@@ -71,12 +71,15 @@ object::object()
 
 object::object( const object &that )
 :
-	m_attrs( that.m_attrs )
+	m_attrs( that.m_attrs ),
+	m_refs( 0 )
 {
 }
 
 
 object::object( const json::value_ref &root )
+:
+	m_refs( 0 )
 {
 	inflate( root );
 }

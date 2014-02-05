@@ -221,6 +221,13 @@ platform::create_folder( const std::string &folder )
 
 
 bool
+platform::copy_file( const std::string &from, const std::string &to )
+{
+	return false;
+}
+
+
+bool
 platform::file_exists( const std::string &name )
 {
 	struct stat buf;

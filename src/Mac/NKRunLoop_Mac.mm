@@ -49,7 +49,6 @@ runloop::main()
 
 runloop_mac::runloop_mac()
 {
-EAGAIN
 	// Make sure there is at least one thing added to runloop
 	
 	int fd = ::socket( AF_INET, SOCK_STREAM, 0 );
