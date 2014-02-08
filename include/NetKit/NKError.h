@@ -108,7 +108,7 @@ public:
 
 		if ( m_map.find( key ) == m_map.end() )
 		{
-			nklog( log::verbose, "locked the door with key %s", key.c_str() );
+			nklog( log::verbose, "locked the door with key %", key );
 
 			m_map[ key ] = key;
 
@@ -120,7 +120,7 @@ public:
 		}
 		else
 		{
-			nklog( log::verbose, "failed to lock the door with key %s", key.c_str() );
+			nklog( log::verbose, "failed to lock the door with key %", key );
 		}
 
 		return ret;

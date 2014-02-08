@@ -112,17 +112,17 @@ oauth::access_token( access_token_reply_f reply )
 						}
 						else
 						{
-							nklog( log::error, "bad json format: %s", root->to_string().c_str() );
+							nklog( log::error, "bad json format: %", root->to_string().c_str() );
 						}
 					}
 					else
 					{
-						nklog( log::error, "http error trying to refresh access token: %d", response->status() );
+						nklog( log::error, "http error trying to refresh access token: %", response->status() );
 					}
 				}
 				else
 				{
-					nklog( log::error, "no response from %s", request->uri()->to_string().c_str() );
+					nklog( log::error, "no response from %", request->uri()->to_string().c_str() );
 				}
 		
 				while ( !m_update_queue.empty() )

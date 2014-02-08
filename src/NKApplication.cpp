@@ -80,7 +80,7 @@ application::parse_command_line( int argc, std::tchar_t **argv )
 				
 				if ( !it->second->push_back( argv[ i ] ) )
 				{
-					nklog( log::error, "syntax error for option '%s'", it->second->name().c_str() );
+					nklog( log::error, "syntax error for option '%'", it->second->name().c_str() );
 					m_okay = false;
 					break;
 				}
@@ -88,14 +88,14 @@ application::parse_command_line( int argc, std::tchar_t **argv )
 			
 			if ( !it->second->set_is_set( true ) )
 			{
-				nklog( log::error, "syntax error for option '%s'", it->second->name().c_str() );
+				nklog( log::error, "syntax error for option '%'", it->second->name().c_str() );
 				m_okay = false;
 				break;
 			}
 		}
 		else
 		{
-			nklog( log::error, "unknown option '%s'", argv[ i ] );
+			nklog( log::error, "unknown option '%'", argv[ i ] );
 			m_okay = false;
 			break;
 		}

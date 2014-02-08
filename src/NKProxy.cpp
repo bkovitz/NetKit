@@ -643,7 +643,7 @@ http_adapter::send_connect()
 	{
 		if ( status != 0 )
 		{
-			nklog( log::error, "send failed: %d", status );
+			nklog( log::error, "send failed: %", status );
 		}
 	} );
 }
@@ -758,7 +758,7 @@ socks4_adapter::recv( const std::uint8_t *in_buf, std::size_t in_len, recv_reply
 						}
 						else
 						{
-							nklog( log::error, "expecting 0x90, received 0x%x", m_handshake[ 0 ] );
+							nklog( log::error, "expecting 0x90, received 0x%", m_handshake[ 0 ] );
 							
 							status	= -1;
 							out_buf = nullptr;
@@ -767,7 +767,7 @@ socks4_adapter::recv( const std::uint8_t *in_buf, std::size_t in_len, recv_reply
 					}
 					else
 					{
-						nklog( log::error, "expecting 0x00, received 0x%x", m_handshake[ 0 ] );
+						nklog( log::error, "expecting 0x00, received 0x%", m_handshake[ 0 ] );
 						
 						status	= -1;
 						out_buf = nullptr;

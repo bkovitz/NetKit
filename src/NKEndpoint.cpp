@@ -196,7 +196,7 @@ ip::endpoint::to_string() const
 		if ( inet_ntop( addr.ss_family, &( ( ( struct sockaddr_in *) &addr )->sin_addr ), buf, sizeof( buf ) ) == NULL )
 #endif
 		{
-			nklog( log::error, "error converting IPv4 addr to string: %d", platform::error() );
+			nklog( log::error, "error converting IPv4 addr to string: %", platform::error() );
 			goto exit;
 		}
 	}
@@ -213,7 +213,7 @@ ip::endpoint::to_string() const
 		if ( inet_ntop( addr.ss_family, &( ( ( struct sockaddr_in6* ) &addr )->sin6_addr ), buf, sizeof( buf ) ) == NULL )
 #endif
 		{
-			nklog( log::error, "error converting IPv6 addr to string: %d", platform::error() );
+			nklog( log::error, "error converting IPv6 addr to string: %", platform::error() );
 			goto exit;
 		}
 	}

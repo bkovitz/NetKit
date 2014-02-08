@@ -223,7 +223,7 @@ ip::address::resolve( std::string host, resolve_reply_f reply )
 		}
 		else
 		{
-			nklog( log::error, "error in getaddrinfo: %s", gai_strerror( err ) );
+			nklog( log::error, "error in getaddrinfo: %", gai_strerror( err ) );
 		}
 		
 		runloop::main()->dispatch( [=]()
@@ -288,7 +288,7 @@ ip::address::to_string() const
 
 #endif
 		{
-			nklog( log::error, "error converting addr to string: %d", platform::error() );
+			nklog( log::error, "error converting addr to string: %", platform::error() );
 		}
 	}
 	else if ( is_v6() )

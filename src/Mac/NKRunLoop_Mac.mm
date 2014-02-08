@@ -70,7 +70,7 @@ runloop_mac::create( std::int32_t domain, std::int32_t type, std::int32_t protoc
 
 	if ( s == -1 )
     {
-        nklog( log::error, "socket() failed: %d", errno );
+        nklog( log::error, "socket() failed: %", errno );
         goto exit;
     }
 
@@ -94,7 +94,7 @@ runloop_mac::create( netkit::endpoint::ref in_endpoint, netkit::endpoint::ref &o
 
 	if ( s == -1 )
     {
-        nklog( log::error, "socket() failed: %d", errno );
+        nklog( log::error, "socket() failed: %", errno );
         goto exit;
     }
 
@@ -102,13 +102,13 @@ runloop_mac::create( netkit::endpoint::ref in_endpoint, netkit::endpoint::ref &o
 
 	if ( ::bind( s, ( sockaddr* ) &addr, len ) != 0 )
     {
-        nklog( log::error, "bind() failed: %d", errno );
+        nklog( log::error, "bind() failed: %", errno );
         goto exit;
     }
 
     if ( ::listen( s, SOMAXCONN ) != 0 )
     {
-        nklog( log::error, "listen() failed: %d", errno );
+        nklog( log::error, "listen() failed: %", errno );
         goto exit;
     }
 
@@ -116,7 +116,7 @@ runloop_mac::create( netkit::endpoint::ref in_endpoint, netkit::endpoint::ref &o
 
     if ( ::getsockname( s, ( sockaddr* ) &addr, &len ) != 0 )
     {
-        nklog( log::error, "getsockname() failed: %d", errno );
+        nklog( log::error, "getsockname() failed: %", errno );
         goto exit;
     }
 
@@ -248,7 +248,7 @@ runloop_mac::fd_mac::bind( netkit::endpoint::ref to )
 
 	if ( ret != 0 )
 	{
-		nklog( log::error, "bind() failed: %d", errno );
+		nklog( log::error, "bind() failed: %", errno );
 	}
 
 	return ret;
@@ -305,7 +305,7 @@ runloop_mac::fd_mac::connect( endpoint::ref to, connect_reply_f reply )
 	}
 	else
 	{
-		nklog( log::error, "connect() failed: %d", errno );
+		nklog( log::error, "connect() failed: %", errno );
 		reply( -1, nullptr );
     }
  
@@ -363,13 +363,13 @@ runloop_mac::fd_mac::accept( std::size_t peek, accept_reply_f reply )
 							}
 							else
 							{
-								nklog( log::error, "::recv() failed: %d", errno );
+								nklog( log::error, "::recv() failed: %", errno );
 								status = -1;
 							}
 						}
 						else
 						{
-							nklog( log::error, "::select() failed: %d", errno );
+							nklog( log::error, "::select() failed: %", errno );
 							status = -1;
 						}
 
@@ -389,7 +389,7 @@ runloop_mac::fd_mac::accept( std::size_t peek, accept_reply_f reply )
 			}
 			else
 			{
-				nklog( log::error, "::accept() failed: %d", errno );
+				nklog( log::error, "::accept() failed: %", errno );
 				reply( -1, nullptr, nullptr, nullptr, 0 );
 			}
 		} );
@@ -468,7 +468,7 @@ runloop_mac::fd_mac::try_send( send_f func )
 			}
 			else
 			{
-				nklog( log::verbose, "::send/to() failed: %d", errno );
+				nklog( log::verbose, "::send/to() failed: %", errno );
 				deliver_reply( context, -1 );
 				goto exit;
 			}
@@ -566,7 +566,7 @@ runloop_mac::fd_mac::close()
 	
 	if ( m_fd != -1 )
 	{
-		nklog( log::verbose, "sock = %d", m_fd );
+		nklog( log::verbose, "sock = %", m_fd );
 		::close( m_fd );
 		m_fd = -1;
 	}

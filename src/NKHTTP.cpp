@@ -866,7 +866,7 @@ response::init()
 #else
     tstruct = *localtime( &now );
 #endif
-    strftime(buf, sizeof(buf), "%a, %d %b %Y %I:%M:%S %Z", &tstruct);
+    strftime(buf, sizeof(buf), "%a, % %b %Y %I:%M:%S %Z", &tstruct);
 	
 	add_to_header( "Date", buf );
 
@@ -1014,7 +1014,7 @@ connection::flush()
 		
 	if ( msg.size() > 0 )
 	{
-		nklog( log::verbose, "sending msg: %s", msg.c_str() );
+		nklog( log::verbose, "sending msg: %", msg.c_str() );
 		
 		send( reinterpret_cast< const std::uint8_t* >( msg.c_str() ), msg.size(), [=]( int status )
 		{
@@ -1358,14 +1358,14 @@ server::resolve( connection::ref conn, const message::header &header )
 			}
 			catch ( std::exception &exc )
 			{
-				nklog( log::error, "caught exception in regex: %s", exc.what() );
+				nklog( log::error, "caught exception in regex: %", exc.what() );
 			}
 		}
 	}
 	
 	if ( !binding )
 	{
-		nklog( log::error, "unable to find binding for method %d -> %s", conn->method(), handler->m_uri.c_str() );
+		nklog( log::error, "unable to find binding for method % -> %", conn->method(), handler->m_uri.c_str() );
 		goto exit;
 	}
 	
@@ -1606,7 +1606,7 @@ client::really_send()
 		}
 		else
 		{
-			nklog( log::error, "received error %d trying to connect to uri '%s'", status, m_request->uri()->to_string().c_str() );
+			nklog( log::error, "received error % trying to connect to uri '%'", status, m_request->uri()->to_string().c_str() );
 			m_request->reply( nullptr );
 		}
 	} );
@@ -1662,7 +1662,7 @@ client::headers_were_received( connection::ref connection, message::header &head
 	
 	if ( m_redirect.size() > 0 )
 	{
-		nklog( log::verbose, "redirecting HTTP request to %s", m_redirect.c_str() );
+		nklog( log::verbose, "redirecting HTTP request to %", m_redirect.c_str() );
 		
 		m_request->set_uri( new netkit::uri( m_redirect ) );
 

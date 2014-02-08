@@ -91,7 +91,7 @@ log::set_level( log::level l )
 
 
 std::string
-log::prune( const char *filename )
+log::prune_filename( const char *filename )
 {
 	for ( auto i = strlen( filename ) - 1; i > 0; i-- )
 	{
@@ -102,4 +102,25 @@ log::prune( const char *filename )
 	}
 
 	return filename;
+}
+
+
+std::string
+log::prune_function( const char *function )
+{
+#if defined( __clang__ )
+
+	std::string tmp( function );
+	
+	auto colons = tmp.find( "::" );
+    auto begin	= tmp.substr( 0, colons ).rfind( " " ) + 1;
+    auto end	= tmp.rfind( "(" ) - begin;
+
+	return tmp.substr( begin, end ) + "()";
+	
+#else
+
+	return function;
+	
+#endif
 }

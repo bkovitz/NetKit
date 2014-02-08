@@ -160,7 +160,7 @@ platform::machine_id()
     
 		if ( KERN_SUCCESS != kernResult)
 		{
-			printf("find_ethernet_interfaces returned 0x%08x\n", kernResult);
+			nklog( log::error, "find_ethernet_interfaces returned %", kernResult );
 		}
 		else
 		{

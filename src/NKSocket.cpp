@@ -132,7 +132,7 @@ socket::start_send( const std::uint8_t *buf, std::size_t len, source::send_reply
 	{
 		if ( status )
 		{
-			nklog( log::error, "send returned %d", platform::error() );
+			nklog( log::error, "send returned %", platform::error() );
 		}
 
 		reply( status );

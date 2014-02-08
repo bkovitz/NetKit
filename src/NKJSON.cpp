@@ -2383,7 +2383,7 @@ value::load_from_file(const std::string &filePath)
 	}
 	else
 	{
-		nklog( log::error, "failed to open file '%s", filePath.c_str() );
+		nklog( log::error, "failed to open file '%", filePath.c_str() );
 	}
 }
 
@@ -2408,7 +2408,7 @@ value::write_to_file(const std::string &filePath, bool indent, bool escapeAll) c
 	}
 	else
 	{
-		nklog( log::error, "failed to open file '%s'", filePath.c_str() );
+		nklog( log::error, "failed to open file '%'", filePath.c_str() );
 	}
 }
 
@@ -2993,12 +2993,12 @@ connection::process( const std::uint8_t *buf, std::size_t len )
 		
 	if ( !ret.is_valid() )
 	{
-		nklog( log::error, "unable to parse %s", msg.c_str() );
+		nklog( log::error, "unable to parse %", msg );
 		ok = false;
 		goto exit;
 	}
 		
-	nklog( log::verbose, "msg = %s", msg.c_str() );
+	nklog( log::verbose, "msg = %", msg );
 	root = ret.get();
 		
 	if ( !root[ "method" ]->is_null() )
@@ -3258,7 +3258,7 @@ server::route_request( const value::ref &request, reply_f r )
 				value::ref reply;
 				value::ref error;
 
-				nklog( log::error, "incorrect parameter count for '%s'", request[ "method" ]->as_string().c_str() );
+				nklog( log::error, "incorrect parameter count for '%'", request[ "method" ]->as_string().c_str() );
 							
 				error[ "code" ]			= netkit::status::bad_params;
 				error[ "message" ]		= "Invalid Paramaters.";

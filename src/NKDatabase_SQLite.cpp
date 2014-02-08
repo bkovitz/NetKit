@@ -46,9 +46,9 @@ manager::create( const std::string &s )
 	else
 	{
 #if defined( WIN32 )
-		nklog( log::error, "sqlite3_open() failed: code = %d, message = %s", err, sqlite3_errstr( err ) );
+		nklog( log::error, "sqlite3_open() failed: code = %, message = %", err, sqlite3_errstr( err ) );
 #else
-		nklog( log::error, "sqlite3_open() failed: code = %d", err );
+		nklog( log::error, "sqlite3_open() failed: code = %", err );
 #endif
 	}
 	
@@ -103,14 +103,14 @@ manager_impl::exec( const std::string &str, bool quiet )
 	
 	if ( !quiet )
 	{
-		nklog( log::voluminous, "exec: %s", str.c_str() );
+		nklog( log::voluminous, "exec: %", str.c_str() );
 	}
 
 	int ret = sqlite3_exec( m_db, str.c_str(), 0, 0, &error );
 	
 	if ( ret )
 	{
-		nklog( log::error, "sqlite3_exec() failed: %d, %s", ret, error );
+		nklog( log::error, "sqlite3_exec() failed: %, %", ret, error );
 	}
 	
 	if ( error )
@@ -127,7 +127,7 @@ database::manager_impl::select( const std::string &str )
 {
 	sqlite3_stmt *stmt;
 
-	nklog( log::voluminous, "%s\n", str.c_str() );
+	nklog( log::voluminous, "%\n", str.c_str() );
 
 	return ( sqlite3_prepare_v2( m_db, str.c_str(), -1, &stmt, NULL ) == SQLITE_OK ) ? new statement_impl( stmt ) : new statement_impl( NULL );
 }
@@ -165,7 +165,7 @@ database::manager_impl::set_version( std::uint32_t version )
 	
 	if ( ret )
 	{
-		nklog( log::error, "sqlite3_exec() failed: %d, %s", ret, error );
+		nklog( log::error, "sqlite3_exec() failed: %, %", ret, error );
 	}
 }
 
@@ -181,7 +181,7 @@ database::manager_impl::backup( const std::string &dest, backup_hook_f hook )
 
 	if ( err )
 	{
-		nklog( log::error, "sqlite3_open('%s') failed: %d", dest.c_str(), err );
+		nklog( log::error, "sqlite3_open('%') failed: %", dest.c_str(), err );
 		ok = false;
 		goto exit;
 	}
@@ -196,7 +196,7 @@ database::manager_impl::backup( const std::string &dest, backup_hook_f hook )
 	
 		if ( ret )
 		{
-			nklog( log::error, "sqlite3_exec() failed: %d, %s", ret, error );
+			nklog( log::error, "sqlite3_exec() failed: %, %", ret, error );
 			ok = false;
 			goto exit;
 		}
@@ -206,7 +206,7 @@ database::manager_impl::backup( const std::string &dest, backup_hook_f hook )
 
 	if ( !backup )
 	{
-		nklog( log::error, "sqlite3_backup_init failed: %d", sqlite3_errcode( dest_db ) );
+		nklog( log::error, "sqlite3_backup_init failed: %", sqlite3_errcode( dest_db ) );
 		ok = false;
 		goto exit;
     }
@@ -252,7 +252,7 @@ database::manager_impl::restore( const std::string &from, restore_hook_f hook )
 
 	if ( err )
 	{
-		nklog( log::error, "sqlite3_close() failed: %d", err );
+		nklog( log::error, "sqlite3_close() failed: %", err );
 		ok = false;
 		goto exit;
 	}
@@ -268,7 +268,7 @@ database::manager_impl::restore( const std::string &from, restore_hook_f hook )
 
 	if ( err )
 	{
-		nklog( log::error, "sqlite3_open('%s') failed: %d", filename.c_str(), err );
+		nklog( log::error, "sqlite3_open('%') failed: %", filename.c_str(), err );
 		ok = false;
 		goto exit;
 	}
@@ -283,7 +283,7 @@ database::manager_impl::restore( const std::string &from, restore_hook_f hook )
 	
 		if ( ret )
 		{
-			nklog( log::error, "sqlite3_exec() failed: %d, %s", ret, error );
+			nklog( log::error, "sqlite3_exec() failed: %, %", ret, error );
 			ok = false;
 			goto exit;
 		}

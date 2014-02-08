@@ -508,7 +508,7 @@ tls_adapter::handle_error( int result )
 				{
 					ERR_error_string_n(error, buffer, sizeof(buffer));
 
-					fprintf( stderr, "Error: %d - %s\n", error, buffer);
+					fprintf( stderr, "Error: % - %\n", error, buffer);
 
 					error = ( int ) ERR_get_error();
 				}

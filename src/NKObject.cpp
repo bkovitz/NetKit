@@ -43,11 +43,11 @@ std::unordered_map< void*, std::string > netkit::ref_count_map;
 void
 netkit::ref_count_print( const std::string &message )
 {
-	fprintf( stderr, "\n\n%s\n-------\n", message.c_str() );
+	fprintf( stderr, "\n\n%\n-------\n", message.c_str() );
 
 	for ( auto it = ref_count_map.begin(); it != ref_count_map.end(); it++ )
 	{
-		fprintf( stderr, "smart_ref -> %s\n\n", it->second.c_str() );
+		fprintf( stderr, "smart_ref -> %\n\n", it->second.c_str() );
 	}
 
 	fprintf( stderr, "\n--------\n\n\n");

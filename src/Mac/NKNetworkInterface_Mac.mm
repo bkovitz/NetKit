@@ -47,7 +47,7 @@ nic::instances()
 	}
 	else
 	{
-		nklog( log::error, "getifaddrs() failed: %d", errno );
+		nklog( log::error, "getifaddrs() failed: %", errno );
 	}
 	
 	return nics;

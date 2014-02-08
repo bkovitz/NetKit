@@ -443,7 +443,7 @@ ws_adapter::recv( const std::uint8_t *in_buf, std::size_t in_len, recv_reply_f r
 		}
 		else
 		{
-			nklog( log::error, "received error %d...closing connection", status );
+			nklog( log::error, "received error %...closing connection", status );
 			reply( status, nullptr, 0, false );
 		}
 	} );
@@ -479,7 +479,7 @@ ws_adapter::parse_server_handshake( const std::uint8_t *buf, std::size_t in_len,
 	
 	if ( lines[ 0 ] != "HTTP/1.1 101 Switching Protocols" )
 	{
-		nklog( log::error, "expecting 'HTTP/1.1 101 Switching Protocols', received %s", lines[ 0 ].c_str() );
+		nklog( log::error, "expecting 'HTTP/1.1 101 Switching Protocols', received %", lines[ 0 ].c_str() );
 		type = frame::type::error;
 		goto exit;
 	}

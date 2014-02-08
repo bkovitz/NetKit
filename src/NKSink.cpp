@@ -196,7 +196,7 @@ sink::run()
 			}
 			else
 			{
-				nklog( log::verbose, "source::recv() returned an error (%d)...closing connection", status );
+				nklog( log::verbose, "source::recv() returned an error (%)...closing connection", status );
 				close();
 			}
 		}

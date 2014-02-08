@@ -33,6 +33,8 @@
 
 #include <NetKit/NKObject.h>
 #include <NetKit/NKCookie.h>
+#include <NetKit/NKPrintF.h>
+#include <sstream>
 #include <vector>
 #include <mutex>
 
@@ -40,13 +42,12 @@
 
 #	include <winsock2.h>
 #	include <windows.h>
-#	include <stdarg.h>
 #	include <stdio.h>
 #	define nklog( LEVEL, MESSAGE, ... ) if ( LEVEL <= log::get_level() ) { netkit::log::put( LEVEL, __FILE__, __FUNCTION__, __LINE__, MESSAGE, __VA_ARGS__ ); }
 
 #elif defined( __clang__ )
 
-#	define nklog( LEVEL, MESSAGE, ... ) netkit::log::put( LEVEL, __FILE__, __PRETTY_FUNCTION__, __LINE__, MESSAGE, ##__VA_ARGS__ );
+#	define nklog( LEVEL, MESSAGE, ... ) if ( LEVEL <= log::get_level() ) { netkit::log::put( LEVEL, __FILE__, __PRETTY_FUNCTION__, __LINE__, MESSAGE, ##__VA_ARGS__ ); };
 
 #endif
 
@@ -88,13 +89,69 @@ public:
 	on_set( cookie::ref *cookie, set_f handler );
 	
 	static void
-	put( level l, const char * filename, const char * function, int line, const char * message, ... );
+	put( level l, const char *filename, const char *function, int line, const char *message )
+	{
+		std::ostringstream	os;
+		char				*time_str;
+		auto				t = time( NULL );
+		
+		time_str = ctime( &t );
+		
+		if ( time_str )
+		{
+			for ( unsigned i = 0; i < strlen( time_str ); i++ )
+			{
+				if ( time_str[ i ] == '\n' )
+				{
+					time_str[ i ] = '\0';
+				}
+			}
+		}
+		
+		os << getpid() << " " << time_str << " " << prune_filename( filename ) << ":" << line << " " << prune_function( function ) << " " << message;
+		
+		put( l, os );
+	}
+	
+	template< typename Head, typename ...Tail >
+	static void
+	put( level l, const char *filename, const char *function, int line, const char *format, const Head &head, const Tail &... tail )
+	{
+		std::ostringstream	os;
+		char				*time_str;
+		auto				t = time( NULL );
+		
+		time_str = ctime( &t );
+		
+		if ( time_str )
+		{
+			for ( unsigned i = 0; i < strlen( time_str ); i++ )
+			{
+				if ( time_str[ i ] == '\n' )
+				{
+					time_str[ i ] = '\0';
+				}
+			}
+		}
+		
+		os << getpid() << " " << time_str << " " << prune_filename( filename ) << ":" << line << " " << prune_function( function ) << " ";
+		
+		netkit::printf( os, format, head, tail... );
+		
+		put( l, os );
+	}
+	
+	static void
+	put( level l, std::ostringstream &os );
 	
 protected:
 
 	static std::string
-	prune( const char *filename );
+	prune_filename( const char *filename );
 
+	static std::string
+	prune_function( const char *filename );
+	
 	typedef std::vector< std::pair< netkit::cookie::naked_ptr, set_f > >	set_handlers;
 	static log::level														m_log_level;
 	static set_handlers														*m_set_handlers;

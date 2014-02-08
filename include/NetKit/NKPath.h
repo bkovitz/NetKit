@@ -28,66 +28,43 @@
  *
  */
  
-#include <NetKit/NKLog.h>
-#include <stdio.h>
-#include <time.h>
-#include <string.h>
-#include <pthread.h>
+#ifndef _netkit_path_h
+#define _netkit_path_h
+
+#include <string>
 #include <vector>
-#include <mutex>
 
-using namespace netkit;
+namespace netkit {
 
-void
-log::init( const std::string &name )
+class path
 {
-	if ( !m_set_handlers )
+public:
+
+	typedef std::vector< std::string > components;
+
+	inline static components
+	split( const std::string &path, char delimiter = '/' )
 	{
-		m_set_handlers = new set_handlers;
+		std::string tmp( path );
+		std::size_t	pos = 0;
+		components	ret;
+
+		while ( ( pos = tmp.find( delimiter ) ) != std::string::npos )
+		{
+			auto token = path.substr( 0, pos );
+
+			if ( token.size() > 0 )
+        	{
+            	ret.push_back( token );
+        	}
+
+			tmp.erase( 0, pos + 1 );
+    	}
+
+		return ret;
 	}
-	
-	if ( !m_mutex )
-	{
-		m_mutex = new std::recursive_mutex;
-	}
+};
+
 }
 
-
-void
-log::put( log::level l, std::ostringstream &os )
-{
-	std::lock_guard< std::recursive_mutex > lock( *m_mutex );
-	
-	switch ( l )
-	{
-		case log::level::info:
-		{
-			fprintf( stderr, "      INFO %s\n", os.str().c_str() );
-		}
-		break;
-		
-		case log::level::warning:
-		{
-			fprintf( stderr, "   WARNING %s\n", os.str().c_str() );
-		}
-		break;
-		
-		case log::level::error:
-		{
-			fprintf( stderr, "     ERROR %s\n", os.str().c_str() );
-		}
-		break;
-		
-		case log::level::verbose:
-		{
-			fprintf( stderr, "   VERBOSE %s\n", os.str().c_str() );
-		}
-		break;
-		
-		case log::level::voluminous:
-		{
-			fprintf( stderr, "VOLUMINOUS %s\n", os.str().c_str() );
-		}
-		break;
-	}
-}
+#endif

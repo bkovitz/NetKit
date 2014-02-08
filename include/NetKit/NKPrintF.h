@@ -27,67 +27,64 @@
  * either expressed or implied, of the FreeBSD Project.
  *
  */
- 
-#include <NetKit/NKLog.h>
-#include <stdio.h>
-#include <time.h>
-#include <string.h>
-#include <pthread.h>
-#include <vector>
-#include <mutex>
 
-using namespace netkit;
+#ifndef _netkit_printf_h
+#define _netkit_printf_h
 
+#include <iostream>
+#include <sstream>
+
+namespace netkit {
+
+template<typename char_type, typename traits = std::char_traits<char_type>>
 void
-log::init( const std::string &name )
+printf( std::basic_ostream<char_type, traits> &output, const char_type *format )
 {
-	if ( !m_set_handlers )
+	while ( *format )
 	{
-		m_set_handlers = new set_handlers;
-	}
-	
-	if ( !m_mutex )
-	{
-		m_mutex = new std::recursive_mutex;
-	}
+		if ( *format == '%' )
+		{
+			if ( *( format + 1 ) == '%' )
+			{
+                ++format;
+            }
+            else
+			{
+                throw std::runtime_error( "invalid format string: missing arguments" );
+            }
+        }
+
+        output << *format++;
+    }
 }
 
 
+template<typename char_type, typename traits = std::char_traits<char_type>, typename Head, typename ...Tail>
 void
-log::put( log::level l, std::ostringstream &os )
+printf( std::basic_ostream<char_type, traits> &output, const char_type *format, const Head &head, const Tail &... tail)
 {
-	std::lock_guard< std::recursive_mutex > lock( *m_mutex );
-	
-	switch ( l )
+	while ( *format )
 	{
-		case log::level::info:
+		if ( *format == '%' )
 		{
-			fprintf( stderr, "      INFO %s\n", os.str().c_str() );
+			if ( *( format + 1 ) == '%' )
+			{
+				++format;
+			}
+			else
+			{
+				output << head;
+				netkit::printf( output, format + 1, tail... );
+				return;
+			}
 		}
-		break;
-		
-		case log::level::warning:
-		{
-			fprintf( stderr, "   WARNING %s\n", os.str().c_str() );
-		}
-		break;
-		
-		case log::level::error:
-		{
-			fprintf( stderr, "     ERROR %s\n", os.str().c_str() );
-		}
-		break;
-		
-		case log::level::verbose:
-		{
-			fprintf( stderr, "   VERBOSE %s\n", os.str().c_str() );
-		}
-		break;
-		
-		case log::level::voluminous:
-		{
-			fprintf( stderr, "VOLUMINOUS %s\n", os.str().c_str() );
-		}
-		break;
+
+		output << *format++;
 	}
+
+	throw std::logic_error( "extra arguments provided to safe_printf" );
 }
+
+}
+
+#endif
