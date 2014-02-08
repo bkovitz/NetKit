@@ -111,12 +111,11 @@ log::prune_function( const char *function )
 #if defined( __clang__ )
 
 	std::string tmp( function );
-	
-	auto colons = tmp.find( "::" );
-    auto begin	= tmp.substr( 0, colons ).rfind( " " ) + 1;
-    auto end	= tmp.rfind( "(" ) - begin;
 
-	return tmp.substr( begin, end ) + "()";
+    auto end    = tmp.find( '(' );
+    auto begin  = tmp.rfind( ' ', end ) + 1;
+
+    return tmp.substr( begin, end - begin ) + "()";
 	
 #else
 

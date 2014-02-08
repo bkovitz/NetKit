@@ -147,7 +147,7 @@ socket::start_recv( source::recv_reply_f reply )
 	{
 		if ( status )
 		{
-			nklog( log::error, "recv returned %u", platform::error() );
+			nklog( log::error, "recv returned %", platform::error() );
 		}
 
 		reply( status, buf, len );
