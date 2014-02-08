@@ -51,7 +51,7 @@ public:
 
 		while ( ( pos = tmp.find( delimiter ) ) != std::string::npos )
 		{
-			auto token = path.substr( 0, pos );
+			auto token = tmp.substr( 0, pos );
 
 			if ( token.size() > 0 )
         	{
@@ -60,6 +60,11 @@ public:
 
 			tmp.erase( 0, pos + 1 );
     	}
+		
+		if ( tmp.size() > 0 )
+        {
+			ret.push_back( tmp );
+        }
 
 		return ret;
 	}
