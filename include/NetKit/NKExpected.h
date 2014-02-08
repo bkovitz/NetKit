@@ -45,6 +45,13 @@ class expected
 {
 public:
 
+	expected()
+	:
+		m_expected( false )
+	{
+		new( &m_storage ) std::runtime_error( "" );
+	}
+
     expected( expected const& that )
 	:
 		m_expected( that.m_expected )

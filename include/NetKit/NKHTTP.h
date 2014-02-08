@@ -251,6 +251,9 @@ public:
 	}
 	
 	virtual void
+	preflight();
+	
+	virtual void
 	send_prologue( connection_ref conn ) const = 0;
 	
 	virtual bool

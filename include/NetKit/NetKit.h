@@ -51,6 +51,7 @@
 #include <NetKit/NKKeychain.h>
 #include <NetKit/NKLDAP.h>
 #include <NetKit/NKRunLoop.h>
+#include <NetKit/NKPath.h>
 #include <NetKit/NKSource.h>
 #include <NetKit/NKSink.h>
 #include <NetKit/NKUnicode.h>

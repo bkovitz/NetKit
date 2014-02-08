@@ -651,6 +651,12 @@ message::write( const uint8_t *buf, size_t len )
 }
 
 
+void
+message::preflight()
+{
+}
+
+
 bool
 message::send_body( connection_ref conn ) const
 {
@@ -983,6 +989,8 @@ bool
 connection::put( message::ref message )
 {
 	m_ostream.clear();
+	
+	message->preflight();
 	
 	message->send_prologue( this );
 	
