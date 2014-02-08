@@ -43,11 +43,11 @@
 #	include <winsock2.h>
 #	include <windows.h>
 #	include <stdio.h>
-#	define nklog( LEVEL, MESSAGE, ... ) if ( LEVEL <= log::get_level() ) { netkit::log::put( LEVEL, __FILE__, __FUNCTION__, __LINE__, MESSAGE, __VA_ARGS__ ); }
+#	define nklog( LEVEL, MESSAGE, ... ) if ( LEVEL <= log::get_level() ) { try { netkit::log::put( LEVEL, __FILE__, __FUNCTION__, __LINE__, MESSAGE, __VA_ARGS__ ); } catch ( ... ) { fprintf( stderr, "logging exception at %s:%d\n", __FUNCTION__, __LINE__ ); } }
 
 #elif defined( __clang__ )
 
-#	define nklog( LEVEL, MESSAGE, ... ) if ( LEVEL <= log::get_level() ) { netkit::log::put( LEVEL, __FILE__, __PRETTY_FUNCTION__, __LINE__, MESSAGE, ##__VA_ARGS__ ); };
+#	define nklog( LEVEL, MESSAGE, ... ) if ( LEVEL <= log::get_level() ) { try { netkit::log::put( LEVEL, __FILE__, __PRETTY_FUNCTION__, __LINE__, MESSAGE, ##__VA_ARGS__ ); } catch ( ... ) { fprintf( stderr, "logging exception at %s:%d\n", __PRETTY_FUNCTION__, __LINE__ ); } };
 
 #endif
 
@@ -88,15 +88,16 @@ public:
 	static void
 	on_set( cookie::ref *cookie, set_f handler );
 	
+	template< typename ...Params >
 	static void
-	put( level l, const char *filename, const char *function, int line, const char *message )
+	put( level l, const char *filename, const char *function, int line, const char *format, const Params &... params )
 	{
 		std::ostringstream	os;
 		char				*time_str;
 		auto				t = time( NULL );
-		
+			
 		time_str = ctime( &t );
-		
+			
 		if ( time_str )
 		{
 			for ( unsigned i = 0; i < strlen( time_str ); i++ )
@@ -107,36 +108,10 @@ public:
 				}
 			}
 		}
-		
-		os << getpid() << " " << time_str << " " << prune_filename( filename ) << ":" << line << " " << prune_function( function ) << " " << message;
-		
-		put( l, os );
-	}
-	
-	template< typename Head, typename ...Tail >
-	static void
-	put( level l, const char *filename, const char *function, int line, const char *format, const Head &head, const Tail &... tail )
-	{
-		std::ostringstream	os;
-		char				*time_str;
-		auto				t = time( NULL );
-		
-		time_str = ctime( &t );
-		
-		if ( time_str )
-		{
-			for ( unsigned i = 0; i < strlen( time_str ); i++ )
-			{
-				if ( time_str[ i ] == '\n' )
-				{
-					time_str[ i ] = '\0';
-				}
-			}
-		}
-		
+			
 		os << getpid() << " " << time_str << " " << prune_filename( filename ) << ":" << line << " " << prune_function( function ) << " ";
-		
-		netkit::printf( os, format, head, tail... );
+			
+		netkit::printf( os, format, params... );
 		
 		put( l, os );
 	}
