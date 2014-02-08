@@ -663,5 +663,5 @@ tls_adapter::callback(int p, int n, void *arg)
 	if (p == 2) c='*';
 	if (p == 3) c='\n';
 	
-	fputc( c,stderr );
+	// fputc( c,stderr );
 }
